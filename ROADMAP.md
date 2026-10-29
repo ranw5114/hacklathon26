@@ -12,10 +12,10 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - ✅ Done when: a live URL shows the app and one AI response
 
 ## Phase 1 · Setup flow + study plan (Oct 30 – Nov 2)
-- [ ] Setup page: learning style, subject, topic, test date, current/goal grade, hours per day, notes
-- [ ] Save setup answers in the browser
-- [ ] `/api/plan`: Gemini returns a structured (JSON) plan
-- [ ] Dashboard showing the plan as days and sections
+- [x] Setup page: learning style, subject, topic, test date, current/goal grade, hours per day, notes
+- [x] Save setup answers in the browser
+- [x] `/api/plan`: Gemini returns a structured (JSON) plan
+- [x] Dashboard showing the plan as days and sections
 - ✅ Done when: entering a test produces a personalized day-by-day plan
 
 ## Phase 2 · Studying a section (Nov 3–6)
