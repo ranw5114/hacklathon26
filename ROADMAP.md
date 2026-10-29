@@ -6,9 +6,9 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 
 ## Phase 0 · Setup (Oct 28–29)
 - [x] Create the Next.js project
-- [ ] Push to GitHub
-- [ ] Deploy to Vercel (live URL)
-- [ ] Get a Gemini API key and make one test call
+- [x] Push to GitHub
+- [x] Deploy to Vercel (live URL: https://hacklathon26.vercel.app)
+- [x] Get a Gemini API key and make one test call
 - ✅ Done when: a live URL shows the app and one AI response
 
 ## Phase 1 · Setup flow + study plan (Oct 30 – Nov 2)
