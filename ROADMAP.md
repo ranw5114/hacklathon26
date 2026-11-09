@@ -34,7 +34,8 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - ✅ Done when: the full study loop works from the path
 
 ## Phase 3 · Chicken Coop + Egg Timer (Nov 10)
-- [ ] `/api/tutor`: AI chat that knows the current plan, with homework photo upload
+- [x] Corn chests on the nest path (every 3 levels, 15-30 corn)
+- [x] `/api/tutor`: AI chat that knows the current plan, with homework photo upload
 - [ ] Egg Timer: keeps correct time when switching tabs, presets, pause/resume, alert when done
 
 ## Phase 4 · The Roost + demo-ready (Nov 11)
