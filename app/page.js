@@ -1,23 +1,28 @@
-import Link from "next/link";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import Chick from "@/components/Chick";
+import { useStored } from "@/lib/storage";
+
+// Start screen. New visitors go to setup; returning visitors go straight to the Barn.
+export default function StartPage() {
+  const profile = useStored("profile");
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-      <h1 className="max-w-2xl text-4xl font-bold sm:text-5xl">
-        Tell us your goal grade. We&apos;ll plan how to get there.
-      </h1>
-      <p className="max-w-xl text-lg text-zinc-600">
-        Your AI study coach builds a day-by-day plan for your next test, taught the way you learn
-        best, and ends with a mock exam that predicts your grade.
+      <span className="bubble">
+        {profile ? `Welcome back, ${profile.name}!` : "Ready to study? Let's do this!"}
+      </span>
+      <Chick size={180} />
+      <p className="max-w-md text-muted">
+        Tell me your goal grade and I&apos;ll build a study plan to get you there, one step at a time.
       </p>
-      <div className="flex flex-wrap justify-center gap-3">
-        <Link href="/setup" className="btn-primary">
-          Get started
+      {/* Wait until saved data is read, so the button points to the right place. */}
+      {profile !== undefined && (
+        <Link href={profile ? "/barn" : "/setup"} className="btn-primary">
+          {profile ? "Go to the Barn" : "Start"}
         </Link>
-        <Link href="/plan" className="btn-secondary">
-          My plan
-        </Link>
-      </div>
+      )}
     </main>
   );
 }

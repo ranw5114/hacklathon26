@@ -18,24 +18,29 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [x] Dashboard showing the plan as days and sections
 - ✅ Done when: entering a test produces a personalized day-by-day plan
 
-## Phase 2 · Studying a section (Nov 3–6)
-- [ ] `/api/lesson`: lesson adapted to learning style (visual, lecture, examples)
-- [ ] `/api/quiz`: mini quiz questions
-- [ ] Mini quiz with instant feedback; score saved
-- [ ] Generate quizzes from pasted notes (PDF upload is a stretch goal)
-- ✅ Done when: finishing a section updates the dashboard
+## Phase 1.5 · Chicken theme + navigation (Nov 7) ✅
+- [x] Chicken theme matched to the Lovable design (colors, Fredoka font, chick mascots)
+- [x] Start screen and profile setup (name, avatar, learning style)
+- [x] The Barn home with the 4 areas, plus top/bottom navigation
+- [x] Nest Builder holds the test form and plan
+- [x] Profile + settings page; placeholder pages for Coop, Timer, Roost
 
-## Phase 3 · Mock exam + rewards (Nov 7–9)
-- [ ] Mock exam across all sections, results page
-- [ ] Predicted grade (plain math: ~70% mock exam + ~30% quiz average)
-- [ ] Points for quizzes; focus timer that awards points
-- ✅ Done when: **the full loop works** (minimum submittable app)
+## Phase 2 · Nest Builder path (Nov 8–9)
+- [ ] Duolingo-style winding path: one level per plan section, mock exam at the end
+- [ ] `/api/lesson`: lesson adapted to learning style
+- [ ] `/api/quiz`: mini quiz questions; score sets the level's "cooked level"
+- [ ] Mock exam + predicted grade (~70% mock exam + ~30% quiz average)
+- ✅ Done when: the full study loop works from the path
 
-## Phase 4 · Tutor + demo-ready (Nov 10–11)
-- [ ] `/api/tutor`: chat with photo upload
-- [ ] Demo mode: sample student with content generated ahead of time (no AI requests)
-- [ ] Friendly error messages when the AI limit is hit
-- ✅ Done when: a judge can click "Try the demo" and explore without errors
+## Phase 3 · Chicken Coop + Egg Timer (Nov 10)
+- [ ] `/api/tutor`: AI chat that knows the current plan, with homework photo upload
+- [ ] Egg Timer: keeps correct time when switching tabs, presets, pause/resume, alert when done
+
+## Phase 4 · The Roost + demo-ready (Nov 11)
+- [ ] Calendar showing study plan days
+- [ ] Optional: sync a calendar from an iCal link (first thing to cut if behind)
+- [ ] Demo mode with content generated ahead of time; friendly errors when the AI limit is hit
+- [ ] Friend's graphics due (avatars, area icons, cooked-level egg images)
 
 ## Phase 5 · Feature freeze + polish (Nov 12)
 - [ ] No new features. Bug fixes, styling pass, check on a phone
@@ -46,12 +51,12 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [ ] Submit (evening of Nov 14)
 
 ## Fallback plan
-- Behind by Nov 6 → drop notes upload, use topic names only
-- Behind by Nov 9 → drop the tutor chat
+- Behind by Nov 9 → simplify lessons to text only
+- Behind by Nov 10 → drop Roost calendar sync, show only the study plan
+- Behind by Nov 11 → drop Coop photo upload
 - Stretch goals (only if ahead): YouTube links per section, grade calculator, PDF upload
 
 ## Friend's parallel tasks
-- Now – Nov 2: screen sketches, colors and fonts, final name
-- Nov 3–9: sample notes and sample test for the demo student, pitch script draft
-- Nov 12: styling pass on the real app
-- Nov 13: narrate or co-present the video
+- By Nov 11: graphics as image files (6 avatars, 4 area icons, cooked-level eggs), sample notes for the demo
+- Nov 12: review the real app, send final design tweaks
+- Nov 13: pitch script and narration

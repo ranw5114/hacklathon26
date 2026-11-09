@@ -1,15 +1,10 @@
 import { ai, MODEL } from "@/lib/gemini";
 import { addDays, daysBetween } from "@/lib/dates";
+import { LEARNING_STYLES } from "@/lib/learningStyles";
 
 // Keep plans short enough to read and to stay inside the free AI limits.
 const MAX_STUDY_DAYS = 14;
 const MAX_NOTES_CHARS = 15_000;
-
-const LEARNING_STYLES = {
-  visual: "a visual learner who understands best through diagrams, charts, and pictures",
-  lecture: "a learner who prefers clear step-by-step explanations, like a teacher's lecture",
-  examples: "a learner who understands best by working through examples and practice problems",
-};
 
 // The exact JSON shape we want back from Gemini.
 const planSchema = {
@@ -49,22 +44,22 @@ const planSchema = {
   required: ["title", "overview", "days"],
 };
 
-function buildPrompt(profile, lessonDays) {
-  const notes = profile.notes?.trim().slice(0, MAX_NOTES_CHARS);
+function buildPrompt(learner, test, lessonDays) {
+  const notes = test.notes?.trim().slice(0, MAX_NOTES_CHARS);
 
   return `You are an expert tutor creating a day-by-day study plan for an upcoming test.
 
 Student:
-- Subject: ${profile.subject}
-- Test topic(s): ${profile.topic}
-- Current grade in the class: ${profile.currentGrade}%
-- Goal grade: ${profile.goalGrade}%
-- Study time available: about ${profile.hoursPerDay} hour(s) per day
-- Learning style: ${LEARNING_STYLES[profile.learningStyle]}
+- Subject: ${test.subject}
+- Test topic(s): ${test.topic}
+- Current grade in the class: ${test.currentGrade}%
+- Goal grade: ${test.goalGrade}%
+- Study time available: about ${test.hoursPerDay} hour(s) per day
+- Learning style: ${LEARNING_STYLES[learner.learningStyle].prompt}
 ${notes ? `\nThe student's class notes (use these to decide what to cover):\n"""\n${notes}\n"""\n` : ""}
 Rules:
 - Create exactly ${lessonDays} day(s). A mock exam is scheduled separately after the last day, so don't include one.
-- Each day has 2-4 sections. Each section's minutes add up to about ${profile.hoursPerDay * 60} minutes per day.
+- Each day has 2-4 sections. Each section's minutes add up to about ${test.hoursPerDay * 60} minutes per day.
 - Start with the basic concepts and build up to harder material. Use the last day for review.
 - Every section ends with a short quiz, so each one should cover a single, testable idea.
 - The bigger the gap between the current grade and goal grade, the more practice-heavy the plan should be.`;
@@ -75,13 +70,13 @@ function errorResponse(message, status) {
 }
 
 export async function POST(request) {
-  const { profile, today } = await request.json();
+  const { learner, test, today } = await request.json();
 
-  if (!profile?.subject || !profile?.topic || !profile?.testDate || !LEARNING_STYLES[profile?.learningStyle]) {
+  if (!test?.subject || !test?.topic || !test?.testDate || !LEARNING_STYLES[learner?.learningStyle]) {
     return errorResponse("Some setup answers are missing.", 400);
   }
 
-  const daysUntilTest = daysBetween(today, profile.testDate);
+  const daysUntilTest = daysBetween(today, test.testDate);
   if (daysUntilTest < 1) {
     return errorResponse("The test date needs to be after today.", 400);
   }
@@ -93,7 +88,7 @@ export async function POST(request) {
   try {
     const response = await ai.models.generateContent({
       model: MODEL,
-      contents: buildPrompt(profile, studyDays),
+      contents: buildPrompt(learner, test, studyDays),
       config: {
         responseMimeType: "application/json",
         responseJsonSchema: planSchema,
