@@ -25,11 +25,12 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [x] Nest Builder holds the test form and plan
 - [x] Profile + settings page; placeholder pages for Coop, Timer, Roost
 
-## Phase 2 · Nest Builder path (Nov 8–9)
-- [ ] Duolingo-style winding path: one level per plan section, mock exam at the end
-- [ ] `/api/lesson`: lesson adapted to learning style
-- [ ] `/api/quiz`: mini quiz questions; score sets the level's "cooked level"
-- [ ] Mock exam + predicted grade (~70% mock exam + ~30% quiz average)
+## Phase 2 · Nest Builder path (Nov 8–9) ✅
+- [x] Duolingo-style winding path: one level per plan section, mock exam at the end
+- [x] `/api/level`: lesson adapted to learning style + 5-question quiz (one AI request)
+- [x] Quiz score sets the level's "cooked level"; corn points for improving
+- [x] Mock exam + predicted grade (70% mock exam + 30% quiz average)
+- [x] AI reliability: automatic retries, backup model, time limits
 - ✅ Done when: the full study loop works from the path
 
 ## Phase 3 · Chicken Coop + Egg Timer (Nov 10)

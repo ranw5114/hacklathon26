@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
-import { clearAll, remove, save, useStored } from "@/lib/storage";
+import { clearAll, resetNest, save, useStored } from "@/lib/storage";
 
 // Profile (edit name, avatar, learning style) and settings (reset data).
 export default function ProfilePage() {
@@ -28,7 +28,7 @@ export default function ProfilePage() {
 
   function deletePlan() {
     if (!confirm("Delete your current study plan? This can't be undone.")) return;
-    remove("test", "plan");
+    resetNest();
   }
 
   function deleteEverything() {

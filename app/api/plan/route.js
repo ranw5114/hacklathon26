@@ -1,6 +1,9 @@
-import { ai, MODEL } from "@/lib/gemini";
+import { generateJSON } from "@/lib/gemini";
 import { addDays, daysBetween } from "@/lib/dates";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
+
+// AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
+export const maxDuration = 60;
 
 // Keep plans short enough to read and to stay inside the free AI limits.
 const MAX_STUDY_DAYS = 14;
@@ -84,24 +87,8 @@ export async function POST(request) {
   // Study every day until the test (up to the max). The last day ends with the mock exam.
   const studyDays = Math.min(daysUntilTest, MAX_STUDY_DAYS);
 
-  let aiPlan;
-  try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents: buildPrompt(learner, test, studyDays),
-      config: {
-        responseMimeType: "application/json",
-        responseJsonSchema: planSchema,
-      },
-    });
-    aiPlan = JSON.parse(response.text);
-  } catch (err) {
-    if (err.status === 429) {
-      return errorResponse("The AI is at its free usage limit right now. Please try again in a minute.", 429);
-    }
-    console.error("Plan generation failed:", err);
-    return errorResponse("Something went wrong while creating your plan. Please try again.", 500);
-  }
+  const { data: aiPlan, error, status } = await generateJSON(buildPrompt(learner, test, studyDays), planSchema);
+  if (error) return errorResponse(error, status);
 
   if (!aiPlan.days?.length) {
     return errorResponse("The AI returned an empty plan. Please try again.", 500);
