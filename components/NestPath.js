@@ -53,7 +53,8 @@ export default function NestPath({ plan, profile, today, onOpenChest }) {
         </section>
       ))}
 
-      <ExamNode plan={plan} unlocked={allDone} />
+      {/* In demo mode the exam is open early, so visitors can try it without finishing every level. */}
+      <ExamNode plan={plan} unlocked={allDone || plan.demo} />
     </div>
   );
 }
@@ -134,7 +135,9 @@ function ExamNode({ plan, unlocked }) {
         {exam.completed
           ? `Predicted grade: ${exam.predicted}%`
           : unlocked
-            ? "Ready when you are!"
+            ? plan.demo && sectionsLeft > 0
+              ? "Unlocked early for the demo!"
+              : "Ready when you are!"
             : `Finish ${sectionsLeft} more level${sectionsLeft === 1 ? "" : "s"} to unlock`}
       </p>
     </div>

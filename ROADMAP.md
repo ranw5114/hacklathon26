@@ -45,7 +45,10 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [x] Calendar sync from a private iCal link (Google, Apple, Outlook), including repeating events
 - [x] Sample school schedule for judges
 - [x] 💡 Free-time study suggestions that fit around synced events
-- [ ] Demo mode with content generated ahead of time; friendly errors when the AI limit is hit
+- [x] Demo mode: "Try the demo" loads an Algebra II student with pre-made lessons (data/demo.json), dates shift to today
+- [x] Friendly errors when the AI limit is hit (done in Phase 2)
+- [ ] Tutorial cards for the whole app (works for demo and real users)
+- [ ] Optional: pop-out timer (Chrome Picture-in-Picture)
 - [ ] Friend's graphics due (avatars, area icons, cooked-level egg images)
 
 ## Phase 5 · Feature freeze + polish (Nov 12)

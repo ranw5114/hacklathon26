@@ -1,26 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import { save, useStored } from "@/lib/storage";
+
+// AI-written answers are usually right, but not always. Students can flag a question that looks
+// wrong; flagged questions don't count toward the score. Limited per quiz so it can't skip hard ones.
+const MAX_FLAGS = 2;
 
 // Multiple-choice quiz, one question at a time. Used by levels and the mock exam.
-// When the last question is answered, it calls onFinish(numberCorrect).
-export default function Quiz({ questions, onFinish }) {
+// When the last question is answered, it calls onFinish(numberCorrect, numberCounted),
+// where numberCounted leaves out flagged questions.
+export default function Quiz({ questions, onFinish, topic }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null); // index of the chosen answer
   const [checked, setChecked] = useState(false); // has "Check" been pressed?
-  const [correctCount, setCorrectCount] = useState(0);
+  const [results, setResults] = useState([]); // results[i] = true if question i was answered correctly
+  const [flagged, setFlagged] = useState([]); // indexes of flagged questions
+  const savedFlags = useStored("flags");
 
   const question = questions[index];
   const isCorrect = selected === question.answerIndex;
   const isLast = index === questions.length - 1;
+  const isFlagged = flagged.includes(index);
 
   function check() {
     setChecked(true);
-    if (isCorrect) setCorrectCount(correctCount + 1);
+    setResults([...results, isCorrect]);
+  }
+
+  function flag() {
+    setFlagged([...flagged, index]);
+    // Saved in this browser. In a full version these would go to a review queue.
+    const report = {
+      question: question.question,
+      markedAnswer: question.choices[question.answerIndex],
+      studentAnswer: question.choices[selected],
+      topic: topic ?? null,
+      flaggedAt: Date.now(),
+    };
+    save("flags", [...(savedFlags ?? []), report].slice(-100));
   }
 
   function next() {
-    if (isLast) return onFinish(correctCount);
+    if (isLast) {
+      const counted = questions.length - flagged.length;
+      const correct = results.filter((right, i) => right && !flagged.includes(i)).length;
+      return onFinish(correct, counted);
+    }
     setIndex(index + 1);
     setSelected(null);
     setChecked(false);
@@ -67,6 +93,15 @@ export default function Quiz({ questions, onFinish }) {
         <div className={`rounded-2xl border-[3px] p-4 ${isCorrect ? "border-green-700 bg-green-50" : "border-red-700 bg-red-50"}`}>
           <p className="font-display text-lg font-semibold">{isCorrect ? "Egg-cellent! 🐣" : "Not quite!"}</p>
           <p className="mt-1">{question.explanation}</p>
+          {isFlagged ? (
+            <p className="mt-3 text-sm font-semibold">🚩 Flagged. Thanks! This question won&apos;t count against you.</p>
+          ) : (
+            flagged.length < MAX_FLAGS && (
+              <button type="button" onClick={flag} className="mt-3 text-sm font-semibold text-muted underline">
+                🚩 This answer looks wrong
+              </button>
+            )
+          )}
         </div>
       )}
 

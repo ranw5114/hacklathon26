@@ -4,6 +4,7 @@ import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import Chick from "@/components/Chick";
 import TimerWatcher from "@/components/TimerWatcher";
+import { ExitDemoButton } from "@/components/DemoButtons";
 import { useStored } from "@/lib/storage";
 
 // Shared layout for every page in the (app) folder: Barn, Nest, Coop, Timer, Roost, Profile.
@@ -30,6 +31,12 @@ export default function AppLayout({ children }) {
   return (
     <>
       <AppNav avatar={profile.avatar} />
+      {profile.demo && (
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b-2 border-line/20 bg-beak/30 px-4 py-1.5 text-center text-sm font-semibold">
+          <span>🎬 Demo mode: a sample student, so explore freely!</span>
+          <ExitDemoButton />
+        </div>
+      )}
       {/* Always mounted, so the Egg Timer keeps going on every page */}
       <TimerWatcher />
       {/* Bottom padding on phones so content isn't hidden behind the bottom bar */}

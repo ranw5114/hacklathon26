@@ -27,7 +27,7 @@ export default function ExamPage() {
 
   if (plan === undefined || exam === undefined) return null;
 
-  const unlocked = plan && currentSectionId(plan) === null;
+  const unlocked = plan && (currentSectionId(plan) === null || plan.demo);
   if (!unlocked) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
@@ -60,8 +60,9 @@ export default function ExamPage() {
     setLoading(false);
   }
 
-  function finishExam(correct) {
-    const score = correct / exam.length;
+  // `counted` leaves out any questions the student flagged as wrong.
+  function finishExam(correct, counted) {
+    const score = correct / counted;
     const predicted = predictedGrade(score, quizAverage(plan));
     const firstTry = !plan.mockExam.completed;
 
@@ -104,7 +105,7 @@ export default function ExamPage() {
           </div>
         )}
 
-        {stage === "exam" && exam && <Quiz questions={exam} onFinish={finishExam} />}
+        {stage === "exam" && exam && <Quiz questions={exam} onFinish={finishExam} topic="Mock exam" />}
 
         {stage === "results" && <ExamResults plan={plan} test={test} avatar={profile.avatar} onRetake={retake} />}
       </div>

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Chick from "@/components/Chick";
+import { TryDemoButton } from "@/components/DemoButtons";
 import { useStored } from "@/lib/storage";
 
-// Start screen. New visitors go to setup; returning visitors go straight to the Barn.
+// Start screen. New visitors can set up a profile or try the demo; returning visitors go to the Barn.
 export default function StartPage() {
   const profile = useStored("profile");
 
@@ -17,11 +18,17 @@ export default function StartPage() {
       <p className="max-w-md text-muted">
         Tell me your goal grade and I&apos;ll build a study plan to get you there, one step at a time.
       </p>
-      {/* Wait until saved data is read, so the button points to the right place. */}
+      {/* Wait until saved data is read, so the buttons point to the right place. */}
       {profile !== undefined && (
-        <Link href={profile ? "/barn" : "/setup"} className="btn-primary">
-          {profile ? "Go to the Barn" : "Start"}
-        </Link>
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link href={profile ? "/barn" : "/setup"} className="btn-primary">
+              {profile ? "Go to the Barn" : "Start"}
+            </Link>
+            {!profile?.demo && <TryDemoButton />}
+          </div>
+          <p className="text-sm text-muted">The demo loads a sample student, so you can look around right away.</p>
+        </div>
       )}
     </main>
   );

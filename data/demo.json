@@ -1,0 +1,1157 @@
+{
+  "learner": {
+    "name": "Demo Chick",
+    "learningStyle": "examples"
+  },
+  "test": {
+    "subject": "Algebra II",
+    "topic": "Quadratic functions: factoring, vertex form, and the quadratic formula",
+    "currentGrade": 76,
+    "goalGrade": 90,
+    "hoursPerDay": 1,
+    "notes": "",
+    "testDayOffset": 5
+  },
+  "plan": {
+    "title": "Algebra II Quadratic Functions Mastery Plan",
+    "overview": "To bridge the gap between your current 76% and your 90% goal, this plan focuses heavily on step-by-step worked examples and targeted practice. We will build your confidence from foundational factoring up to solving complex equations with the quadratic formula.",
+    "days": [
+      {
+        "dayOffset": 0,
+        "focus": "Factoring Basics",
+        "sections": [
+          {
+            "id": "d1-s1",
+            "title": "Greatest Common Factor and Simple Quadratics",
+            "goal": "You will be able to factor out a GCF and factor quadratic expressions where a equals 1.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          },
+          {
+            "id": "d1-s2",
+            "title": "Factoring by Grouping and When a > 1",
+            "goal": "You will be able to factor complex quadratic expressions where the leading coefficient is greater than 1.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          }
+        ]
+      },
+      {
+        "dayOffset": 1,
+        "focus": "Solving by Factoring",
+        "sections": [
+          {
+            "id": "d2-s1",
+            "title": "Zero Product Property",
+            "goal": "You will be able to solve factored quadratic equations for their x-intercepts.",
+            "minutes": 25,
+            "completed": false,
+            "score": null
+          },
+          {
+            "id": "d2-s2",
+            "title": "Solving Full Quadratic Equations",
+            "goal": "You will be able to set a quadratic equation to zero, factor it completely, and find all solutions.",
+            "minutes": 35,
+            "completed": false,
+            "score": null
+          }
+        ]
+      },
+      {
+        "dayOffset": 2,
+        "focus": "Vertex Form and Graphing",
+        "sections": [
+          {
+            "id": "d3-s1",
+            "title": "Anatomy of Vertex Form",
+            "goal": "You will be able to identify the vertex, axis of symmetry, and direction of opening from a vertex form equation.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          },
+          {
+            "id": "d3-s2",
+            "title": "Completing the Square",
+            "goal": "You will be able to convert a standard form quadratic into vertex form by completing the square.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          }
+        ]
+      },
+      {
+        "dayOffset": 3,
+        "focus": "The Quadratic Formula",
+        "sections": [
+          {
+            "id": "d4-s1",
+            "title": "Introduction to the Quadratic Formula",
+            "goal": "You will be able to plug coefficients into the quadratic formula to solve non-factorable equations.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          },
+          {
+            "id": "d4-s2",
+            "title": "The Discriminant",
+            "goal": "You will be able to use the discriminant to determine the number and type of solutions a quadratic has.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          }
+        ]
+      },
+      {
+        "dayOffset": 4,
+        "focus": "Comprehensive Review and Practice",
+        "sections": [
+          {
+            "id": "d5-s1",
+            "title": "Choosing the Best Method",
+            "goal": "You will be able to decide whether to factor, use vertex form, or apply the quadratic formula based on the given problem.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          },
+          {
+            "id": "d5-s2",
+            "title": "Mixed Problem Marathon",
+            "goal": "You will be able to solve a variety of challenging quadratic problems under timed conditions to prep for your test.",
+            "minutes": 30,
+            "completed": false,
+            "score": null
+          }
+        ]
+      }
+    ],
+    "mockExamDayOffset": 4
+  },
+  "levels": {
+    "d1-s1": {
+      "lesson": {
+        "hook": "Mastering factoring gives you a superpower to solve complex quadratic equations quickly and easily!",
+        "sections": [
+          {
+            "heading": "Step 1: Factoring out the Greatest Common Factor (GCF)",
+            "body": "Before tackling harder factoring, always check if all terms share a common factor. Find the largest number and variable that divides evenly into every term, and pull it out to the front using the distributive property."
+          },
+          {
+            "heading": "Step 2: Factoring Simple Quadratics where a = 1",
+            "body": "For an expression like x² + bx + c, your goal is to find two numbers that multiply to give you c and add up to give you b. Once you find them, write your answer as two binomials: (x + p)(x + q)."
+          }
+        ],
+        "example": {
+          "problem": "Factor the expression completely: x² + 7x + 10",
+          "steps": [
+            "Identify a, b, and c in x² + 7x + 10. Here, a = 1, b = 7, and c = 10.",
+            "List pairs of numbers that multiply to c (10): (1 and 10), (2 and 5).",
+            "Check which pair adds up to b (7): 1 + 10 = 11 (no), but 2 + 5 = 7 (yes!).",
+            "Place these numbers into our factored form template: (x + 2)(x + 5)."
+          ],
+          "answer": "(x + 2)(x + 5)"
+        },
+        "keyPoints": [
+          "Always look for a GCF first before doing anything else.",
+          "In x² + bx + c, look for numbers that multiply to c and add to b.",
+          "Check your factored answer by multiplying it back out using FOIL.",
+          "Order matters less than accuracy, but writing terms with x first is standard."
+        ],
+        "videoSearch": "how to factor quadratic expressions where a equals 1 and GCF"
+      },
+      "quiz": [
+        {
+          "question": "What is the Greatest Common Factor (GCF) of the expression 3x² + 6x?",
+          "choices": [
+            "3",
+            "3x",
+            "x",
+            "6x"
+          ],
+          "answerIndex": 1,
+          "explanation": "Both terms share a common coefficient of 3 and at least one x, making 3x the GCF."
+        },
+        {
+          "question": "Factor the simple quadratic expression: x² + 5x + 6",
+          "choices": [
+            "(x + 1)(x + 6)",
+            "(x + 2)(x + 3)",
+            "(x - 2)(x - 3)",
+            "(x + 5)(x + 1)"
+          ],
+          "answerIndex": 1,
+          "explanation": "The numbers 2 and 3 multiply to 6 and add up to 5, so the factored form is (x + 2)(x + 3)."
+        },
+        {
+          "question": "What two numbers multiply to -12 and add up to -4?",
+          "choices": [
+            "-6 and 2",
+            "6 and -2",
+            "-4 and 3",
+            "-3 and 4"
+          ],
+          "answerIndex": 0,
+          "explanation": "-6 multiplied by 2 equals -12, and -6 plus 2 equals -4."
+        },
+        {
+          "question": "Factor the expression completely by first pulling out the GCF: 2x² + 10x + 12",
+          "choices": [
+            "2(x + 5)(x + 6)",
+            "2(x + 2)(x + 3)",
+            "(2x + 4)(x + 3)",
+            "2(x - 2)(x - 3)"
+          ],
+          "answerIndex": 1,
+          "explanation": "First factor out a 2 to get 2(x² + 5x + 6), then factor the remaining quadratic into (x + 2)(x + 3)."
+        },
+        {
+          "question": "Which of the following is the fully factored form of x² - 9x + 20?",
+          "choices": [
+            "(x - 1)(x - 20)",
+            "(x + 4)(x + 5)",
+            "(x - 4)(x - 5)",
+            "(x - 2)(x - 10)"
+          ],
+          "answerIndex": 2,
+          "explanation": "-4 and -5 multiply to positive 20 and add up to -9, resulting in (x - 4)(x - 5)."
+        }
+      ]
+    },
+    "d1-s2": {
+      "lesson": {
+        "hook": "Mastering factoring when the leading coefficient is greater than one unlocks the secret to solving complex quadratic equations with confidence!",
+        "sections": [
+          {
+            "heading": "Understanding the Problem",
+            "body": "When you have a quadratic expression in the form ax² + bx + c where a is greater than 1, you cannot simply look for numbers that multiply to c and add to b. Instead, you need to use a method called factoring by grouping, often known as the AC method."
+          },
+          {
+            "heading": "The AC Method Steps",
+            "body": "First, multiply a and c together. Next, find two numbers that multiply to that product (ac) and add up to the middle coefficient (b). Use those two numbers to split the middle term into two parts, and then factor by grouping."
+          }
+        ],
+        "example": {
+          "problem": "Factor the quadratic expression 2x² + 7x + 3 completely.",
+          "steps": [
+            "Identify a = 2, b = 7, and c = 3.",
+            "Multiply a and c: 2 × 3 = 6.",
+            "Find two numbers that multiply to 6 and add to 7. Those numbers are 6 and 1.",
+            "Rewrite the middle term 7x as 6x + 1x, giving: 2x² + 6x + 1x + 3.",
+            "Group the terms in pairs: (2x² + 6x) + (1x + 3).",
+            "Factor out the greatest common factor from each group: 2x(x + 3) + 1(x + 3).",
+            "Factor out the common binomial (x + 3) to get the final result: (2x + 1)(x + 3)."
+          ],
+          "answer": "(2x + 1)(x + 3)"
+        },
+        "keyPoints": [
+          "Always check if there is a greatest common factor to pull out from all terms first.",
+          "Multiply the leading coefficient a by the constant c to start the AC method.",
+          "Split the middle term using the two factors you found.",
+          "Group the four terms into two pairs and factor by grouping."
+        ],
+        "videoSearch": "factoring quadratics when a is greater than 1 grouping"
+      },
+      "quiz": [
+        {
+          "question": "What is the first step when factoring a quadratic expression of the form ax² + bx + c where a is greater than 1?",
+          "choices": [
+            "Multiply a and c together",
+            "Guess and check random numbers",
+            "Set the expression equal to zero",
+            "Divide all terms by b"
+          ],
+          "answerIndex": 0,
+          "explanation": "The first step of the AC method is to multiply the leading coefficient a by the constant c."
+        },
+        {
+          "question": "When factoring 3x² + 10x + 8, what should the two numbers for the split middle term multiply to?",
+          "choices": [
+            "10",
+            "11",
+            "24",
+            "8"
+          ],
+          "answerIndex": 2,
+          "explanation": "You multiply a and c together, which is 3 × 8 = 24."
+        },
+        {
+          "question": "Factor the expression 2x² + 5x + 2 completely.",
+          "choices": [
+            "(2x + 1)(x + 2)",
+            "(2x + 2)(x + 1)",
+            "(2x - 1)(x - 2)",
+            "(x + 2)(x + 2)"
+          ],
+          "answerIndex": 0,
+          "explanation": "The numbers 4 and 1 multiply to 4 and add to 5. Splitting gives 2x² + 4x + 1x + 2, which factors to (2x + 1)(x + 2)."
+        },
+        {
+          "question": "What is the common binomial factor after grouping the terms in 4x² + 11x + 6?",
+          "choices": [
+            "(x + 1)",
+            "(x + 2)",
+            "(2x + 3)",
+            "(4x + 1)"
+          ],
+          "answerIndex": 1,
+          "explanation": "Splitting 11x into 8x and 3x gives 4x(x + 2) + 3(x + 2), revealing the common binomial (x + 2)."
+        },
+        {
+          "question": "Factor the expression 6x² + 13x + 6 completely.",
+          "choices": [
+            "(3x + 2)(2x + 3)",
+            "(6x + 1)(x + 6)",
+            "(3x + 1)(2x + 6)",
+            "(2x + 2)(3x + 3)"
+          ],
+          "answerIndex": 0,
+          "explanation": "Multiplying 6 and 6 gives 36. The numbers 9 and 4 multiply to 36 and add to 13, leading to the factors (3x + 2)(2x + 3)."
+        }
+      ]
+    },
+    "d2-s1": {
+      "lesson": {
+        "hook": "Mastering the zero product property is your secret weapon for quickly finding where a quadratic graph crosses the x-axis!",
+        "sections": [
+          {
+            "heading": "What is the Zero Product Property?",
+            "body": "When two things multiply to give you zero, at least one of those things must be equal to zero. In algebra, if a times b equals zero, then either a equals zero or b equals zero."
+          },
+          {
+            "heading": "Connecting to Quadratic Equations",
+            "body": "When a quadratic equation is written in factored form like (x - p)(x - q) = 0, you can use this property to find the x-intercepts by setting each individual factor equal to zero and solving for x."
+          }
+        ],
+        "example": {
+          "problem": "Solve the quadratic equation (x - 3)(x + 5) = 0 for its x-intercepts.",
+          "steps": [
+            "Recognize that the equation is already in factored form and equal to zero.",
+            "Set the first factor equal to zero: x - 3 = 0.",
+            "Solve the first simple equation by adding 3 to both sides to get x = 3.",
+            "Set the second factor equal to zero: x + 5 = 0.",
+            "Solve the second simple equation by subtracting 5 from both sides to get x = -5."
+          ],
+          "answer": "x = 3 and x = -5"
+        },
+        "keyPoints": [
+          "The equation must equal zero before you can use the zero product property.",
+          "Set each factor containing a variable equal to zero separately.",
+          "Solve the resulting linear equations to find your x-intercepts."
+        ],
+        "videoSearch": "Zero Product Property quadratic equations tutorial"
+      },
+      "quiz": [
+        {
+          "question": "What are the solutions to the equation (x - 2)(x - 4) = 0?",
+          "choices": [
+            "x = 2 and x = 4",
+            "x = -2 and x = -4",
+            "x = 2 and x = -4",
+            "x = 0 and x = 8"
+          ],
+          "answerIndex": 0,
+          "explanation": "Set each factor to zero: x - 2 = 0 gives x = 2, and x - 4 = 0 gives x = 4."
+        },
+        {
+          "question": "Find the x-intercepts for (x + 1)(x - 7) = 0.",
+          "choices": [
+            "x = 1 and x = 7",
+            "x = -1 and x = -7",
+            "x = -1 and x = 7",
+            "x = 0 and x = -7"
+          ],
+          "answerIndex": 2,
+          "explanation": "Setting x + 1 = 0 yields x = -1, and setting x - 7 = 0 yields x = 7."
+        },
+        {
+          "question": "Solve for x: 3x(x + 5) = 0",
+          "choices": [
+            "x = 3 and x = -5",
+            "x = 0 and x = -5",
+            "x = 0 and x = 5",
+            "x = -3 and x = 5"
+          ],
+          "answerIndex": 1,
+          "explanation": "The monomial factor 3x gives 3x = 0 so x = 0, and the binomial factor gives x + 5 = 0 so x = -5."
+        },
+        {
+          "question": "What values of x satisfy (2x - 4)(x + 3) = 0?",
+          "choices": [
+            "x = 2 and x = 3",
+            "x = -2 and x = -3",
+            "x = 4 and x = -3",
+            "x = 2 and x = -3"
+          ],
+          "answerIndex": 3,
+          "explanation": "Set 2x - 4 = 0 to get 2x = 4 (so x = 2), and set x + 3 = 0 to get x = -3."
+        },
+        {
+          "question": "Find the solutions to the equation x² - 5x + 6 = 0 using factoring and the zero product property.",
+          "choices": [
+            "x = -2 and x = -3",
+            "x = 1 and x = 6",
+            "x = 2 and x = 3",
+            "x = 0 and x = 5"
+          ],
+          "answerIndex": 2,
+          "explanation": "First factor the quadratic into (x - 2)(x - 3) = 0, then set each factor to zero to get x = 2 and x = 3."
+        }
+      ]
+    },
+    "d2-s2": {
+      "lesson": {
+        "hook": "Mastering how to solve full quadratic equations by setting them to zero and factoring is your secret weapon for acing your Algebra II test!",
+        "sections": [
+          {
+            "heading": "Step 1: Set the Equation to Zero",
+            "body": "Before you can solve any quadratic equation, all the terms must be on one side of the equals sign and zero on the other side. This is called standard form: ax² + bx + c = 0."
+          },
+          {
+            "heading": "Step 2: Factor Completely",
+            "body": "Once your equation equals zero, look for a greatest common factor first, then factor the remaining quadratic expression into two binomials. This breaks the equation down into two simpler parts multiplied together."
+          },
+          {
+            "heading": "Step 3: Apply the Zero Product Property",
+            "body": "If two things multiply to give you zero, at least one of them must be zero. Set each binomial factor equal to zero and solve for x to find all solutions."
+          }
+        ],
+        "example": {
+          "problem": "Solve the quadratic equation x² - 5x = 6 by factoring.",
+          "steps": [
+            "Move 6 to the left side by subtracting 6 from both sides to set the equation to zero: x² - 5x - 6 = 0.",
+            "Find two numbers that multiply to -6 and add up to -5. Those numbers are -6 and +1.",
+            "Write the expression in factored form: (x - 6)(x + 1) = 0.",
+            "Set each factor equal to zero: x - 6 = 0 and x + 1 = 0.",
+            "Solve each mini-equation for x: x = 6 and x = -1."
+          ],
+          "answer": "x = 6 and x = -1"
+        },
+        "keyPoints": [
+          "Always rearrange your equation so one side equals zero before doing anything else.",
+          "Look for common factors across all terms to make your job easier.",
+          "Remember that a squared equation can have up to two real solutions.",
+          "Check your solutions by plugging them back into the original equation."
+        ],
+        "videoSearch": "solving quadratic equations by factoring algebra 2"
+      },
+      "quiz": [
+        {
+          "question": "What is the very first step in solving a quadratic equation like x² + 4x = 12?",
+          "choices": [
+            "Divide everything by 4",
+            "Set the equation to zero by subtracting 12 from both sides",
+            "Take the square root of both sides immediately",
+            "Graph the equation on a coordinate plane"
+          ],
+          "answerIndex": 1,
+          "explanation": "You must always set the equation equal to zero (x² + 4x - 12 = 0) before you can attempt to factor or solve it."
+        },
+        {
+          "question": "Which of the following is the correct factored form of the quadratic expression x² - 9x + 18?",
+          "choices": [
+            "(x - 3)(x - 6)",
+            "(x + 3)(x + 6)",
+            "(x - 2)(x - 9)",
+            "(x + 2)(x + 9)"
+          ],
+          "answerIndex": 0,
+          "explanation": "-3 and -6 multiply to positive 18 and add up to -9, making (x - 3)(x - 6) the correct factorization."
+        },
+        {
+          "question": "If a quadratic equation is factored into (x + 4)(x - 5) = 0, what are the solutions for x?",
+          "choices": [
+            "x = 4 and x = -5",
+            "x = -4 and x = 5",
+            "x = 4 and x = 5",
+            "x = -4 and x = -5"
+          ],
+          "answerIndex": 1,
+          "explanation": "Set each factor to zero: x + 4 = 0 gives x = -4, and x - 5 = 0 gives x = 5."
+        },
+        {
+          "question": "Solve for x: x² + 7x + 10 = 0",
+          "choices": [
+            "x = 1 and x = 10",
+            "x = -2 and x = 5",
+            "x = 2 and x = -5",
+            "x = -2 and x = -5"
+          ],
+          "answerIndex": 3,
+          "explanation": "The expression factors into (x + 2)(x + 5) = 0, which yields solutions x = -2 and x = -5."
+        },
+        {
+          "question": "What are the solutions to the quadratic equation 2x² - 8x = 0?",
+          "choices": [
+            "x = 0 and x = 4",
+            "x = 2 and x = 4",
+            "x = 0 and x = -4",
+            "x = 2 and x = -2"
+          ],
+          "answerIndex": 0,
+          "explanation": "Factor out the greatest common factor, 2x, to get 2x(x - 4) = 0. Setting 2x = 0 gives x = 0, and setting x - 4 = 0 gives x = 4."
+        }
+      ]
+    },
+    "d3-s1": {
+      "lesson": {
+        "hook": "Mastering vertex form makes graphing parabolas as easy as reading a map!",
+        "sections": [
+          {
+            "heading": "Meet Vertex Form",
+            "body": "The vertex form of a quadratic function is written as f(x) = a(x - h)² + k. This special form reveals the turning point of the parabola and its direction instantly, without needing a long table of values."
+          },
+          {
+            "heading": "Decoding the Parts",
+            "body": "The point (h, k) is the vertex of the parabola, and the vertical line x = h is the axis of symmetry. The coefficient 'a' tells us if the parabola opens upward (if 'a' is positive) or downward (if 'a' is negative), as well as how stretched or compressed it is."
+          }
+        ],
+        "example": {
+          "problem": "Find the vertex, axis of symmetry, and direction of opening for f(x) = -2(x - 3)² + 5.",
+          "steps": [
+            "Compare the given equation f(x) = -2(x - 3)² + 5 to the standard vertex form f(x) = a(x - h)² + k.",
+            "Identify the value of h. In (x - 3)², the h value is 3.",
+            "Identify the value of k. The constant at the end is 5, so k = 5. The vertex (h, k) is therefore (3, 5).",
+            "Find the axis of symmetry by using x = h, which gives x = 3.",
+            "Identify the value of 'a'. The coefficient in front of the squared term is -2. Since -2 is negative, the parabola opens downward."
+          ],
+          "answer": "Vertex: (3, 5), Axis of Symmetry: x = 3, Direction: Opens downward"
+        },
+        "keyPoints": [
+          "Vertex form is written as f(x) = a(x - h)² + k.",
+          "The vertex is at the point (h, k), remembering to flip the sign inside the parentheses for h.",
+          "The axis of symmetry is always the vertical line x = h.",
+          "If 'a' is positive, the parabola opens up; if 'a' is negative, it opens down."
+        ],
+        "videoSearch": "algebra 2 vertex form of quadratic functions explained"
+      },
+      "quiz": [
+        {
+          "question": "What is the vertex of the quadratic function f(x) = (x - 4)² + 7?",
+          "choices": [
+            "(-4, 7)",
+            "(4, 7)",
+            "(7, 4)",
+            "(-4, -7)"
+          ],
+          "answerIndex": 1,
+          "explanation": "In vertex form f(x) = a(x - h)² + k, h is 4 and k is 7, giving the vertex (4, 7)."
+        },
+        {
+          "question": "What is the axis of symmetry for the function f(x) = 3(x + 2)² - 1?",
+          "choices": [
+            "x = 2",
+            "y = -2",
+            "x = -2",
+            "x = -1"
+          ],
+          "answerIndex": 2,
+          "explanation": "The axis of symmetry is the vertical line x = h. Since the term is (x + 2), rewriting it as (x - (-2)) shows that h = -2, so x = -2."
+        },
+        {
+          "question": "Does the graph of f(x) = -5(x - 1)² + 3 open upward or downward?",
+          "choices": [
+            "Upward",
+            "Downward",
+            "It is a horizontal line",
+            "It is a vertical line"
+          ],
+          "answerIndex": 1,
+          "explanation": "The coefficient 'a' is -5. Because this number is negative, the parabola opens downward."
+        },
+        {
+          "question": "Find the vertex of the function f(x) = -0.5(x + 6)² - 4.",
+          "choices": [
+            "(6, -4)",
+            "(-6, 4)",
+            "(-0.5, -4)",
+            "(-6, -4)"
+          ],
+          "answerIndex": 3,
+          "explanation": "The value of h comes from (x + 6) which means h = -6, and the value of k is the outside constant -4, making the vertex (-6, -4)."
+        },
+        {
+          "question": "Which of the following functions has a vertex at (5, -2) and opens upward?",
+          "choices": [
+            "f(x) = 4(x - 5)² - 2",
+            "f(x) = -4(x - 5)² - 2",
+            "f(x) = 4(x + 5)² - 2",
+            "f(x) = 4(x - 5)² + 2"
+          ],
+          "answerIndex": 0,
+          "explanation": "A vertex at (5, -2) requires (x - 5)² and a - 2 at the end. Opening upward requires a positive leading coefficient, such as 4."
+        }
+      ]
+    },
+    "d3-s2": {
+      "lesson": {
+        "hook": "Mastering completing the square gives you a superpower to rewrite any quadratic function and instantly see its vertex!",
+        "sections": [
+          {
+            "heading": "What is Vertex Form?",
+            "body": "Vertex form looks like f(x) = a(x - h)² + k, where (h, k) is the highest or lowest point on the parabola. When our equation is in standard form like f(x) = ax² + bx + c, it is hard to spot the vertex right away. Completing the square is the clever trick we use to bridge that gap."
+          },
+          {
+            "heading": "The Magic Number",
+            "body": "To complete the square for an expression like x² + bx, we take the middle coefficient b, divide it by 2, and square the result. We add this number to create a neat, perfectly factored binomial squared: (x + b/2)²."
+          }
+        ],
+        "example": {
+          "problem": "Convert f(x) = x² + 6x + 5 into vertex form.",
+          "steps": [
+            "Group the x terms together: f(x) = (x² + 6x) + 5",
+            "Take the middle term 6, divide by 2 to get 3, and square it to get 9.",
+            "Add and subtract that magic number inside the function to keep it balanced: f(x) = (x² + 6x + 9 - 9) + 5",
+            "Rewrite the trinomial as a squared binomial: f(x) = (x + 3)² - 9 + 5",
+            "Combine the outside numbers: f(x) = (x + 3)² - 4"
+          ],
+          "answer": "f(x) = (x + 3)² - 4"
+        },
+        "keyPoints": [
+          "Always isolate the x terms before finding your magic number.",
+          "The magic number formula is always (b / 2)².",
+          "Add and subtract the magic number on the same side, or add it to both sides, to keep the equation balanced.",
+          "The vertex (h, k) for f(x) = (x - h)² + k is found by flipping the sign of h."
+        ],
+        "videoSearch": "algebra 2 completing the square vertex form tutorial"
+      },
+      "quiz": [
+        {
+          "question": "What is the value of (b / 2)² for the expression x² - 8x?",
+          "choices": [
+            "16",
+            "-4",
+            "8",
+            "-16"
+          ],
+          "answerIndex": 0,
+          "explanation": "Divide the middle coefficient -8 by 2 to get -4, and then square -4 to get positive 16."
+        },
+        {
+          "question": "Which of the following is the factored form of the completed square x² + 10x + 25?",
+          "choices": [
+            "(x - 5)²",
+            "(x + 10)²",
+            "(x + 5)²",
+            "(x + 25)²"
+          ],
+          "answerIndex": 2,
+          "explanation": "Half of 10 is 5, and 5² = 25, so x² + 10x + 25 is a perfect square: (x + 5)²."
+        },
+        {
+          "question": "What number must be added and subtracted to complete the square for f(x) = x² - 4x + 1?",
+          "choices": [
+            "1",
+            "2",
+            "4",
+            "-2"
+          ],
+          "answerIndex": 2,
+          "explanation": "Take the middle coefficient −4, halve it to get −2, then square it: (−2)² = 4. So you add and subtract 4: x² − 4x + 4 − 4 + 1 = (x − 2)² − 3."
+        },
+        {
+          "question": "Convert f(x) = x² + 4x + 3 into vertex form.",
+          "choices": [
+            "f(x) = (x + 2)² - 1",
+            "f(x) = (x + 2)² + 3",
+            "f(x) = (x + 4)² - 13",
+            "f(x) = (x + 2)² + 1"
+          ],
+          "answerIndex": 0,
+          "explanation": "Half of 4 is 2, and 2 squared is 4. Add and subtract 4: (x² + 4x + 4 - 4) + 3, which simplifies to (x + 2)² - 1."
+        },
+        {
+          "question": "What is the vertex of the quadratic function f(x) = (x - 3)² + 7?",
+          "choices": [
+            "(-3, 7)",
+            "(3, -7)",
+            "(7, 3)",
+            "(3, 7)"
+          ],
+          "answerIndex": 3,
+          "explanation": "Vertex form is f(x) = a(x - h)² + k. Here h = 3 and k = 7, giving the vertex (3, 7)."
+        }
+      ]
+    },
+    "d4-s1": {
+      "lesson": {
+        "hook": "Mastering the quadratic formula gives you a superpower to solve any quadratic equation, even when factoring seems impossible!",
+        "sections": [
+          {
+            "heading": "Meet the Formula",
+            "body": "When a quadratic equation in standard form ax² + bx + c = 0 cannot be easily factored, we use the quadratic formula: x = (-b ± √(b² - 4ac)) / (2a). All you need to do is identify your a, b, and c values and plug them right in."
+          },
+          {
+            "heading": "Step-by-Step Plug and Chug",
+            "body": "First, make sure your equation is set equal to zero. Next, write down the values for a, b, and c. Finally, substitute them carefully into the formula, remembering to follow the order of operations, especially inside the square root."
+          }
+        ],
+        "example": {
+          "problem": "Solve x² + 5x + 6 = 0 using the quadratic formula.",
+          "steps": [
+            "Identify the coefficients: a = 1, b = 5, and c = 6.",
+            "Write down the formula: x = (-b ± √(b² - 4ac)) / (2a).",
+            "Substitute the values: x = (-5 ± √(5² - 4(1)(6))) / (2(1)).",
+            "Simplify inside the square root: x = (-5 ± √(25 - 24)) / 2.",
+            "Subtract inside the root: x = (-5 ± √1) / 2.",
+            "Take the square root: x = (-5 ± 1) / 2.",
+            "Split into two equations for plus and minus: x = (-5 + 1) / 2 and x = (-5 - 1) / 2.",
+            "Calculate final values: x = -4 / 2 = -2 and x = -6 / 2 = -3."
+          ],
+          "answer": "x = -2 and x = -3"
+        },
+        "keyPoints": [
+          "Always set your quadratic equation equal to zero before finding a, b, and c.",
+          "Be extremely careful with negative signs when substituting into b² - 4ac.",
+          "The symbol ± means you will evaluate the expression once with addition and once with subtraction."
+        ],
+        "videoSearch": "algebra 2 introduction to the quadratic formula examples"
+      },
+      "quiz": [
+        {
+          "question": "What is the first step before using the quadratic formula on 2x² - 4x = 6?",
+          "choices": [
+            "Divide everything by 2",
+            "Set the equation equal to zero by subtracting 6 from both sides",
+            "Take the square root of both sides",
+            "Factor out an x"
+          ],
+          "answerIndex": 1,
+          "explanation": "The equation must be in standard form ax² + bx + c = 0 before you can correctly identify a, b, and c."
+        },
+        {
+          "question": "Identify a, b, and c for the equation: 3x² - 5x + 2 = 0",
+          "choices": [
+            "a = 3, b = 5, c = 2",
+            "a = 3, b = -5, c = -2",
+            "a = 3, b = -5, c = 2",
+            "a = 1, b = -5, c = 2"
+          ],
+          "answerIndex": 2,
+          "explanation": "The coefficient a is 3, b includes its negative sign as -5, and c is the positive constant 2."
+        },
+        {
+          "question": "What is the value of the discriminant (b² - 4ac) for the equation x² + 6x + 8 = 0?",
+          "choices": [
+            "4",
+            "36",
+            "68",
+            "0"
+          ],
+          "answerIndex": 0,
+          "explanation": "Plugging into b² - 4ac gives (6)² - 4(1)(8) = 36 - 32 = 4."
+        },
+        {
+          "question": "Solve for x using the quadratic formula: x² - 9 = 0",
+          "choices": [
+            "x = 3 and x = -3",
+            "x = 9 and x = -9",
+            "x = 0 and x = 3",
+            "x = 3 only"
+          ],
+          "answerIndex": 0,
+          "explanation": "With a = 1, b = 0, and c = -9, the formula yields x = (0 ± √(0 - 4(1)(-9))) / 2 = (± √36) / 2 = ±6 / 2 = ±3."
+        },
+        {
+          "question": "Solve using the quadratic formula: 2x² + 5x - 3 = 0",
+          "choices": [
+            "x = 1 and x = -3",
+            "x = 1/2 and x = -3",
+            "x = -1/2 and x = 3",
+            "x = 2 and x = -3"
+          ],
+          "answerIndex": 1,
+          "explanation": "With a = 2, b = 5, c = -3, the discriminant is 25 - 4(2)(-3) = 49. The roots are (-5 ± 7) / 4, giving 2/4 (or 1/2) and -12/4 (or -3)."
+        }
+      ]
+    },
+    "d4-s2": {
+      "lesson": {
+        "hook": "Ever wonder how many answers a quadratic equation has before you even solve it? The discriminant gives you a quick superpower to find out!",
+        "sections": [
+          {
+            "heading": "What is the Discriminant?",
+            "body": "When you use the quadratic formula, the part underneath the square root symbol is b² - 4ac. This little expression is called the discriminant. It tells you everything about the nature of the roots or solutions."
+          },
+          {
+            "heading": "Reading the Signs",
+            "body": "If the discriminant is positive, you get two real solutions. If it equals zero, you get exactly one real solution. If it is negative, you get two complex or imaginary solutions because you cannot take the square root of a negative number in the real number system."
+          }
+        ],
+        "example": {
+          "problem": "Find the number and type of solutions for the quadratic equation 2x² + 5x + 3 = 0.",
+          "steps": [
+            "Identify the values of a, b, and c from the standard form ax² + bx + c = 0. Here, a = 2, b = 5, and c = 3.",
+            "Write down the discriminant formula: b² - 4ac.",
+            "Substitute the values into the formula: (5)² - 4(2)(3).",
+            "Simplify the exponents and multiplication: 25 - 24.",
+            "Subtract to find the final value: 1. Since 1 is positive, there are two distinct real solutions."
+          ],
+          "answer": "Two real solutions"
+        },
+        "keyPoints": [
+          "The discriminant formula is b² - 4ac.",
+          "A positive discriminant means two real solutions.",
+          "A discriminant of zero means one real solution.",
+          "A negative discriminant means two complex solutions."
+        ],
+        "videoSearch": "Algebra 2 the discriminant explained"
+      },
+      "quiz": [
+        {
+          "question": "What is the formula for the discriminant in a quadratic equation?",
+          "choices": [
+            "b² - 4ac",
+            "-b ± √(b² - 4ac)",
+            "ax² + bx + c",
+            "2a / -b"
+          ],
+          "answerIndex": 0,
+          "explanation": "The discriminant is specifically the expression found underneath the square root in the quadratic formula, which is b² - 4ac."
+        },
+        {
+          "question": "If the discriminant of a quadratic equation is -9, how many and what type of solutions does it have?",
+          "choices": [
+            "Two real solutions",
+            "One real solution",
+            "Two complex solutions",
+            "No solutions at all"
+          ],
+          "answerIndex": 2,
+          "explanation": "A negative discriminant means you will have to take the square root of a negative number, resulting in two complex (or imaginary) solutions."
+        },
+        {
+          "question": "For the equation x² - 6x + 9 = 0, what is the value of the discriminant?",
+          "choices": [
+            "-36",
+            "72",
+            "36",
+            "0"
+          ],
+          "answerIndex": 3,
+          "explanation": "Substitute a = 1, b = -6, and c = 9 into b² - 4ac, giving (-6)² - 4(1)(9) = 36 - 36 = 0."
+        },
+        {
+          "question": "If a quadratic equation has a discriminant of zero, what does that mean graphically?",
+          "choices": [
+            "The parabola touches the x-axis at exactly one point.",
+            "The parabola does not cross the x-axis.",
+            "The parabola crosses the x-axis twice.",
+            "The parabola opens downwards."
+          ],
+          "answerIndex": 0,
+          "explanation": "A discriminant of zero means there is one real solution, which corresponds to the vertex of the parabola resting directly on the x-axis."
+        },
+        {
+          "question": "Determine the number and type of solutions for 3x² + x + 2 = 0.",
+          "choices": [
+            "Two real solutions",
+            "Two complex solutions",
+            "One real solution",
+            "One complex solution"
+          ],
+          "answerIndex": 1,
+          "explanation": "Using a = 3, b = 1, and c = 2, the discriminant is (1)² - 4(3)(2) = 1 - 24 = -23. Since it is negative, there are two complex solutions."
+        }
+      ]
+    },
+    "d5-s1": {
+      "lesson": {
+        "hook": "Mastering the art of choosing the right tool makes solving quadratic equations feel like a breeze!",
+        "sections": [
+          {
+            "heading": "When to Factor",
+            "body": "Use factoring when the equation is easily set to zero and the numbers look friendly. If you can quickly spot two numbers that multiply to the constant term and add up to the middle coefficient, factoring is your fastest route."
+          },
+          {
+            "heading": "When to Use Vertex Form",
+            "body": "Look for vertex form when the equation already has a squared binomial isolated, or if the question specifically asks for the maximum or minimum value. Taking the square root of both sides is much quicker than expanding everything out."
+          },
+          {
+            "heading": "When to Use the Quadratic Formula",
+            "body": "When factoring seems impossible because the numbers are messy or fractions are involved, break out the quadratic formula. It always works for any quadratic equation in the form ax² + bx + c = 0."
+          }
+        ],
+        "example": {
+          "problem": "Decide the best method and solve x² - 5x + 6 = 0.",
+          "steps": [
+            "Step 1: Check for factoring. The equation is equal to zero, and we need two numbers that multiply to 6 and add up to -5.",
+            "Step 2: Identify the numbers. The numbers -2 and -3 fit because (-2) * (-3) = 6 and (-2) + (-3) = -5.",
+            "Step 3: Write the factored form. (x - 2)(x - 3) = 0.",
+            "Step 4: Solve for x by setting each factor to zero. x - 2 = 0 or x - 3 = 0.",
+            "Step 5: Find the final solutions. x = 2 and x = 3."
+          ],
+          "answer": "x = 2, x = 3"
+        },
+        "keyPoints": [
+          "Try factoring first if the equation is clean and simple.",
+          "Use vertex form or square roots if a squared term is already isolated.",
+          "Use the quadratic formula as a reliable backup when factoring is too difficult.",
+          "Always set your quadratic equation to zero before choosing a method."
+        ],
+        "videoSearch": "Algebra 2 choosing the best method to solve quadratic equations"
+      },
+      "quiz": [
+        {
+          "question": "Which method is generally the fastest if an equation can be easily split into two binomials?",
+          "choices": [
+            "Quadratic formula",
+            "Factoring",
+            "Completing the square",
+            "Graphing by hand"
+          ],
+          "answerIndex": 1,
+          "explanation": "Factoring is usually the quickest method when the numbers are friendly and easy to break down."
+        },
+        {
+          "question": "Which equation is best solved by taking the square root of both sides?",
+          "choices": [
+            "(x - 3)² = 16",
+            "x² + 7x + 10 = 0",
+            "3x² + 5x - 2 = 0",
+            "x² - 4x = 11"
+          ],
+          "answerIndex": 0,
+          "explanation": "Having a squared binomial equal to a number makes taking square roots the most direct approach."
+        },
+        {
+          "question": "When should you use the quadratic formula?",
+          "choices": [
+            "Only when the coefficient of x² is 1",
+            "Only when the vertex is requested",
+            "When factoring is too difficult or involves messy decimals",
+            "Whenever you want to avoid algebra entirely"
+          ],
+          "answerIndex": 2,
+          "explanation": "The quadratic formula is your universal backup tool that works on any quadratic equation."
+        },
+        {
+          "question": "What is the very first step you should take before choosing a method for 2x² + 4x = 6?",
+          "choices": [
+            "Take the square root of both sides",
+            "Divide everything by 4",
+            "Rearrange the equation so one side is zero",
+            "Calculate the vertex immediately"
+          ],
+          "answerIndex": 2,
+          "explanation": "Most methods, including factoring and the quadratic formula, require the equation to be set to zero first."
+        },
+        {
+          "question": "If you are asked to find the maximum height of a launched projectile, which form is most helpful?",
+          "choices": [
+            "Standard form ax² + bx + c",
+            "Factored form",
+            "Vertex form",
+            "Linear form"
+          ],
+          "answerIndex": 2,
+          "explanation": "Vertex form directly reveals the maximum or minimum value because the vertex represents the peak or lowest point."
+        }
+      ]
+    },
+    "d5-s2": {
+      "lesson": {
+        "hook": "Let us put your quadratic skills to the test with a mixed marathon so you can crush your Algebra II exam!",
+        "sections": [
+          {
+            "heading": "Choose Your Weapon",
+            "body": "When facing a quadratic problem, your first step is deciding which tool to use. If the equation easily factors, use factoring. If you need the peak or lowest point, use vertex form. If it refuses to factor, always rely on the quadratic formula."
+          },
+          {
+            "heading": "The Master Strategy",
+            "body": "Always set your quadratic equation equal to zero in standard form, which is ax² + bx + c = 0, before attempting to solve or apply any formulas."
+          }
+        ],
+        "example": {
+          "problem": "Solve 2x² - 8x + 6 = 0 using factoring and then verify the vertex form of this function.",
+          "steps": [
+            "Step 1: Factor out the greatest common divisor, which is 2, to get 2(x² - 4x + 3) = 0.",
+            "Step 2: Factor the inside expression. We need two numbers that multiply to 3 and add to -4, which are -1 and -3. This gives 2(x - 1)(x - 3) = 0.",
+            "Step 3: Set each factor to zero to find the roots: x - 1 = 0 yields x = 1, and x - 3 = 0 yields x = 3.",
+            "Step 4: Find the vertex. The x-coordinate of the vertex is the midpoint of the roots, so x = (1 + 3) / 2 = 2.",
+            "Step 5: Plug x = 2 back into the original function to find the y-coordinate: y = 2(2)² - 8(2) + 6 = -2.",
+            "Step 6: Write the vertex form: y = a(x - h)² + k, which becomes y = 2(x - 2)² - 2."
+          ],
+          "answer": "Roots are x = 1 and x = 3, and the vertex form is y = 2(x - 2)² - 2."
+        },
+        "keyPoints": [
+          "Always set the equation to zero first.",
+          "Try factoring first because it is usually the fastest method.",
+          "Use the quadratic formula x = (-b ± √(b² - 4ac)) / (2a) when factoring fails.",
+          "The vertex (h, k) can be found using h = -b / (2a)."
+        ],
+        "videoSearch": "Algebra 2 mixed quadratic functions practice exam review"
+      },
+      "quiz": [
+        {
+          "question": "What is the first step in solving 3x² - 12x = -9?",
+          "choices": [
+            "Apply the quadratic formula immediately",
+            "Rewrite the equation in standard form as 3x² - 12x + 9 = 0",
+            "Divide by 3 and ignore the right side",
+            "Find the vertex"
+          ],
+          "answerIndex": 1,
+          "explanation": "You must always set your quadratic equation equal to zero in standard form before attempting to solve it."
+        },
+        {
+          "question": "Which method is best for solving x² - 9 = 0 quickly?",
+          "choices": [
+            "Factoring as a difference of squares",
+            "The quadratic formula",
+            "Completing the square",
+            "Graphing by hand"
+          ],
+          "answerIndex": 0,
+          "explanation": "Recognizing patterns like the difference of squares allows you to factor x² - 9 into (x - 3)(x + 3) = 0 instantly."
+        },
+        {
+          "question": "Find the x-coordinate of the vertex for the function y = x² - 6x + 8.",
+          "choices": [
+            "6",
+            "-3",
+            "3",
+            "8"
+          ],
+          "answerIndex": 2,
+          "explanation": "Using the vertex formula h = -b / (2a), we get h = -(-6) / (2 * 1) = 6 / 2 = 3."
+        },
+        {
+          "question": "What are the solutions to x² - 5x + 6 = 0?",
+          "choices": [
+            "x = 1 and x = 6",
+            "x = -2 and x = -3",
+            "x = 2 and x = 3",
+            "x = -1 and x = -6"
+          ],
+          "answerIndex": 2,
+          "explanation": "Factoring gives (x - 2)(x - 3) = 0, which means the solutions are x = 2 and x = 3."
+        },
+        {
+          "question": "If a quadratic function has a vertex at (2, -5) and a value of a = 3, what is its vertex form?",
+          "choices": [
+            "y = 3(x - 2)² - 5",
+            "y = 3(x + 2)² - 5",
+            "y = 3(x - 2)² + 5",
+            "y = (3x - 2)² - 5"
+          ],
+          "answerIndex": 0,
+          "explanation": "The vertex form is y = a(x - h)² + k. Substituting a = 3, h = 2, and k = -5 gives y = 3(x - 2)² - 5."
+        }
+      ]
+    }
+  },
+  "exam": [
+    {
+      "question": "What is the greatest common factor (GCF) of the expression 12x³ - 18x² + 6x?",
+      "choices": [
+        "6x",
+        "3x²",
+        "6x(2x² - 3x)",
+        "12x"
+      ],
+      "answerIndex": 0,
+      "explanation": "The largest number that divides evenly into 12, 18, and 6 is 6, and the lowest power of x shared by all terms is x. Thus, the GCF is 6x."
+    },
+    {
+      "question": "Which of the following is equivalent to the quadratic expression x² - 9x + 20 in factored form?",
+      "choices": [
+        "(x - 4)(x - 5)",
+        "(x + 4)(x + 5)",
+        "(x - 2)(x - 10)",
+        "(x + 2)(x + 10)"
+      ],
+      "answerIndex": 0,
+      "explanation": "To factor x² - 9x + 20, we need two numbers that multiply to 20 and add to -9. Those numbers are -4 and -5, giving (x - 4)(x - 5)."
+    },
+    {
+      "question": "What are the solutions to the equation (x - 3)(x + 7) = 0 using the Zero Product Property?",
+      "choices": [
+        "x = 3 and x = -7",
+        "x = -3 and x = 7",
+        "x = 3 and x = 7",
+        "x = -3 and x = -7"
+      ],
+      "answerIndex": 0,
+      "explanation": "By setting each factor equal to zero, x - 3 = 0 yields x = 3 and x + 7 = 0 yields x = -7."
+    },
+    {
+      "question": "In the vertex form of a quadratic function f(x) = a(x - h)² + k, what does the point (h, k) represent?",
+      "choices": [
+        "The y-intercept",
+        "The vertex of the parabola",
+        "The x-intercepts",
+        "The slope of the curve"
+      ],
+      "answerIndex": 1,
+      "explanation": "Vertex form explicitly displays the coordinates of the vertex, which are represented by (h, k)."
+    },
+    {
+      "question": "What is the value of the discriminant for the quadratic equation 2x² - 4x + 1 = 0?",
+      "choices": [
+        "8",
+        "24",
+        "-8",
+        "16"
+      ],
+      "answerIndex": 0,
+      "explanation": "The discriminant is calculated as b² - 4ac. Substituting a = 2, b = -4, and c = 1 gives (-4)² - 4(2)(1) = 16 - 8 = 8."
+    },
+    {
+      "question": "How many real solutions does a quadratic equation have if its discriminant is strictly negative?",
+      "choices": [
+        "Zero real solutions",
+        "One real solution",
+        "Two real solutions",
+        "Infinitely many solutions"
+      ],
+      "answerIndex": 0,
+      "explanation": "A negative discriminant means there would be a negative number under the square root in the quadratic formula, resulting in two complex (non-real) solutions and zero real solutions."
+    },
+    {
+      "question": "What value must be added to the expression x² + 10x to complete the square?",
+      "choices": [
+        "25",
+        "10",
+        "100",
+        "5"
+      ],
+      "answerIndex": 0,
+      "explanation": "To complete the square for x² + bx, take half of b and square it. Half of 10 is 5, and 5 squared is 25."
+    },
+    {
+      "question": "Factor the expression 2x² + 7x + 3 completely.",
+      "choices": [
+        "(2x + 1)(x + 3)",
+        "(2x + 3)(x + 1)",
+        "(2x - 1)(x - 3)",
+        "(x + 1)(2x + 3)"
+      ],
+      "answerIndex": 0,
+      "explanation": "Using grouping or trial and error for a > 1, we look for factors of (2)(3) = 6 that add to 7. Those are 6 and 1, leading to 2x² + 6x + x + 3, which factors by grouping to (2x + 1)(x + 3)."
+    },
+    {
+      "question": "What are the exact solutions to the equation x² - 4x - 2 = 0 found by using the quadratic formula?",
+      "choices": [
+        "x = 2 ± √6",
+        "x = -2 ± √6",
+        "x = 4 ± √24",
+        "x = 2 ± 2√2"
+      ],
+      "answerIndex": 0,
+      "explanation": "Using x = (-b ± √(b² - 4ac)) / 2a with a=1, b=-4, c=-2 yields x = (4 ± √(16 - 4(1)(-2))) / 2 = (4 ± √24) / 2 = (4 ± 2√6) / 2 = 2 ± √6."
+    },
+    {
+      "question": "Rewrite the standard form quadratic function f(x) = x² - 6x + 5 into vertex form by completing the square.",
+      "choices": [
+        "f(x) = (x - 3)² - 4",
+        "f(x) = (x - 3)² + 5",
+        "f(x) = (x + 3)² - 4",
+        "f(x) = (x - 6)² - 31"
+      ],
+      "answerIndex": 0,
+      "explanation": "Take half of -6 (-3) and square it (9). Add and subtract 9 inside the function: f(x) = (x² - 6x + 9) - 9 + 5, which simplifies to (x - 3)² - 4."
+    }
+  ]
+}

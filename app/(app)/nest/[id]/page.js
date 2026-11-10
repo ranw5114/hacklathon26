@@ -50,15 +50,15 @@ export default function LevelPage() {
       });
   }, [canPlay, level, levels, profile, test, section, id, attempt]);
 
-  function finishQuiz(correct) {
-    const total = level.quiz.length;
+  // `total` leaves out any questions the student flagged as wrong.
+  function finishQuiz(correct, total) {
     // Corn is only earned for improving on your best score, so replaying can't farm points.
     const bestBefore = Math.round((section.score ?? 0) * total);
     const earned = Math.max(0, correct - bestBefore) * POINTS_PER_CORRECT;
 
     save("plan", completeSection(plan, id, correct / total));
     save("points", (points ?? 0) + earned);
-    setResult({ correct, total, earned });
+    setResult({ correct, total, earned, flagged: level.quiz.length - total });
     setStage("results");
   }
 
@@ -120,7 +120,7 @@ export default function LevelPage() {
         )}
 
         {/* A new key makes React start a fresh Quiz (back to question 1) */}
-        {level && stage === "quiz" && <Quiz key={quizRound} questions={level.quiz} onFinish={finishQuiz} />}
+        {level && stage === "quiz" && <Quiz key={quizRound} questions={level.quiz} onFinish={finishQuiz} topic={section.title} />}
 
         {stage === "results" && result && <Results result={result} onRetry={retryQuiz} />}
       </div>
@@ -144,6 +144,11 @@ function Results({ result, onRetry }) {
       <p className="text-lg">
         {result.correct} of {result.total} correct
       </p>
+      {result.flagged > 0 && (
+        <p className="text-sm text-muted">
+          🚩 {result.flagged} flagged question{result.flagged === 1 ? "" : "s"} didn&apos;t count
+        </p>
+      )}
       {result.earned > 0 && <p className="font-display font-semibold">+{result.earned} 🌽 corn</p>}
       <div className="mt-4 flex flex-wrap justify-center gap-3">
         <button type="button" onClick={onRetry} className="btn-secondary">

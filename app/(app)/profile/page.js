@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
 import { useConfirm } from "@/components/Modal";
+import { ExitDemoButton, TryDemoButton } from "@/components/DemoButtons";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
 import { clearAll, resetNest, save, useStored } from "@/lib/storage";
 
@@ -90,21 +91,44 @@ export default function ProfilePage() {
 
       <section className="card mt-8 flex flex-col gap-4">
         <h2 className="text-2xl">Settings</h2>
-        <p className="text-sm text-muted">
-          Everything is saved only in this browser. Nothing is sent to an account.
-        </p>
+        <p className="text-sm text-muted">Everything is saved only in this browser. Nothing is sent to an account.</p>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={deletePlan} disabled={!plan} className="btn-secondary">
             Delete study plan
           </button>
-          <button
-            type="button"
-            onClick={deleteEverything}
-            className="btn-secondary border-red-700 text-red-700 hover:bg-red-50"
-          >
-            Delete all my data
-          </button>
+          {/* In the demo, "Delete all" is hidden so the user's saved real data can't be wiped by accident. */}
+          {!profile.demo && (
+            <button
+              type="button"
+              onClick={deleteEverything}
+              className="btn-secondary border-red-700 text-red-700 hover:bg-red-50"
+            >
+              Delete all my data
+            </button>
+          )}
         </div>
+      </section>
+
+      <section className="card mt-8 flex flex-col gap-3">
+        <h2 className="text-2xl">Demo</h2>
+        {profile.demo ? (
+          <>
+            <p className="text-sm text-muted">
+              You&apos;re exploring the demo student. Exit to go back to your own account.
+            </p>
+            <ExitDemoButton className="btn-primary self-start" />
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muted">
+              Peek at a sample student with a study plan already in progress. Your own progress is saved and comes back
+              when you exit the demo.
+            </p>
+            <div className="flex flex-col items-start gap-2">
+              <TryDemoButton className="btn-secondary" />
+            </div>
+          </>
+        )}
       </section>
     </main>
   );

@@ -30,7 +30,8 @@ export default function Lesson({ lesson, avatar, videoSources }) {
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white text-sm font-bold">
                 {i + 1}
               </span>
-              <span className="pt-0.5">{step}</span>
+              {/* Drop "Step 1:" if the AI added it, since the steps are already numbered */}
+              <span className="pt-0.5">{step.replace(/^step\s*\d+\s*[:.)-]\s*/i, "")}</span>
             </li>
           ))}
         </ol>
