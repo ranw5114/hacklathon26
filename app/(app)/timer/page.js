@@ -4,6 +4,7 @@ import { useState } from "react";
 import Chick from "@/components/Chick";
 import PageTour from "@/components/PageTour";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
+import { popOutSupported, requestPopOut } from "@/lib/popout";
 import { todayString } from "@/lib/dates";
 import { currentSectionId, findSection } from "@/lib/progress";
 import { save, useStored } from "@/lib/storage";
@@ -125,6 +126,16 @@ export default function TimerPage() {
             </button>
           )}
         </div>
+        {popOutSupported() && (
+          <div className="flex w-full flex-col items-center gap-2 border-t-2 border-dashed border-line/30 pt-5">
+            <button type="button" onClick={requestPopOut} className="btn-secondary flex items-center gap-2 bg-chick/60">
+              <span className="text-xl">📌</span> Pop out timer
+            </button>
+            <p className="max-w-xs text-center text-sm text-muted">
+              Keeps a mini timer floating on top of other tabs and apps while you study.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Settings: only changeable when the timer isn't running */}

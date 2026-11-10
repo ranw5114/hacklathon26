@@ -48,7 +48,7 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [x] Demo mode: "Try the demo" loads an Algebra II student with pre-made lessons (data/demo.json), dates shift to today
 - [x] Friendly errors when the AI limit is hit (done in Phase 2)
 - [x] Tutorial cards for each area (auto-open on first visit, ? to replay, reset in Settings; text in lib/tutorials.js)
-- [ ] Optional: pop-out timer (Chrome Picture-in-Picture)
+- [x] Pop-out timer (Chrome/Edge Picture-in-Picture), 📌 button on the Timer page and mini timer (needs a check in real Chrome)
 - [ ] Friend's graphics due (avatars, area icons, cooked-level egg images)
 
 ## Phase 5 · Feature freeze + polish (Nov 12)

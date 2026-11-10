@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { notify, playDing } from "@/lib/alerts";
 import { localDateString } from "@/lib/dates";
+import { onPopOutRequest, openPopOutWindow, popOutSupported, requestPopOut } from "@/lib/popout";
 import { save, useStored } from "@/lib/storage";
 import {
   advance,
   CORN_PER_FOCUS_MINUTE,
+  DEFAULT_TIMER,
   eggStage,
   formatTime,
   pauseTimer,
@@ -29,6 +32,25 @@ export default function TimerWatcher() {
   const points = useStored("points");
   const now = useNow();
   const pathname = usePathname();
+  const [popout, setPopout] = useState(null); // the floating pop-out window, while it's open
+
+  // Open the pop-out window when a "Pop out" button asks for it.
+  useEffect(() => {
+    return onPopOutRequest(async () => {
+      if (popout) return popout.focus();
+      try {
+        const win = await openPopOutWindow();
+        win.addEventListener("pagehide", () => setPopout(null)); // user closed it
+        setPopout(win);
+      } catch (err) {
+        // The browser refused (e.g. not from a click, or pop-outs are turned off).
+        console.warn("Couldn't open the pop-out timer:", err);
+      }
+    });
+  }, [popout]);
+
+  // Close the pop-out if this part of the app goes away (e.g. back to the start screen).
+  useEffect(() => () => popout?.close(), [popout]);
 
   // When time runs out: log the session, give corn, start the break, and alert the user.
   // The loop also catches up on anything that finished while the app was closed.
@@ -80,14 +102,17 @@ export default function TimerWatcher() {
     else document.title = APP_TITLE;
   }, [running, paused, left, label]);
 
-  if (!timer) return null;
   const onTimerPage = pathname === "/timer";
   const showPill = (running || paused) && !onTimerPage;
-  if (!showPill && !timer.notice) return null;
+  const popoutContent =
+    popout && createPortal(<PopOutTimer timer={timer ?? DEFAULT_TIMER} now={now} />, popout.document.body);
+
+  if (!timer || (!showPill && !timer.notice)) return popoutContent;
 
   return (
     // Phones: a bar at the top that pushes the page down. Computers: floats in the top-right corner.
     <div className="sticky top-0 z-30 flex flex-col items-center gap-2 bg-background/95 px-3 py-2 sm:fixed sm:top-20 sm:right-6 sm:items-end sm:bg-transparent sm:p-0">
+      {popoutContent}
       {timer.notice && !onTimerPage && (
         <div className="flex max-w-sm items-start gap-3 rounded-2xl border-[3px] border-line bg-white px-4 py-3 shadow-[0_4px_0_var(--chick-line)]">
           <p className="text-sm font-semibold">{timer.notice}</p>
@@ -117,8 +142,50 @@ export default function TimerWatcher() {
           >
             {running ? "⏸" : "▶"}
           </button>
+          {popOutSupported() && (
+            <button
+              type="button"
+              onClick={requestPopOut}
+              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-line bg-white text-sm"
+              aria-label="Pop out timer"
+              title="Pop out: keep the timer on top of other tabs and apps"
+            >
+              📌
+            </button>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+// What shows inside the floating pop-out window.
+function PopOutTimer({ timer, now }) {
+  const running = timer.status === "running";
+  const isBreak = timer.mode === "break";
+  const fraction = progress(timer, now);
+
+  return (
+    <div className="flex h-screen items-center justify-center gap-4 bg-background p-4 text-foreground">
+      <div
+        className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[3px] border-line"
+        style={{ background: `conic-gradient(var(--chick-beak) ${fraction * 360}deg, var(--chick-body) 0deg)` }}
+      >
+        <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-line bg-white text-4xl">
+          {isBreak ? "☕" : eggStage(fraction).emoji}
+        </div>
+      </div>
+      <div className="flex flex-col items-start gap-2">
+        <span className="label-small">{timer.status === "paused" ? "Paused" : isBreak ? "Break" : "Focus"}</span>
+        <span className="font-display text-4xl font-semibold tabular-nums">{formatTime(timeLeft(timer, now))}</span>
+        <button
+          type="button"
+          onClick={() => save("timer", running ? pauseTimer(timer) : startTimer(timer))}
+          className="btn-primary px-4 py-1.5 text-sm"
+        >
+          {running ? "Pause" : timer.status === "paused" ? "Resume" : "Start"}
+        </button>
+      </div>
     </div>
   );
 }
