@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
+import { useConfirm } from "@/components/Modal";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
 import { clearAll, resetNest, save, useStored } from "@/lib/storage";
 
@@ -14,6 +15,7 @@ export default function ProfilePage() {
   // Edit a copy, so nothing changes until "Save" is clicked.
   const [draft, setDraft] = useState(profile);
   const [saved, setSaved] = useState(false);
+  const { confirm, dialog } = useConfirm();
 
   function update(field, value) {
     setDraft({ ...draft, [field]: value });
@@ -26,19 +28,32 @@ export default function ProfilePage() {
     setSaved(true);
   }
 
-  function deletePlan() {
-    if (!confirm("Delete your current study plan? This can't be undone.")) return;
+  async function deletePlan() {
+    const ok = await confirm({
+      title: "Delete your study plan?",
+      message: "Your nest, levels, and mock exam will be deleted. Your profile and corn stay. This can't be undone.",
+      confirmLabel: "Delete plan",
+      danger: true,
+    });
+    if (!ok) return;
     resetNest();
   }
 
-  function deleteEverything() {
-    if (!confirm("Delete your profile and all your progress? This can't be undone.")) return;
+  async function deleteEverything() {
+    const ok = await confirm({
+      title: "Delete everything?",
+      message: "Your profile, study plan, corn, chats, and timer history will all be deleted. This can't be undone.",
+      confirmLabel: "Delete everything",
+      danger: true,
+    });
+    if (!ok) return;
     clearAll();
     router.push("/");
   }
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
+      {dialog}
       <div className="flex items-end gap-4">
         <Chick variant={draft.avatar} size={100} />
         <div>

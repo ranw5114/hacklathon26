@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
+import { useConfirm } from "@/components/Modal";
 import { resizeImage } from "@/lib/images";
 import { findSection, currentSectionId } from "@/lib/progress";
 import { remove, save, useStored } from "@/lib/storage";
@@ -28,6 +29,7 @@ export default function CoopPage() {
   const [previews, setPreviews] = useState({}); // message id → photo preview (this visit only)
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState("");
+  const { confirm, dialog } = useConfirm();
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -86,8 +88,15 @@ export default function CoopPage() {
     setThinking(false);
   }
 
-  function clearChat() {
-    if (!confirm("Clear this conversation?")) return;
+  async function clearChat() {
+    const ok = await confirm({
+      title: "Clear this chat?",
+      message: "Your conversation with Scholar will be deleted.",
+      confirmLabel: "Clear chat",
+      danger: true,
+      chick: "scholar",
+    });
+    if (!ok) return;
     remove("chat");
     setPreviews({});
   }
@@ -101,6 +110,7 @@ export default function CoopPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
+      {dialog}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Chick variant="scholar" size={56} />

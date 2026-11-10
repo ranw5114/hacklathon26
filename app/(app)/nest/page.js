@@ -1,6 +1,7 @@
 "use client";
 
 import Chick from "@/components/Chick";
+import { useConfirm } from "@/components/Modal";
 import NestForm from "@/components/NestForm";
 import NestPath from "@/components/NestPath";
 import { resetNest, save, useStored } from "@/lib/storage";
@@ -13,6 +14,7 @@ export default function NestPage() {
   const test = useStored("test");
   const plan = useStored("plan");
   const points = useStored("points");
+  const { confirm, dialog } = useConfirm();
 
   if (test === undefined || plan === undefined) return null;
 
@@ -37,8 +39,15 @@ export default function NestPage() {
     save("points", (points ?? 0) + corn);
   }
 
-  function startNewNest() {
-    if (!confirm("Delete this plan and build a new one?")) return;
+  async function startNewNest() {
+    const ok = await confirm({
+      title: "Build a new nest?",
+      message: "This plan, its lessons, and its mock exam will be deleted so you can start fresh. Your corn stays.",
+      confirmLabel: "Start fresh",
+      danger: true,
+      chick: "mint",
+    });
+    if (!ok) return;
     resetNest();
   }
 
@@ -47,6 +56,7 @@ export default function NestPage() {
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8">
+      {dialog}
       {/* Top banner: what this nest is for, plus quick stats */}
       <div className="card bg-chick">
         <p className="label-small">

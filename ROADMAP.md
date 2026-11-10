@@ -41,8 +41,10 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [x] 1 corn per focus minute; today's session log
 
 ## Phase 4 · The Roost + demo-ready (Nov 11)
-- [ ] Calendar showing study plan days
-- [ ] Optional: sync a calendar from an iCal link (first thing to cut if behind)
+- [x] The Roost: Month / Week / Day views (click a day to expand), study plan, test and mock exam days
+- [x] Calendar sync from a private iCal link (Google, Apple, Outlook), including repeating events
+- [x] Sample school schedule for judges
+- [x] 💡 Free-time study suggestions that fit around synced events
 - [ ] Demo mode with content generated ahead of time; friendly errors when the AI limit is hit
 - [ ] Friend's graphics due (avatars, area icons, cooked-level egg images)
 
