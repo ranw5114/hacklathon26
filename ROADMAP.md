@@ -47,7 +47,7 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 - [x] 💡 Free-time study suggestions that fit around synced events
 - [x] Demo mode: "Try the demo" loads an Algebra II student with pre-made lessons (data/demo.json), dates shift to today
 - [x] Friendly errors when the AI limit is hit (done in Phase 2)
-- [ ] Tutorial cards for the whole app (works for demo and real users)
+- [x] Tutorial cards for each area (auto-open on first visit, ? to replay, reset in Settings; text in lib/tutorials.js)
 - [ ] Optional: pop-out timer (Chrome Picture-in-Picture)
 - [ ] Friend's graphics due (avatars, area icons, cooked-level egg images)
 

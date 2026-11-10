@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
+import PageTour from "@/components/PageTour";
 import { useConfirm } from "@/components/Modal";
 import { resizeImage } from "@/lib/images";
 import { findSection, currentSectionId } from "@/lib/progress";
@@ -119,11 +120,18 @@ export default function CoopPage() {
             <h1 className="text-2xl sm:text-3xl">The Chicken Coop</h1>
           </div>
         </div>
-        {messages.length > 0 && (
-          <button type="button" onClick={clearChat} className="btn-secondary shrink-0 px-4 py-1.5 text-sm whitespace-nowrap">
-            Clear chat
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={clearChat}
+              className="btn-secondary shrink-0 px-4 py-1.5 text-sm whitespace-nowrap"
+            >
+              Clear chat
+            </button>
+          )}
+          <PageTour page="coop" />
+        </div>
       </div>
 
       {/* Conversation */}

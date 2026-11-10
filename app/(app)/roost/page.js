@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
+import PageTour from "@/components/PageTour";
 import CalendarSyncButton, { syncCalendar } from "@/components/roost/CalendarSync";
 import DayView from "@/components/roost/DayView";
 import MonthView from "@/components/roost/MonthView";
@@ -76,6 +77,9 @@ export default function RoostPage() {
         <div>
           <p className="label-small">Calendar</p>
           <h1 className="text-3xl">The Roost</h1>
+        </div>
+        <div className="ml-auto">
+          <PageTour page="roost" />
         </div>
       </div>
 

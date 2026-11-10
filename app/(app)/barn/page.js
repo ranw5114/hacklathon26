@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Chick from "@/components/Chick";
+import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { formatTime, timeLeft } from "@/lib/timer";
@@ -74,6 +75,9 @@ export default function BarnPage() {
           <p className="mt-1 font-display font-semibold text-muted">
             {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}🌽 {points ?? 0} corn
           </p>
+        </div>
+        <div className="ml-auto self-start">
+          <PageTour page="barn" />
         </div>
       </div>
 

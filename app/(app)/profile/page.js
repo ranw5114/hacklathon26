@@ -13,9 +13,11 @@ export default function ProfilePage() {
   const router = useRouter();
   const profile = useStored("profile");
   const plan = useStored("plan");
+  const prefs = useStored("prefs");
   // Edit a copy, so nothing changes until "Save" is clicked.
   const [draft, setDraft] = useState(profile);
   const [saved, setSaved] = useState(false);
+  const [toursReset, setToursReset] = useState(false);
   const { confirm, dialog } = useConfirm();
 
   function update(field, value) {
@@ -92,6 +94,19 @@ export default function ProfilePage() {
       <section className="card mt-8 flex flex-col gap-4">
         <h2 className="text-2xl">Settings</h2>
         <p className="text-sm text-muted">Everything is saved only in this browser. Nothing is sent to an account.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              save("prefs", { ...prefs, toursSeen: {} });
+              setToursReset(true);
+            }}
+            className="btn-secondary"
+          >
+            Show the tutorials again
+          </button>
+          {toursReset && <span className="text-sm text-muted">Done! Each page will show its tour again.</span>}
+        </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={deletePlan} disabled={!plan} className="btn-secondary">
             Delete study plan

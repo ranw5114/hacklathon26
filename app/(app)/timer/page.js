@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Chick from "@/components/Chick";
+import PageTour from "@/components/PageTour";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
 import { todayString } from "@/lib/dates";
 import { currentSectionId, findSection } from "@/lib/progress";
@@ -73,6 +74,9 @@ export default function TimerPage() {
         <div>
           <p className="label-small">Study timer</p>
           <h1 className="text-3xl">Egg Timer</h1>
+        </div>
+        <div className="ml-auto">
+          <PageTour page="timer" />
         </div>
       </div>
 

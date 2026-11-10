@@ -1,6 +1,7 @@
 "use client";
 
 import Chick from "@/components/Chick";
+import PageTour from "@/components/PageTour";
 import EditGradesButton from "@/components/EditGrades";
 import { useConfirm } from "@/components/Modal";
 import NestForm from "@/components/NestForm";
@@ -27,6 +28,9 @@ export default function NestPage() {
           <div>
             <span className="bubble text-sm">Let&apos;s build your nest, one twig at a time!</span>
             <h1 className="mt-3 text-4xl">Nest Builder</h1>
+          </div>
+          <div className="ml-auto self-start">
+            <PageTour page="nest" />
           </div>
         </div>
         <NestForm learner={profile} />
@@ -60,9 +64,12 @@ export default function NestPage() {
       {dialog}
       {/* Top banner: what this nest is for, plus quick stats */}
       <div className="card bg-chick">
-        <p className="label-small">
-          {test.subject} · {test.topic}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="label-small">
+            {test.subject} · {test.topic}
+          </p>
+          <PageTour page="nest" />
+        </div>
         <h1 className="mt-1 text-2xl sm:text-3xl">{plan.title}</h1>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-display font-semibold">
           <span>📅 {daysLeft > 0 ? `${daysLeft} days left` : "Test day!"}</span>
