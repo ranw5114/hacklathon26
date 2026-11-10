@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Field } from "@/components/ProfileFields";
 import { save } from "@/lib/storage";
 import { todayString } from "@/lib/dates";
+import { checkGrades } from "@/lib/grades";
 
 const HOURS_OPTIONS = [0.5, 1, 1.5, 2, 3];
 
@@ -17,32 +18,41 @@ const EMPTY_TEST = {
   notes: "",
 };
 
-// Returns an error message, or "" if everything is filled in.
+// Returns { error, canSwap }, with error "" if everything is filled in correctly.
 function validate(test) {
-  if (!test.subject.trim() || !test.topic.trim()) return "Add the subject and what's on the test.";
-  if (!test.testDate) return "Pick your test date.";
-  if (test.testDate <= todayString()) return "The test date needs to be after today.";
-  const current = Number(test.currentGrade);
-  const goal = Number(test.goalGrade);
-  if (test.currentGrade === "" || current < 0 || current > 100) return "Enter your current grade (0-100).";
-  if (test.goalGrade === "" || goal < 0 || goal > 100) return "Enter your goal grade (0-100).";
-  return "";
+  if (!test.subject.trim() || !test.topic.trim()) return { error: "Add the subject and what's on the test." };
+  if (!test.testDate) return { error: "Pick your test date." };
+  if (test.testDate <= todayString()) return { error: "The test date needs to be after today." };
+  return checkGrades(test.currentGrade, test.goalGrade);
 }
 
 // The form that collects test details and asks the AI to build a study plan.
 export default function NestForm({ learner }) {
   const [test, setTest] = useState(EMPTY_TEST);
   const [error, setError] = useState("");
+  const [canSwap, setCanSwap] = useState(false);
   const [loading, setLoading] = useState(false);
 
   function update(field, value) {
     setTest({ ...test, [field]: value });
     setError("");
+    setCanSwap(false);
+  }
+
+  // Fixes the common mix-up of typing the goal into the current-grade box (and vice versa).
+  function swapGrades() {
+    setTest({ ...test, currentGrade: test.goalGrade, goalGrade: test.currentGrade });
+    setError("");
+    setCanSwap(false);
   }
 
   async function buildNest() {
-    const message = validate(test);
-    if (message) return setError(message);
+    const check = validate(test);
+    if (check.error) {
+      setError(check.error);
+      setCanSwap(Boolean(check.canSwap));
+      return;
+    }
 
     setLoading(true);
     const finalTest = {
@@ -140,7 +150,16 @@ export default function NestForm({ learner }) {
         />
       </Field>
 
-      {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-red-50 p-3 text-sm text-red-700">
+          <span className="flex-1">{error}</span>
+          {canSwap && (
+            <button type="button" onClick={swapGrades} className="btn-secondary px-4 py-1.5 text-sm">
+              Swap them
+            </button>
+          )}
+        </div>
+      )}
 
       <button type="button" onClick={buildNest} disabled={loading} className="btn-primary self-end">
         {loading ? "Building your nest…" : "Build my nest"}

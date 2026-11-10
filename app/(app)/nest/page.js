@@ -1,6 +1,7 @@
 "use client";
 
 import Chick from "@/components/Chick";
+import EditGradesButton from "@/components/EditGrades";
 import { useConfirm } from "@/components/Modal";
 import NestForm from "@/components/NestForm";
 import NestPath from "@/components/NestPath";
@@ -65,7 +66,9 @@ export default function NestPage() {
         <h1 className="mt-1 text-2xl sm:text-3xl">{plan.title}</h1>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-display font-semibold">
           <span>📅 {daysLeft > 0 ? `${daysLeft} days left` : "Test day!"}</span>
-          <span>🎯 {test.currentGrade}% → {test.goalGrade}%</span>
+          <span className="flex items-center gap-2">
+            🎯 {test.currentGrade}% → {test.goalGrade}% <EditGradesButton test={test} />
+          </span>
           <span>🌽 {points ?? 0} corn</span>
         </div>
       </div>

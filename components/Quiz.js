@@ -95,12 +95,12 @@ export default function Quiz({ questions, onFinish, topic }) {
           <p className="mt-1">{question.explanation}</p>
           {isFlagged ? (
             <p className="mt-3 text-sm font-semibold">🚩 Flagged. Thanks! This question won&apos;t count against you.</p>
+          ) : flagged.length < MAX_FLAGS ? (
+            <button type="button" onClick={flag} className="mt-3 text-sm font-semibold text-muted underline">
+              🚩 This answer looks wrong
+            </button>
           ) : (
-            flagged.length < MAX_FLAGS && (
-              <button type="button" onClick={flag} className="mt-3 text-sm font-semibold text-muted underline">
-                🚩 This answer looks wrong
-              </button>
-            )
+            <p className="mt-3 text-sm text-muted">🚩 You&apos;ve used both flags for this quiz.</p>
           )}
         </div>
       )}
