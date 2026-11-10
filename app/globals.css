@@ -31,6 +31,21 @@ body {
   font-family: var(--font-body), ui-rounded, system-ui, sans-serif;
 }
 
+/* Show the pointing-hand cursor on anything clickable (Tailwind's default is the arrow for buttons). */
+@layer base {
+  button:not(:disabled),
+  [role="button"],
+  select,
+  input[type="checkbox"],
+  input[type="date"],
+  label:has(input[type="checkbox"]) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
 h1,
 h2,
 h3 {

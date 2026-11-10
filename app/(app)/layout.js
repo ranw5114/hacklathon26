@@ -3,6 +3,7 @@
 import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import Chick from "@/components/Chick";
+import TimerWatcher from "@/components/TimerWatcher";
 import { useStored } from "@/lib/storage";
 
 // Shared layout for every page in the (app) folder: Barn, Nest, Coop, Timer, Roost, Profile.
@@ -29,6 +30,8 @@ export default function AppLayout({ children }) {
   return (
     <>
       <AppNav avatar={profile.avatar} />
+      {/* Always mounted, so the Egg Timer keeps going on every page */}
+      <TimerWatcher />
       {/* Bottom padding on phones so content isn't hidden behind the bottom bar */}
       <div className="flex flex-1 flex-col pb-24 sm:pb-0">{children}</div>
     </>

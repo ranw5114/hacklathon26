@@ -36,7 +36,9 @@ Core loop: **Setup → Plan → Study a section → Mock exam → Predicted grad
 ## Phase 3 · Chicken Coop + Egg Timer (Nov 10)
 - [x] Corn chests on the nest path (every 3 levels, 15-30 corn)
 - [x] `/api/tutor`: AI chat that knows the current plan, with homework photo upload
-- [ ] Egg Timer: keeps correct time when switching tabs, presets, pause/resume, alert when done
+- [x] Egg Timer: keeps correct time across pages, tabs, and reloads; presets, pause/resume, ding + notification
+- [x] Mini timer on every page, live countdown in the tab title and the Barn card
+- [x] 1 corn per focus minute; today's session log
 
 ## Phase 4 · The Roost + demo-ready (Nov 11)
 - [ ] Calendar showing study plan days

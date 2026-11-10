@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Chick from "@/components/Chick";
+import { useStored } from "@/lib/storage";
 
 // Placeholder icons (emoji) until the custom graphics are ready.
 export const NAV_ITEMS = [
@@ -17,6 +18,7 @@ export const NAV_ITEMS = [
 // Top bar on computers, bottom bar on phones (like Duolingo).
 export default function AppNav({ avatar }) {
   const pathname = usePathname();
+  const points = useStored("points");
 
   return (
     <>
@@ -30,6 +32,9 @@ export default function AppNav({ avatar }) {
           {NAV_ITEMS.map((item) => (
             <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
           ))}
+          <span className="ml-auto rounded-full border-2 border-line bg-white px-3 py-1 font-display font-semibold">
+            🌽 {points ?? 0}
+          </span>
         </nav>
       </header>
 

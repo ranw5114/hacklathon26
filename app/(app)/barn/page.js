@@ -5,6 +5,8 @@ import Link from "next/link";
 import Chick from "@/components/Chick";
 import { useStored } from "@/lib/storage";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
+import { formatTime, timeLeft } from "@/lib/timer";
+import { useNow } from "@/lib/useNow";
 
 const AREAS = [
   {
@@ -47,9 +49,20 @@ const JOKES = [
 // The home dashboard with the four areas.
 export default function BarnPage() {
   const profile = useStored("profile");
+  const timer = useStored("timer");
+  const points = useStored("points");
+  const now = useNow();
   // Pick one joke when the page opens (useState keeps it from changing on every re-render).
   const [joke] = useState(() => JOKES[Math.floor(Math.random() * JOKES.length)]);
   const style = LEARNING_STYLES[profile.learningStyle];
+
+  // While the Egg Timer is going, its card shows the live countdown instead of the tagline.
+  function tagline(area) {
+    if (area.href !== "/timer" || !timer || timer.status === "idle") return area.tagline;
+    const left = formatTime(timeLeft(timer, now));
+    if (timer.status === "paused") return `⏸ Paused with ${left} left`;
+    return `⏳ ${timer.mode === "break" ? "On a break" : "Focusing"}… ${left} left`;
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
@@ -58,7 +71,9 @@ export default function BarnPage() {
         <div>
           <span className="bubble text-sm sm:text-base">Welcome to the barn, {profile.name}!</span>
           <h1 className="mt-4 text-4xl sm:text-5xl">The Barn</h1>
-          {style && <p className="mt-1 font-display font-semibold text-muted">You&apos;re a {style.label.toLowerCase()} learner 🐣</p>}
+          <p className="mt-1 font-display font-semibold text-muted">
+            {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}🌽 {points ?? 0} corn
+          </p>
         </div>
       </div>
 
@@ -71,7 +86,7 @@ export default function BarnPage() {
             <span>
               <span className="label-small">{area.kicker}</span>
               <span className="block font-display text-2xl font-semibold">{area.title}</span>
-              <span className="block text-muted">{area.tagline}</span>
+              <span className="block text-muted">{tagline(area)}</span>
             </span>
           </Link>
         ))}
