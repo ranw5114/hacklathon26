@@ -17,7 +17,7 @@ const WIGGLE = [0, 50, 80, 50, 0, -50, -80, -50];
 
 // The Duolingo-style path: day banners, an egg for each level, corn chests, then the mock exam.
 // `goal` is the goal grade as a fraction (0.9 = 90%), which decides golden vs fried eggs.
-export default function NestPath({ nestId, plan, profile, today, goal, onOpenChest }) {
+export default function NestPath({ nestId, plan, avatar, today, goal, onOpenChest }) {
   const currentId = currentSectionId(plan, goal);
   const allDone = currentId === null;
   const totalLevels = allSections(plan).length;
@@ -48,7 +48,7 @@ export default function NestPath({ nestId, plan, profile, today, goal, onOpenChe
                   section={section}
                   offset={levelOffset}
                   isCurrent={section.id === currentId}
-                  avatar={profile.avatar}
+                  avatar={avatar}
                   goal={goal}
                   chickColor={BABY_COLORS[levelNumber % BABY_COLORS.length]}
                 />

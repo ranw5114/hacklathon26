@@ -9,6 +9,7 @@ import { BroodingChick, HatchedChick } from "@/components/EggArt";
 import { formatDate, localDateString, todayString } from "@/lib/dates";
 import { fryEgg, hatchChicks, judgeMissedDays } from "@/lib/flock";
 import { allPlanDays, useNests } from "@/lib/nests";
+import { avatarLook } from "@/lib/avatar";
 import { onPopOutRequest, openPopOutWindow, popOutSupported, requestPopOut } from "@/lib/popout";
 import { load, save, update, useStored } from "@/lib/storage";
 import {
@@ -144,7 +145,7 @@ export default function TimerWatcher() {
 
   const onTimerPage = pathname === "/timer";
   const showPill = (running || paused) && !onTimerPage;
-  const avatar = profile?.avatar;
+  const avatar = avatarLook(profile, flock); // a starter chick or a Henhouse chick
   const lastChick = flock?.chicks?.at(-1)?.color;
   const popoutContent =
     popout &&

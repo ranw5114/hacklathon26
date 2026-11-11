@@ -13,6 +13,7 @@ import { todayString } from "@/lib/dates";
 import MissingNest from "@/components/MissingNest";
 import { updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 import { completeSection, conceptSummary, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
@@ -21,6 +22,7 @@ export default function LevelPage() {
   const { nestId, levelId: id } = useParams();
   const nest = useNest(nestId);
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const test = nest?.test;
   const plan = nest?.plan;
   const levels = nest?.levels;
@@ -102,7 +104,7 @@ export default function LevelPage() {
 
   if (!canPlay) {
     return (
-      <Message bubble="This level is still in its shell!" avatar={profile.avatar} nestId={nestId}>
+      <Message bubble="This level is still in its shell!" avatar={avatar} nestId={nestId}>
         Pass the levels before it first (reach your goal grade on each one).
       </Message>
     );
@@ -129,14 +131,14 @@ export default function LevelPage() {
 
         {!error && !level && (
           <div className="flex flex-col items-center gap-4 py-12">
-            <Chick variant={profile.avatar} size={100} className="animate-bounce" />
+            <Chick variant={avatar} size={100} className="animate-bounce" />
             <span className="bubble">Hatching your lesson…</span>
           </div>
         )}
 
         {level && stage === "lesson" && (
           <>
-            <Lesson lesson={level.lesson} avatar={profile.avatar} videoSources={profile.videoSources} />
+            <Lesson lesson={level.lesson} avatar={avatar} videoSources={profile.videoSources} />
             <div className="mt-8 flex justify-end">
               <button type="button" onClick={() => setStage("quiz")} className="btn-primary">
                 Start the quiz →
@@ -151,10 +153,10 @@ export default function LevelPage() {
         {stage === "results" && result && <Results result={result} nestId={nestId} onRetry={retryQuiz} onReview={reviewLesson} />}
 
         {/* A failed quiz: a heartbroken chicken pops up */}
-        <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={profile.avatar} chickMood="sad">
+        <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={avatar} chickMood="sad">
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="flex items-end gap-2">
-              <Chick variant={profile.avatar} mood="crying" size={90} />
+              <Chick variant={avatar} mood="crying" size={90} />
               <FriedEgg size={70} />
             </div>
             <p className="font-display text-lg font-semibold">{FRIED_POPUP}</p>

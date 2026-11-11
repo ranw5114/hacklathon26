@@ -7,11 +7,13 @@ import TimerWatcher from "@/components/TimerWatcher";
 import { ExitDemoButton } from "@/components/DemoButtons";
 import { useMoveOldNest } from "@/lib/nests";
 import { useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 
 // Shared layout for every page in the (app) folder: Barn, Nest, Coop, Timer, Roost, Profile.
 // The (app) folder name is in parentheses, so it doesn't appear in the URL (/barn, not /app/barn).
 export default function AppLayout({ children }) {
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   // Plans saved before multiple nests existed move into the new nests list (once).
   useMoveOldNest();
 
@@ -33,7 +35,7 @@ export default function AppLayout({ children }) {
 
   return (
     <>
-      <AppNav avatar={profile.avatar} />
+      <AppNav avatar={avatar} />
       {profile.demo && (
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b-2 border-line/20 bg-beak/30 px-4 py-1.5 text-center text-sm font-semibold">
           <span>🎬 Demo mode: a sample student, so explore freely!</span>

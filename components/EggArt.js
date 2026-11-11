@@ -1,7 +1,7 @@
 // Drawings for the Egg Timer and the flock, in the same outlined style as the chicks.
 
 import { useId } from "react";
-import Chick, { CHICKS } from "@/components/Chick";
+import Chick, { CHICK_COLORS, CHICKS } from "@/components/Chick";
 
 const LINE = "var(--chick-line)";
 const SHELL = "oklch(98.5% 0.012 85)";
@@ -93,7 +93,10 @@ export function BroodingChick({
   size = 120,
   className = "",
 }) {
-  const chick = CHICKS[avatar] || CHICKS.sunny;
+  // The wings match the chick's color, including a Henhouse chick's paint.
+  const baseVariant = typeof avatar === "object" ? avatar.variant : avatar;
+  const paint = typeof avatar === "object" ? CHICK_COLORS[avatar.color] : null;
+  const chick = { ...(CHICKS[baseVariant] || CHICKS.sunny), ...(paint ? { body: paint.body } : {}) };
   const clipId = useId();
   return (
     <svg viewBox="0 0 140 126" width={size} height={size * (126 / 140)} className={`overflow-visible ${className}`} aria-hidden="true">

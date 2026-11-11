@@ -10,6 +10,7 @@ import NestPath from "@/components/NestPath";
 import { addCorn, chickCount, randomChestCorn, withDefaults } from "@/lib/flock";
 import { deleteNest, updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 import { goalFraction, openChest } from "@/lib/progress";
 import { daysBetween, formatDate, todayString } from "@/lib/dates";
 
@@ -19,6 +20,7 @@ export default function NestPage() {
   const router = useRouter();
   const nest = useNest(nestId);
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const flock = useStored("flock");
   const { confirm, dialog } = useConfirm();
 
@@ -39,7 +41,7 @@ export default function NestPage() {
       message: `Your ${test.subject} plan, its lessons, and its mock exam will be deleted. Your other nests and your chicks stay. This can't be undone.`,
       confirmLabel: "Delete nest",
       danger: true,
-      chick: profile.avatar,
+      chick: avatar,
     });
     if (!ok) return;
     router.push("/nest");
@@ -97,7 +99,7 @@ export default function NestPage() {
       )}
 
       <div className="mt-8">
-        <NestPath nestId={nestId} plan={plan} profile={profile} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />
+        <NestPath nestId={nestId} plan={plan} avatar={avatar} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />
       </div>
 
       <div className="mt-12 flex flex-col items-center gap-3 text-center">

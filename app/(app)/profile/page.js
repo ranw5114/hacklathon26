@@ -8,6 +8,9 @@ import { ExitDemoButton, TryDemoButton } from "@/components/DemoButtons";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
 import { clearAll, remove, save, useStored } from "@/lib/storage";
 import { useNests } from "@/lib/nests";
+import { avatarLook } from "@/lib/avatar";
+import { chickName } from "@/lib/henhouse";
+import Link from "next/link";
 
 // Profile (edit name, avatar, learning style) and settings (reset data).
 export default function ProfilePage() {
@@ -15,11 +18,18 @@ export default function ProfilePage() {
   const profile = useStored("profile");
   const nests = useNests();
   const prefs = useStored("prefs");
+  const flock = useStored("flock");
   // Edit a copy, so nothing changes until "Save" is clicked.
   const [draft, setDraft] = useState(profile);
   const [saved, setSaved] = useState(false);
   const [toursReset, setToursReset] = useState(false);
+  // Picking a starter chick here switches away from a Henhouse chick avatar (applied on Save).
+  const [pickedStarter, setPickedStarter] = useState(false);
   const { confirm, dialog } = useConfirm();
+
+  // What the avatar will look like after saving.
+  const previewProfile = { ...draft, avatarChickId: pickedStarter ? null : profile?.avatarChickId };
+  const henhouseChick = previewProfile.avatarChickId && flock?.chicks?.find((c) => c.id === previewProfile.avatarChickId);
 
   function update(field, value) {
     setDraft({ ...draft, [field]: value });
@@ -28,7 +38,13 @@ export default function ProfilePage() {
 
   function saveProfile() {
     if (!draft.name.trim()) return;
-    save("profile", { ...draft, name: draft.name.trim() });
+    // Start from the latest saved profile, so an avatar picked in the Henhouse meanwhile isn't lost.
+    save("profile", {
+      ...profile,
+      ...draft,
+      name: draft.name.trim(),
+      avatarChickId: pickedStarter ? null : profile.avatarChickId,
+    });
     setSaved(true);
   }
 
@@ -59,7 +75,7 @@ export default function ProfilePage() {
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
       {dialog}
       <div className="flex items-end gap-4">
-        <Chick variant={draft.avatar} size={100} />
+        <Chick variant={avatarLook(previewProfile, flock)} size={100} />
         <div>
           <p className="label-small">Profile</p>
           <h1 className="text-4xl">{profile.name}</h1>
@@ -72,7 +88,28 @@ export default function ProfilePage() {
           <input className="input" value={draft.name} onChange={(e) => update("name", e.target.value)} />
         </Field>
         <Field label="Avatar">
-          <AvatarPicker value={draft.avatar} onChange={(id) => update("avatar", id)} />
+          {henhouseChick && (
+            <p className="mb-2 rounded-2xl bg-chick/50 px-4 py-2 text-sm">
+              ⭐ Your avatar is <strong>{chickName(henhouseChick, flock.chicks.indexOf(henhouseChick))}</strong> from
+              the <Link href="/henhouse" className="underline">Henhouse</Link>. Pick a starter chick below to switch back.
+            </p>
+          )}
+          <AvatarPicker
+            value={henhouseChick ? null : draft.avatar}
+            onChange={(id) => {
+              setPickedStarter(true);
+              update("avatar", id);
+            }}
+          />
+          {!henhouseChick && (
+            <p className="mt-2 text-sm text-muted">
+              Or make one of your hatched chicks your avatar in the{" "}
+              <Link href="/henhouse" className="underline">
+                Henhouse
+              </Link>
+              .
+            </p>
+          )}
         </Field>
         <Field label="Learning style">
           <LearningStylePicker value={draft.learningStyle} onChange={(id) => update("learningStyle", id)} />

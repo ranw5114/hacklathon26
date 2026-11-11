@@ -13,6 +13,7 @@ import { chickLook, chickName } from "@/lib/henhouse";
 import Link from "next/link";
 import { currentSectionId, findSection, goalFraction } from "@/lib/progress";
 import { save, update, useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 import { allPlanDays, focusNest, useNests } from "@/lib/nests";
 import {
   broodStage,
@@ -44,6 +45,7 @@ export default function TimerPage() {
   const plan = focus?.plan ?? null;
   const test = focus?.test ?? null;
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const flock = useStored("flock");
   const now = useNow();
   const { confirm, dialog } = useConfirm();
@@ -129,7 +131,7 @@ export default function TimerPage() {
         confirmLabel: "Stop and fry it",
         cancelLabel: "Keep it warm",
         danger: true,
-        chick: profile?.avatar,
+        chick: avatar,
       });
       if (!ok) return;
       update("flock", (f) => fryEgg(f, "stopped"));
@@ -190,7 +192,7 @@ export default function TimerPage() {
           <div className="flex h-52 w-52 flex-col items-center justify-center rounded-full border-[3px] border-line bg-white">
             {timer.mode === "focus" ? (
               <BroodingChick
-                avatar={profile?.avatar}
+                avatar={avatar}
                 cracks={idle ? 0 : stage.cracks}
                 animate={running}
                 eggStyle={timer.eggStyle}
@@ -328,7 +330,7 @@ export default function TimerPage() {
         sessions={sessions}
         today={today}
         plan={allPlanDays(nests)}
-        avatar={profile?.avatar}
+        avatar={avatar}
         plateRef={plateRef}
         hideNewestFried={Boolean(friedFresh)}
       />

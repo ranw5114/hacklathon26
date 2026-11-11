@@ -5,6 +5,7 @@ import Link from "next/link";
 import Chick from "@/components/Chick";
 import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 import { chickCount, withDefaults } from "@/lib/flock";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { formatTime, timeLeft } from "@/lib/timer";
@@ -51,6 +52,7 @@ const JOKES = [
 // The home dashboard with the four areas.
 export default function BarnPage() {
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const timer = useStored("timer");
   const flock = useStored("flock");
   const now = useNow();
@@ -69,7 +71,7 @@ export default function BarnPage() {
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
       <div className="flex items-end gap-5">
-        <Chick variant={profile.avatar} size={120} className="shrink-0" />
+        <Chick variant={avatar} size={120} className="shrink-0" />
         <div>
           <span className="bubble text-sm sm:text-base">Welcome to the barn, {profile.name}!</span>
           <h1 className="mt-4 text-4xl sm:text-5xl">The Barn</h1>
