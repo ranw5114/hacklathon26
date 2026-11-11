@@ -48,7 +48,47 @@ function Accessory({ type }) {
   return null;
 }
 
-export default function Chick({ variant = "sunny", size = 96, className = "" }) {
+// Faces for different moods. "happy" is the normal face.
+const TEAR = "oklch(78% 0.1 230)";
+function Face({ mood }) {
+  if (mood === "crying") {
+    return (
+      <g>
+        {/* Squeezed-shut eyes, streams of tears, and a wailing open beak */}
+        <g fill="none" stroke="var(--chick-line)" strokeWidth="3.5" strokeLinecap="round">
+          <path d="M33 58 l7 4 l-7 4" />
+          <path d="M87 58 l-7 4 l7 4" />
+        </g>
+        <path d="M37 68 q-2 12 1 24" fill="none" stroke={TEAR} strokeWidth="5" strokeLinecap="round" />
+        <path d="M83 68 q2 12 -1 24" fill="none" stroke={TEAR} strokeWidth="5" strokeLinecap="round" />
+        <path d="M51 60 q9 -4 18 0 l-3 9 q-6 3 -12 0 z" fill="var(--chick-beak)" stroke="var(--chick-line)" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M54 64 q6 2 12 0" fill="none" stroke="var(--chick-line)" strokeWidth="2" />
+      </g>
+    );
+  }
+  const sad = mood === "sad";
+  return (
+    <g>
+      <ellipse cx="40" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
+      <ellipse cx="80" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
+      {sad ? (
+        <>
+          {/* Worried eyebrows, a droopy beak, and one tear */}
+          <g fill="none" stroke="var(--chick-line)" strokeWidth="3" strokeLinecap="round">
+            <path d="M32 51 L45 47" />
+            <path d="M88 51 L75 47" />
+          </g>
+          <path d="M53 62 q7 -4 14 0 q-1 6 -7 7 q-6 -1 -7 -7 z" fill="var(--chick-beak)" />
+          <path d="M84 67 q3 5 0 8 q-3 -3 0 -8 z" fill={TEAR} stroke="var(--chick-line)" strokeWidth="1.5" />
+        </>
+      ) : (
+        <path d="M52 58 q8 -5 16 0 q-2 6 -8 6 q-6 0 -8 -6 z" fill="var(--chick-beak)" />
+      )}
+    </g>
+  );
+}
+
+export default function Chick({ variant = "sunny", size = 96, className = "", mood = "happy" }) {
   const chick = CHICKS[variant] || CHICKS.sunny;
   // Each chick needs its own unique ID for the clip path, even if two chicks look the same.
   const clipId = useId();
@@ -71,9 +111,7 @@ export default function Chick({ variant = "sunny", size = 96, className = "" }) 
         <rect y="72" width="120" height="30" fill={chick.belly} />
       </g>
       <path d={BODY} fill="none" stroke="var(--chick-line)" strokeWidth="4" />
-      <ellipse cx="40" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
-      <ellipse cx="80" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
-      <path d="M52 58 q8 -5 16 0 q-2 6 -8 6 q-6 0 -8 -6 z" fill="var(--chick-beak)" />
+      <Face mood={mood} />
       <Accessory type={chick.extra} />
     </svg>
   );
