@@ -26,6 +26,14 @@ export const CHICK_COLORS = {
   lime: { name: "Lime", body: "oklch(0.94 0.1 125)", belly: "oklch(0.88 0.13 125)" },
   cocoa: { name: "Cocoa", body: "oklch(0.78 0.06 55)", belly: "oklch(0.7 0.07 55)" },
   midnight: { name: "Midnight", body: "oklch(0.55 0.08 270)", belly: "oklch(0.47 0.09 270)" },
+  rose: { name: "Rose", body: "oklch(0.88 0.07 10)", belly: "oklch(0.8 0.1 10)" },
+  coral: { name: "Coral", body: "oklch(0.82 0.11 35)", belly: "oklch(0.74 0.13 35)" },
+  teal: { name: "Teal", body: "oklch(0.82 0.08 195)", belly: "oklch(0.74 0.1 195)" },
+  cloud: { name: "Cloud", body: "oklch(0.96 0.005 250)", belly: "oklch(0.89 0.01 250)" },
+  gold: { name: "Gold", body: "oklch(0.86 0.14 85)", belly: "oklch(0.78 0.15 75)" },
+  ruby: { name: "Ruby", body: "oklch(0.62 0.17 20)", belly: "oklch(0.54 0.18 20)" },
+  forest: { name: "Forest", body: "oklch(0.62 0.1 150)", belly: "oklch(0.54 0.11 150)" },
+  bubblegum: { name: "Bubblegum", body: "oklch(0.85 0.12 345)", belly: "oklch(0.77 0.15 345)" },
 };
 
 const INK = "var(--chick-line)";
@@ -87,6 +95,61 @@ function Accessory({ type }) {
         <path d="M26 34 C 28 6 92 6 94 34 Z" fill="oklch(0.7 0.13 250)" />
         <rect x="24" y="28" width="72" height="9" rx="4" fill="oklch(0.62 0.13 250)" />
         <circle cx="60" cy="6" r="7" fill="white" />
+      </g>
+    );
+  }
+  if (type === "tophat") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <rect x="42" y="-8" width="36" height="32" rx="3" fill="oklch(0.3 0.03 40)" />
+        <rect x="42" y="13" width="36" height="6" fill="oklch(0.6 0.18 25)" />
+        <ellipse cx="60" cy="25" rx="30" ry="5" fill="oklch(0.3 0.03 40)" />
+      </g>
+    );
+  }
+  if (type === "cowboy") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M38 22 C 36 4 46 -2 60 4 C 74 -2 84 4 82 22 Z" fill="oklch(0.62 0.1 55)" />
+        <path d="M10 22 C 20 34 100 34 110 22 C 104 16 96 20 92 22 C 80 28 40 28 28 22 C 24 20 16 16 10 22 Z" fill="oklch(0.62 0.1 55)" />
+        <path d="M39 17 Q60 22 81 17" fill="none" stroke="oklch(0.4 0.06 50)" strokeWidth="4" />
+      </g>
+    );
+  }
+  if (type === "chef") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round" fill="white">
+        <circle cx="45" cy="8" r="10" />
+        <circle cx="75" cy="8" r="10" />
+        <circle cx="60" cy="0" r="12" />
+        <rect x="40" y="10" width="40" height="16" rx="3" />
+      </g>
+    );
+  }
+  if (type === "bunny") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <ellipse cx="44" cy="2" rx="8" ry="20" fill="white" transform="rotate(-14 44 2)" />
+        <ellipse cx="44" cy="4" rx="3.5" ry="13" fill="oklch(0.85 0.08 0)" stroke="none" transform="rotate(-14 44 4)" />
+        <ellipse cx="76" cy="2" rx="8" ry="20" fill="white" transform="rotate(14 76 2)" />
+        <ellipse cx="76" cy="4" rx="3.5" ry="13" fill="oklch(0.85 0.08 0)" stroke="none" transform="rotate(14 76 4)" />
+      </g>
+    );
+  }
+  if (type === "halo") {
+    return (
+      <g fill="none">
+        <ellipse cx="60" cy="4" rx="24" ry="6" stroke={INK} strokeWidth="7" />
+        <ellipse cx="60" cy="4" rx="24" ry="6" stroke="oklch(0.88 0.15 90)" strokeWidth="3.5" />
+      </g>
+    );
+  }
+  if (type === "witch") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M36 26 L66 -18 L80 24 Z" fill="oklch(0.45 0.13 300)" />
+        <path d="M40 18 Q60 24 78 18 L79 22 Q60 28 39 22 Z" fill="oklch(0.85 0.15 90)" />
+        <ellipse cx="58" cy="26" rx="38" ry="6" fill="oklch(0.45 0.13 300)" />
       </g>
     );
   }
@@ -191,6 +254,24 @@ function FaceWear({ type }) {
       </g>
     );
   }
+  if (type === "hearts") {
+    const heart = (x) => `M${x} 68 C ${x - 14} 58 ${x - 10} 46 ${x} 53 C ${x + 10} 46 ${x + 14} 58 ${x} 68 Z`;
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
+        <path d={heart(40)} fill="oklch(0.7 0.2 10)" fillOpacity="0.85" />
+        <path d={heart(80)} fill="oklch(0.7 0.2 10)" fillOpacity="0.85" />
+        <path d="M50 57 Q60 53 70 57" fill="none" />
+      </g>
+    );
+  }
+  if (type === "monocle") {
+    return (
+      <g fill="none" stroke={INK} strokeWidth="2.5">
+        <circle cx="80" cy="60" r="10" stroke="oklch(0.7 0.13 80)" strokeWidth="3.5" fill="white" fillOpacity="0.2" />
+        <path d="M89 66 Q96 78 92 92" stroke="oklch(0.7 0.13 80)" strokeWidth="2" />
+      </g>
+    );
+  }
   if (type === "goggles") {
     return (
       <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
@@ -216,6 +297,15 @@ function FaceWear({ type }) {
 
 // Clothes on the body (drawn inside the body outline).
 function BodyWear({ type }) {
+  if (type === "sweater") {
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
+        <rect x="0" y="70" width="120" height="40" fill="oklch(0.62 0.13 250)" />
+        <path d="M0 82 L10 76 L20 82 L30 76 L40 82 L50 76 L60 82 L70 76 L80 82 L90 76 L100 82 L110 76 L120 82" fill="none" stroke="white" strokeWidth="3" />
+        <path d="M40 70 Q60 80 80 70" fill="none" />
+      </g>
+    );
+  }
   if (type === "labcoat") {
     return (
       <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
@@ -289,6 +379,43 @@ function Prop({ type }) {
       </g>
     );
   }
+  if (type === "balloon") {
+    return (
+      <g {...common}>
+        <path d="M96 94 Q92 76 102 58" fill="none" strokeWidth="1.5" />
+        <ellipse cx="104" cy="44" rx="12" ry="14" fill="oklch(0.68 0.2 25)" />
+        <path d="M101 58 L107 58 L104 54 Z" fill="oklch(0.68 0.2 25)" />
+        <ellipse cx="99" cy="38" rx="3" ry="5" fill="white" opacity="0.6" stroke="none" />
+      </g>
+    );
+  }
+  if (type === "wand") {
+    return (
+      <g {...common}>
+        <path d="M88 96 L104 64" strokeWidth="4" />
+        <path d="M105 50 l3 7 l7 1 l-5 5 l1 7 l-6 -3 l-6 3 l1 -7 l-5 -5 l7 -1 z" fill="oklch(0.88 0.15 90)" />
+      </g>
+    );
+  }
+  if (type === "mug") {
+    return (
+      <g {...common}>
+        <path d="M82 72 L102 72 L100 94 L84 94 Z" fill="oklch(0.85 0.08 30)" />
+        <path d="M102 76 C 110 76 110 88 101 88" fill="none" />
+        <path d="M88 66 q-3 -4 0 -8 M95 66 q-3 -4 0 -8" fill="none" strokeWidth="2" />
+      </g>
+    );
+  }
+  if (type === "trophy") {
+    return (
+      <g {...common}>
+        <path d="M84 64 L106 64 L104 78 C 102 84 88 84 86 78 Z" fill="oklch(0.85 0.15 85)" />
+        <path d="M84 67 C 76 67 78 78 87 77 M106 67 C 114 67 112 78 103 77" fill="none" />
+        <rect x="92" y="83" width="6" height="6" fill="oklch(0.85 0.15 85)" />
+        <rect x="86" y="89" width="18" height="6" rx="1" fill="oklch(0.6 0.08 55)" />
+      </g>
+    );
+  }
   if (type === "paintbrush") {
     return (
       <g {...common} transform="rotate(30 96 78)">
@@ -306,6 +433,27 @@ function NeckWear({ type }) {
       <g stroke={INK} strokeWidth="3" strokeLinejoin="round" fill="oklch(0.65 0.18 25)">
         <path d="M14 76 Q60 88 106 76 L106 85 Q60 97 14 85 Z" />
         <path d="M80 86 L92 86 L94 99 L82 99 Z" />
+      </g>
+    );
+  }
+  if (type === "pearls") {
+    return (
+      <g stroke={INK} strokeWidth="1.5" fill="white">
+        {[16, 25, 34, 43, 52, 60, 68, 77, 86, 95, 104].map((x) => (
+          <circle key={x} cx={x} cy={78 + 6 * Math.sin(((x - 16) / 88) * Math.PI)} r="4" />
+        ))}
+      </g>
+    );
+  }
+  if (type === "bandana") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M22 74 Q60 84 98 74 L60 100 Z" fill="oklch(0.62 0.2 25)" />
+        <g fill="white" stroke="none">
+          <circle cx="50" cy="82" r="2" />
+          <circle cx="66" cy="83" r="2" />
+          <circle cx="58" cy="91" r="2" />
+        </g>
       </g>
     );
   }
@@ -344,6 +492,15 @@ export default function Chick({ variant = "sunny", size = 96, className = "", mo
           <path d={BODY} />
         </clipPath>
       </defs>
+      {wear?.body === "cape" && (
+        <path
+          d="M18 56 C 2 74 0 92 8 102 L112 102 C 120 92 118 74 102 56 Z"
+          fill="oklch(0.6 0.2 25)"
+          stroke={INK}
+          strokeWidth="3"
+          strokeLinejoin="round"
+        />
+      )}
       <g clipPath={`url(#${clipId})`}>
         <rect width="120" height="100" fill={chick.body} />
         <rect y="72" width="120" height="30" fill={chick.belly} />

@@ -5,7 +5,10 @@ import Link from "next/link";
 import Chick, { CHICK_COLORS } from "@/components/Chick";
 import { CoopRoof } from "@/components/EggArt";
 import { chickCount, withDefaults } from "@/lib/flock";
-import { buyItem, chickLook, chickName, SHOP, SLOT_LABELS, updateChick, wardrobe } from "@/lib/henhouse";
+import { buyItem, chickLook, chickName, SHOP, SLOT_LABELS, SLOTS, updateChick, wardrobe } from "@/lib/henhouse";
+
+// What each wardrobe row is called on the chick editor.
+const WEAR_LABELS = { head: "Head", face: "Face", neck: "Neck", body: "Body", prop: "Holding" };
 import { save, update, useStored } from "@/lib/storage";
 
 const HOW_FROM = { timer: "the Egg Timer", quiz: "a perfect quiz", exam: "the mock exam", chest: "a chest" };
@@ -125,9 +128,9 @@ export default function HenhousePage() {
               </div>
             </div>
 
-            {["head", "face", "neck"].map((slot) => (
+            {SLOTS.map((slot) => (
               <div key={slot}>
-                <p className="text-sm font-semibold">{SLOT_LABELS[slot]}</p>
+                <p className="text-sm font-semibold">{WEAR_LABELS[slot]}</p>
                 <div className="mt-1 flex flex-wrap gap-2">
                   <WearButton active={!selected.wear?.[slot] || selected.wear?.[slot] === "none"} onClick={() => change({ wear: { ...selected.wear, [slot]: "none" } })}>
                     None
@@ -150,33 +153,43 @@ export default function HenhousePage() {
       <section className="card mt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-xl">The Shop</h2>
-          <p className="text-sm text-muted">Earn corn by reaching your goal grade on Nest quizzes and opening chests.</p>
+          <p className="text-sm text-muted">
+            Earn corn for every concept you get right on Nest quizzes, and from chests on the path.
+          </p>
         </div>
         {message && <p className="mt-3 rounded-2xl bg-chick/60 px-4 py-2 text-sm font-semibold">{message}</p>}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {SHOP.map((item) => {
-            const owned = flock.owned.includes(item.id);
-            const preview =
-              item.slot === "color" ? { variant: "sunny", color: item.value } : { variant: "sunny", wear: { head: "none", [item.slot]: item.value } };
-            return (
-              <div key={item.id} className="flex flex-col items-center gap-1 rounded-2xl border-[3px] border-line bg-white p-3 text-center">
-                <Chick {...preview} size={56} />
-                <p className="text-sm font-semibold">{item.name}</p>
-                {owned ? (
-                  <span className="text-sm font-semibold text-muted">✓ Owned</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => buy(item)}
-                    className={`btn-primary px-3 py-1 text-sm ${flock.corn < item.price ? "opacity-60" : ""}`}
-                  >
-                    🌽 {item.price}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {["color", ...SLOTS].map((slot) => (
+          <div key={slot} className="mt-5">
+            <h3 className="text-lg">
+              {SLOT_LABELS[slot]}
+              {slot === "color" && <span className="ml-2 text-sm font-normal text-muted">10–20 corn each</span>}
+            </h3>
+            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+              {SHOP.filter((item) => item.slot === slot).map((item) => {
+                const owned = flock.owned.includes(item.id);
+                const preview =
+                  item.slot === "color" ? { variant: "sunny", color: item.value } : { variant: "sunny", wear: { head: "none", [item.slot]: item.value } };
+                return (
+                  <div key={item.id} className="flex flex-col items-center gap-1 rounded-2xl border-[3px] border-line bg-white p-2 text-center">
+                    <Chick {...preview} size={50} />
+                    <p className="text-sm font-semibold">{item.name}</p>
+                    {owned ? (
+                      <span className="text-sm font-semibold text-muted">✓ Owned</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => buy(item)}
+                        className={`btn-primary px-3 py-1 text-sm ${flock.corn < item.price ? "opacity-60" : ""}`}
+                      >
+                        🌽 {item.price}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </section>
     </main>
   );
