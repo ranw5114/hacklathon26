@@ -6,10 +6,15 @@ import { useRouter } from "next/navigation";
 import { addNest } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { checkGrades } from "@/lib/grades";
+import { findSubject, SUBJECT_GROUPS, SUBJECTS } from "@/lib/subjects";
+
+// The menu value for "type your own subject".
+const OTHER = "other";
 
 const HOURS_OPTIONS = [0.5, 1, 1.5, 2, 3];
 
 const EMPTY_TEST = {
+  subjectId: "", // a SUBJECTS id from the menu, or "other" when typed in
   subject: "",
   topic: "",
   testDate: "",
@@ -21,7 +26,8 @@ const EMPTY_TEST = {
 
 // Returns { error, canSwap }, with error "" if everything is filled in correctly.
 function validate(test) {
-  if (!test.subject.trim() || !test.topic.trim()) return { error: "Add the subject and what's on the test." };
+  if (!test.subject.trim()) return { error: "Pick a subject, or choose \"Something else\" and type it in." };
+  if (!test.topic.trim() && !findSubject(test.subjectId)?.defaultTopic) return { error: "Add what's on the test." };
   if (!test.testDate) return { error: "Pick your test date." };
   if (test.testDate <= todayString()) return { error: "The test date needs to be after today." };
   return checkGrades(test.currentGrade, test.goalGrade);
@@ -34,6 +40,9 @@ export default function NestForm({ learner }) {
   const [error, setError] = useState("");
   const [canSwap, setCanSwap] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const picked = findSubject(test.subjectId);
+  const isTest = picked?.kind === "test";
 
   function update(field, value) {
     setTest({ ...test, [field]: value });
@@ -59,6 +68,8 @@ export default function NestForm({ learner }) {
     setLoading(true);
     const finalTest = {
       ...test,
+      // Tests like the SAT can be studied as a whole, so "what's on it" can be left blank.
+      topic: test.topic.trim() || findSubject(test.subjectId)?.defaultTopic || test.topic,
       currentGrade: Number(test.currentGrade),
       goalGrade: Number(test.goalGrade),
     };
@@ -72,8 +83,11 @@ export default function NestForm({ learner }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Saved as a new nest next to any others, then open it.
-      const id = addNest(finalTest, data);
+      // The research about the subject is kept with the test, so every lesson, exam, and tutor
+      // answer for this nest can use it. Saved as a new nest next to any others, then opened.
+      const { research, ...plan } = data;
+      const researchedTest = { ...finalTest, brief: research?.brief ?? "", sources: research?.sources ?? [], basis: research?.basis ?? [] };
+      const id = addNest(researchedTest, plan);
       router.push(`/nest/${id}`);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -85,18 +99,59 @@ export default function NestForm({ learner }) {
     <section className="card flex flex-col gap-5">
       <h2 className="text-2xl">What are we studying for?</h2>
 
-      <Field label="Subject">
-        <input
+      <Field label="Class or test">
+        <select
           className="input"
-          placeholder="e.g. Biology"
-          value={test.subject}
-          onChange={(e) => update("subject", e.target.value)}
-        />
+          value={test.subjectId}
+          onChange={(e) => {
+            const id = e.target.value;
+            const choice = findSubject(id);
+            setTest({ ...test, subjectId: id, subject: choice ? choice.label : "" });
+            setError("");
+          }}
+        >
+          <option value="" disabled>
+            Choose a class or test…
+          </option>
+          {SUBJECT_GROUPS.map((group) => (
+            <optgroup key={group} label={group}>
+              {SUBJECTS.filter((s) => s.group === group).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+          <option value={OTHER}>Something else (type it in)</option>
+        </select>
       </Field>
-      <Field label="What's on the test?">
+      {test.subjectId === OTHER && (
+        <Field label="Type your class or test">
+          <input
+            className="input"
+            autoFocus
+            placeholder="e.g. Marine Biology, IB Physics HL, or the ACT Science section"
+            value={test.subject}
+            onChange={(e) => update("subject", e.target.value)}
+          />
+          <span className="text-xs text-muted">
+            Tip: paste your syllabus or study guide in the notes below so the plan matches your exact class.
+          </span>
+        </Field>
+      )}
+      {picked?.kind === "test" && (
+        <p className="-mt-2 rounded-2xl bg-chick/50 px-4 py-2 text-sm">
+          📚 Your plan will follow the real {picked.label}: its format, timing, scoring, and question style.
+        </p>
+      )}
+      <Field label={picked?.defaultTopic ? "What's on it? (optional)" : "What's on the test?"}>
         <input
           className="input"
-          placeholder="e.g. Cell structure and cellular respiration"
+          placeholder={
+            picked?.defaultTopic
+              ? `Leave blank for the whole test, or name a part (e.g. ${picked.kind === "test" ? "Geometry and probability" : "Unit 3"})`
+              : "e.g. Cell structure and cellular respiration"
+          }
           value={test.topic}
           onChange={(e) => update("topic", e.target.value)}
         />
@@ -124,7 +179,7 @@ export default function NestForm({ learner }) {
             ))}
           </select>
         </Field>
-        <Field label="Current grade (%)">
+        <Field label={isTest ? "Current score (% of the max)" : "Current grade (%)"}>
           <input
             type="number"
             className="input"
@@ -133,7 +188,7 @@ export default function NestForm({ learner }) {
             onChange={(e) => update("currentGrade", e.target.value)}
           />
         </Field>
-        <Field label="Goal grade (%)">
+        <Field label={isTest ? "Goal score (% of the max)" : "Goal grade (%)"}>
           <input
             type="number"
             className="input"
@@ -164,7 +219,7 @@ export default function NestForm({ learner }) {
       )}
 
       <button type="button" onClick={buildNest} disabled={loading} className="btn-primary self-end">
-        {loading ? "Building your nest…" : "Build my nest"}
+        {loading ? `Researching ${test.subject || "your subject"} and building your nest…` : "Build my nest"}
       </button>
     </section>
   );

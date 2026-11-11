@@ -1,3 +1,4 @@
+import { subjectBriefText } from "@/lib/briefPrompt";
 import { generateJSON, PLAIN_TEXT_RULE, questionSchema } from "@/lib/gemini";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
@@ -28,9 +29,9 @@ export async function POST(request) {
 
 Topics covered:
 ${topicList}
-
+${subjectBriefText(test)}
 Rules:
-- Write exactly ${EXAM_QUESTIONS} multiple-choice questions, like a real class test at this level.
+- Write exactly ${EXAM_QUESTIONS} multiple-choice questions, like the real test at this level (match its question style and difficulty from the facts above, if given).
 - Cover all the topics, with a few extra questions on topics marked "student found this hard".
 - Mix recall questions with problem-solving questions. Order them from easier to harder.
 - Each question has exactly 4 choices and one correct answer. Vary which position the correct answer is in.

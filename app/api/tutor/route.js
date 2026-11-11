@@ -1,6 +1,7 @@
 import { generateText, PLAIN_TEXT_RULE } from "@/lib/gemini";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { GRAPH_RULES, SVG_RULES } from "@/lib/drawingRules";
+import { subjectBriefText } from "@/lib/briefPrompt";
 import { shortenForHistory } from "@/lib/tutorReply";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
@@ -43,6 +44,7 @@ About the student:
 ${style ? `- Learning style: ${style.prompt}` : ""}
 ${test ? `- Currently studying ${test.subject} for a test on: ${test.topic}` : ""}
 ${currentLevel ? `- Their current lesson: "${currentLevel}"` : ""}
+${subjectBriefText(test)}
 
 How to help:
 - Be warm and encouraging. Use short paragraphs and numbered steps for problems.${style ? "" : " Keep answers concise."}
