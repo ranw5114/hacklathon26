@@ -154,7 +154,7 @@ export default function RoostPage() {
         <span>🔵 Your calendar</span>
         <span>🎯 Test</span>
         <span>🏆 Mock exam</span>
-        <span>🥚🍳🐣 Studied with the Egg Timer (cooks as you study more)</span>
+        <span>🐣 Hatched an egg with the Egg Timer</span>
       </div>
     </main>
   );

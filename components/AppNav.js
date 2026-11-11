@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Chick from "@/components/Chick";
+import { chickCount } from "@/lib/flock";
 import { useStored } from "@/lib/storage";
 
 // Placeholder icons (emoji) until the custom graphics are ready.
@@ -18,7 +19,7 @@ export const NAV_ITEMS = [
 // Top bar on computers, bottom bar on phones (like Duolingo).
 export default function AppNav({ avatar }) {
   const pathname = usePathname();
-  const points = useStored("points");
+  const flock = useStored("flock");
 
   return (
     <>
@@ -32,9 +33,13 @@ export default function AppNav({ avatar }) {
           {NAV_ITEMS.map((item) => (
             <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
           ))}
-          <span className="ml-auto rounded-full border-2 border-line bg-white px-3 py-1 font-display font-semibold">
-            🌽 {points ?? 0}
-          </span>
+          <Link
+            href="/timer"
+            className="ml-auto flex items-center gap-1 rounded-full border-2 border-line bg-white py-0.5 pr-3 pl-2 font-display font-semibold"
+            title="Your flock of chicks"
+          >
+            <Chick variant="sunny" size={26} /> {chickCount(flock)}
+          </Link>
         </nav>
       </header>
 

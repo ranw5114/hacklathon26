@@ -34,7 +34,7 @@ export default function ProfilePage() {
   async function deletePlan() {
     const ok = await confirm({
       title: "Delete your study plan?",
-      message: "Your nest, levels, and mock exam will be deleted. Your profile and corn stay. This can't be undone.",
+      message: "Your nest, levels, and mock exam will be deleted. Your profile and chicks stay. This can't be undone.",
       confirmLabel: "Delete plan",
       danger: true,
     });
@@ -45,7 +45,7 @@ export default function ProfilePage() {
   async function deleteEverything() {
     const ok = await confirm({
       title: "Delete everything?",
-      message: "Your profile, study plan, corn, chats, and timer history will all be deleted. This can't be undone.",
+      message: "Your profile, study plan, chicks, chats, and timer history will all be deleted. This can't be undone.",
       confirmLabel: "Delete everything",
       danger: true,
     });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Chick from "@/components/Chick";
 import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
+import { chickCount } from "@/lib/flock";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { formatTime, timeLeft } from "@/lib/timer";
 import { useNow } from "@/lib/useNow";
@@ -51,7 +52,7 @@ const JOKES = [
 export default function BarnPage() {
   const profile = useStored("profile");
   const timer = useStored("timer");
-  const points = useStored("points");
+  const flock = useStored("flock");
   const now = useNow();
   // Pick one joke when the page opens (useState keeps it from changing on every re-render).
   const [joke] = useState(() => JOKES[Math.floor(Math.random() * JOKES.length)]);
@@ -73,7 +74,7 @@ export default function BarnPage() {
           <span className="bubble text-sm sm:text-base">Welcome to the barn, {profile.name}!</span>
           <h1 className="mt-4 text-4xl sm:text-5xl">The Barn</h1>
           <p className="mt-1 font-display font-semibold text-muted">
-            {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}🌽 {points ?? 0} corn
+            {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}{chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"} in your flock
           </p>
         </div>
         <div className="ml-auto self-start">

@@ -5,17 +5,21 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { notify, playDing } from "@/lib/alerts";
-import { localDateString } from "@/lib/dates";
+import { BroodingChick, HatchedChick } from "@/components/EggArt";
+import { formatDate, localDateString, todayString } from "@/lib/dates";
+import { fryEgg, hatchChicks, judgeMissedDays } from "@/lib/flock";
 import { onPopOutRequest, openPopOutWindow, popOutSupported, requestPopOut } from "@/lib/popout";
-import { save, useStored } from "@/lib/storage";
+import { load, save, update, useStored } from "@/lib/storage";
 import {
   advance,
-  CORN_PER_FOCUS_MINUTE,
+  broodStage,
+  coldIn,
   DEFAULT_TIMER,
-  eggStage,
   formatTime,
+  MIN_FOCUS_MIN,
   pauseTimer,
   progress,
+  resetTimer,
   startTimer,
   timeLeft,
 } from "@/lib/timer";
@@ -24,12 +28,14 @@ import { useNow } from "@/lib/useNow";
 const APP_TITLE = "Chick Study Buddy";
 
 // Lives in the shared layout, so it runs on every page (Barn, Nest, Coop, ...).
-// It finishes sessions when time is up, keeps the tab title counting down,
-// and shows a small floating timer while one is running.
+// It hatches eggs when time is up, fries eggs left paused too long, checks for missed
+// study-plan days, keeps the tab title counting down, and shows a small floating timer.
 export default function TimerWatcher() {
   const timer = useStored("timer");
   const sessions = useStored("sessions");
-  const points = useStored("points");
+  const plan = useStored("plan");
+  const profile = useStored("profile");
+  const flock = useStored("flock");
   const now = useNow();
   const pathname = usePathname();
   const [popout, setPopout] = useState(null); // the floating pop-out window, while it's open
@@ -52,7 +58,7 @@ export default function TimerWatcher() {
   // Close the pop-out if this part of the app goes away (e.g. back to the start screen).
   useEffect(() => () => popout?.close(), [popout]);
 
-  // When time runs out: log the session, give corn, start the break, and alert the user.
+  // When time runs out: log the session, hatch a chick, start the break, and alert the user.
   // The loop also catches up on anything that finished while the app was closed.
   useEffect(() => {
     if (!timer || timer.status !== "running" || now < timer.endsAt) return;
@@ -74,21 +80,53 @@ export default function TimerWatcher() {
       next = advance(next);
     }
 
-    const corn = newSessions.reduce((sum, s) => sum + s.minutes * CORN_PER_FOCUS_MINUTE, 0);
+    // Only sessions of at least MIN_FOCUS_MIN minutes hatch (older saved timers may be shorter).
+    const hatched = newSessions.filter((s) => s.minutes >= MIN_FOCUS_MIN).length;
+    const tooShort = newSessions.length - hatched;
     const notice = [
-      newSessions.length && `Focus session done! +${corn} 🌽`,
+      hatched === 1 && "Your egg hatched! A new chick joined your flock. 🐣",
+      hatched > 1 && `${hatched} eggs hatched! New chicks joined your flock. 🐣`,
+      tooShort > 0 && `Focus done! Sessions need ${MIN_FOCUS_MIN}+ minutes to hatch an egg.`,
       breakEnded ? "Break's over, ready for another round?" : `Break time (${next.breakMin} min).`,
     ]
       .filter(Boolean)
       .join(" ");
 
     if (newSessions.length) save("sessions", [...(sessions ?? []), ...newSessions].slice(-200));
-    if (corn) save("points", (points ?? 0) + corn);
+    if (hatched) update("flock", (f) => hatchChicks(f, hatched, "timer", newSessions.at(-1).endedAt));
     save("timer", { ...next, notice });
 
     playDing();
     notify("Egg Timer 🐣", notice);
-  }, [now, timer, sessions, points]);
+  }, [now, timer, sessions]);
+
+  // A focus session left paused too long: the egg goes cold and gets fried.
+  useEffect(() => {
+    if (!timer || coldIn(timer, now) !== 0) return;
+    update("flock", (f) => fryEgg(f, "cold"));
+    save("timer", {
+      ...resetTimer(timer),
+      notice: "Your egg was left alone for too long and went cold. It got fried! 🍳",
+    });
+    playDing();
+  }, [now, timer]);
+
+  // Study-plan days that passed with no egg hatched: one chick per day becomes a drumstick.
+  // Checked when the app opens and again after midnight (the date is part of the dependencies).
+  const today = todayString();
+  useEffect(() => {
+    if (plan === undefined || sessions === undefined || flock === undefined || !plan) return;
+    const result = judgeMissedDays(load("flock"), plan, sessions, today);
+    if (!result.missed.length && result.flock.judgedDays.length === (flock?.judgedDays?.length ?? 0)) return;
+    save("flock", result.flock);
+    if (!result.lost) return;
+    const days = result.missed.map(formatDate).join(", ");
+    const message =
+      result.lost === 1
+        ? `You missed your study plan on ${days}. One chick got fried into a drumstick. 🍗`
+        : `You missed your study plan on ${days}. ${result.lost} chicks got fried into drumsticks. 🍗`;
+    update("timer", (t) => ({ ...(t ?? DEFAULT_TIMER), notice: message }));
+  }, [plan, sessions, flock, today]);
 
   // Show the countdown in the browser tab, so it's visible from other tabs too.
   const running = timer?.status === "running";
@@ -104,8 +142,14 @@ export default function TimerWatcher() {
 
   const onTimerPage = pathname === "/timer";
   const showPill = (running || paused) && !onTimerPage;
+  const avatar = profile?.avatar;
+  const lastChick = flock?.chicks?.at(-1)?.color;
   const popoutContent =
-    popout && createPortal(<PopOutTimer timer={timer ?? DEFAULT_TIMER} now={now} />, popout.document.body);
+    popout &&
+    createPortal(
+      <PopOutTimer timer={timer ?? DEFAULT_TIMER} now={now} avatar={avatar} lastChick={lastChick} />,
+      popout.document.body
+    );
 
   if (!timer || (!showPill && !timer.notice)) return popoutContent;
 
@@ -130,7 +174,7 @@ export default function TimerWatcher() {
       {showPill && (
         <div className="flex items-center gap-1 rounded-full border-[3px] border-line bg-chick py-1 pr-1 pl-3 shadow-[0_4px_0_var(--chick-line)]">
           <Link href="/timer" className="flex items-center gap-2 font-display font-semibold">
-            <span className="text-xl">{timer.mode === "break" ? "☕" : eggStage(progress(timer, now)).emoji}</span>
+            <TimerIcon timer={timer} now={now} avatar={avatar} lastChick={lastChick} size={34} />
             <span className="tabular-nums">{left}</span>
             <span className="text-sm text-muted">{paused ? "Paused" : label}</span>
           </Link>
@@ -159,8 +203,15 @@ export default function TimerWatcher() {
   );
 }
 
+// A small picture of what's happening: the chick keeping its egg warm, or the new chick on a break.
+function TimerIcon({ timer, now, avatar, lastChick, size }) {
+  if (timer.mode === "break") return <HatchedChick color={lastChick} size={size} />;
+  const animate = timer.status === "running";
+  return <BroodingChick avatar={avatar} cracks={broodStage(progress(timer, now)).cracks} animate={animate} size={size} />;
+}
+
 // What shows inside the floating pop-out window.
-function PopOutTimer({ timer, now }) {
+function PopOutTimer({ timer, now, avatar, lastChick }) {
   const running = timer.status === "running";
   const isBreak = timer.mode === "break";
   const fraction = progress(timer, now);
@@ -171,12 +222,15 @@ function PopOutTimer({ timer, now }) {
         className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[3px] border-line"
         style={{ background: `conic-gradient(var(--chick-beak) ${fraction * 360}deg, var(--chick-body) 0deg)` }}
       >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-line bg-white text-4xl">
-          {isBreak ? "☕" : eggStage(fraction).emoji}
+        <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-line bg-white">
+          <TimerIcon timer={timer} now={now} avatar={avatar} lastChick={lastChick} size={64} />
         </div>
       </div>
       <div className="flex flex-col items-start gap-2">
         <span className="label-small">{timer.status === "paused" ? "Paused" : isBreak ? "Break" : "Focus"}</span>
+        {coldIn(timer, now) !== null && (
+          <span className="text-xs font-semibold text-red-700">Egg gets cold in {formatTime(coldIn(timer, now))}</span>
+        )}
         <span className="font-display text-4xl font-semibold tabular-nums">{formatTime(timeLeft(timer, now))}</span>
         <button
           type="button"

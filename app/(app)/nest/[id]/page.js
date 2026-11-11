@@ -6,8 +6,9 @@ import { useParams } from "next/navigation";
 import Chick from "@/components/Chick";
 import Lesson from "@/components/Lesson";
 import Quiz from "@/components/Quiz";
-import { save, useStored } from "@/lib/storage";
-import { completeSection, cookLevel, findSection, isUnlocked, POINTS_PER_CORRECT } from "@/lib/progress";
+import { chicksForQuiz, hatchChicks } from "@/lib/flock";
+import { save, update, useStored } from "@/lib/storage";
+import { completeSection, cookLevel, findSection, isUnlocked } from "@/lib/progress";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
@@ -16,7 +17,6 @@ export default function LevelPage() {
   const test = useStored("test");
   const plan = useStored("plan");
   const levels = useStored("levels");
-  const points = useStored("points");
 
   const [stage, setStage] = useState("lesson"); // "lesson" → "quiz" → "results"
   const [result, setResult] = useState(null); // { correct, total, earned }
@@ -52,12 +52,11 @@ export default function LevelPage() {
 
   // `total` leaves out any questions the student flagged as wrong.
   function finishQuiz(correct, total) {
-    // Corn is only earned for improving on your best score, so replaying can't farm points.
-    const bestBefore = Math.round((section.score ?? 0) * total);
-    const earned = Math.max(0, correct - bestBefore) * POINTS_PER_CORRECT;
+    // Chicks hatch the first time you finish a level and the first time you ace it, so replaying can't farm them.
+    const earned = chicksForQuiz(section, correct, total);
 
     save("plan", completeSection(plan, id, correct / total));
-    save("points", (points ?? 0) + earned);
+    if (earned) update("flock", (f) => hatchChicks(f, earned, "quiz"));
     setResult({ correct, total, earned, flagged: level.quiz.length - total });
     setStage("results");
   }
@@ -149,7 +148,11 @@ function Results({ result, onRetry }) {
           🚩 {result.flagged} flagged question{result.flagged === 1 ? "" : "s"} didn&apos;t count
         </p>
       )}
-      {result.earned > 0 && <p className="font-display font-semibold">+{result.earned} 🌽 corn</p>}
+      {result.earned > 0 && (
+        <p className="font-display font-semibold">
+          🐣 +{result.earned} chick{result.earned === 1 ? "" : "s"} hatched!
+        </p>
+      )}
       <div className="mt-4 flex flex-wrap justify-center gap-3">
         <button type="button" onClick={onRetry} className="btn-secondary">
           Try again
