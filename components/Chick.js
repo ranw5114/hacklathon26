@@ -471,7 +471,12 @@ function NeckWear({ type }) {
 
 // variant: an avatar from CHICKS. Optional `color` (a CHICK_COLORS id) repaints it, and
 // `wear` ({ head, face, neck, body, prop }) dresses it up; head "none" hides the avatar's own hat or bow.
-export default function Chick({ variant = "sunny", size = 96, className = "", mood = "happy", color, wear }) {
+// `variant` can also be a whole look ({ variant, color, wear }), like the avatar from lib/avatar.js.
+// An explicit `color` or `wear` prop still wins (e.g. a subject outfit on the Nests page).
+export default function Chick({ variant: look = "sunny", size = 96, className = "", mood = "happy", color: colorProp, wear: wearProp }) {
+  const variant = typeof look === "object" ? look.variant : look;
+  const color = colorProp ?? (typeof look === "object" ? look.color : undefined);
+  const wear = wearProp ?? (typeof look === "object" ? look.wear : undefined);
   const base = CHICKS[variant] || CHICKS.sunny;
   const paint = CHICK_COLORS[color];
   const chick = paint ? { ...base, body: paint.body, belly: paint.belly } : base;

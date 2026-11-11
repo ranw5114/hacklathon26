@@ -16,6 +16,7 @@ const HOW_FROM = { timer: "the Egg Timer", quiz: "a perfect quiz", exam: "the mo
 // The Henhouse: every chick you've hatched. Name them, paint them, and dress them up with corn.
 export default function HenhousePage() {
   const stored = useStored("flock");
+  const profile = useStored("profile");
   const [selectedId, setSelectedId] = useState(null);
   const [message, setMessage] = useState("");
 
@@ -65,7 +66,14 @@ export default function HenhousePage() {
                     i === selectedIndex ? "border-line bg-white shadow-[0_3px_0_var(--chick-line)]" : "border-transparent"
                   }`}
                 >
-                  <Chick {...chickLook(chick)} size={52} />
+                  <span className="relative">
+                    <Chick {...chickLook(chick)} size={52} />
+                    {chick.id === profile?.avatarChickId && (
+                      <span className="absolute -top-2 -right-2 text-base" title="Your avatar">
+                        ⭐
+                      </span>
+                    )}
+                  </span>
                   <span className="mt-1 w-full truncate text-xs font-semibold">{chickName(chick, i)}</span>
                 </button>
               ))}
@@ -91,6 +99,17 @@ export default function HenhousePage() {
               Hatched {new Date(selected.hatchedAt).toLocaleDateString()}
               {HOW_FROM[selected.from] && <> from {HOW_FROM[selected.from]}</>}
             </p>
+            {selected.id === profile?.avatarChickId ? (
+              <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold">⭐ Your avatar</span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => update("profile", (p) => ({ ...p, avatarChickId: selected.id }))}
+                className="btn-secondary px-3 py-1 text-sm"
+              >
+                Make this my avatar
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col gap-4">

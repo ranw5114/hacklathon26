@@ -9,6 +9,7 @@ import { useParams } from "next/navigation";
 import MissingNest from "@/components/MissingNest";
 import { updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 import { allSections, currentSectionId, goalFraction, predictedGrade, quizAverage } from "@/lib/progress";
 
 // The mock exam: a practice test on everything, ending with a predicted grade.
@@ -16,6 +17,7 @@ export default function ExamPage() {
   const { nestId } = useParams();
   const nest = useNest(nestId);
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const test = nest?.test;
   const plan = nest?.plan;
   const exam = nest?.exam; // saved questions, so a refresh doesn't make a new exam
@@ -33,7 +35,7 @@ export default function ExamPage() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
         <span className="bubble">Pass every level to unlock the mock exam!</span>
-        <Chick variant={profile.avatar} size={110} />
+        <Chick variant={avatar} size={110} />
         <Link href={`/nest/${nestId}`} className="btn-primary">
           Back to nest
         </Link>
@@ -93,7 +95,7 @@ export default function ExamPage() {
       <div className="mt-6">
         {stage === "intro" && (
           <div className="card flex flex-col items-center gap-4 py-10 text-center">
-            <Chick variant={profile.avatar} size={100} className={loading ? "animate-bounce" : ""} />
+            <Chick variant={avatar} size={100} className={loading ? "animate-bounce" : ""} />
             <span className="bubble">
               {loading ? "Writing your exam…" : "This one counts! Like the real test."}
             </span>
@@ -110,7 +112,7 @@ export default function ExamPage() {
 
         {stage === "exam" && exam && <Quiz questions={exam} onFinish={finishExam} topic="Mock exam" />}
 
-        {stage === "results" && <ExamResults nestId={nestId} plan={plan} test={test} avatar={profile.avatar} earned={earned} onRetake={retake} />}
+        {stage === "results" && <ExamResults nestId={nestId} plan={plan} test={test} avatar={avatar} earned={earned} onRetake={retake} />}
       </div>
     </main>
   );

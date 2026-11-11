@@ -7,11 +7,13 @@ import { daysBetween, formatDate, todayString } from "@/lib/dates";
 import { sortNests, subjectOutfit, useNests } from "@/lib/nests";
 import { allSections, goalFraction, isPassed } from "@/lib/progress";
 import { useStored } from "@/lib/storage";
+import { useAvatar } from "@/lib/avatar";
 
 // All nests: one chick sitting in a nest for each test, dressed for its subject.
 export default function NestsPage() {
   const nests = useNests();
   const profile = useStored("profile");
+  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const router = useRouter();
 
   if (nests === undefined) return null;
@@ -32,7 +34,7 @@ export default function NestsPage() {
 
       {sorted.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center gap-4 py-10 text-center">
-          <ChickInNest avatar={profile?.avatar} size={170} />
+          <ChickInNest avatar={avatar} size={170} />
           <span className="bubble">No nests yet. Got a test coming up?</span>
           <p className="max-w-md text-muted">
             Build a nest for each test. Your chick makes a day-by-day study plan, with a short lesson and quiz for every
@@ -45,7 +47,7 @@ export default function NestsPage() {
       ) : (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((nest) => (
-            <NestCard key={nest.id} nest={nest} avatar={profile?.avatar} today={today} />
+            <NestCard key={nest.id} nest={nest} avatar={avatar} today={today} />
           ))}
           {/* An empty nest that starts a new one */}
           <Link
