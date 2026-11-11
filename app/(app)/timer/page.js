@@ -11,7 +11,7 @@ import { addDays, todayString } from "@/lib/dates";
 import { chickCount, fryEgg, hatchStreak, withDefaults } from "@/lib/flock";
 import { chickLook, chickName } from "@/lib/henhouse";
 import Link from "next/link";
-import { currentSectionId, findSection } from "@/lib/progress";
+import { currentSectionId, findSection, goalFraction } from "@/lib/progress";
 import { save, update, useStored } from "@/lib/storage";
 import {
   broodStage,
@@ -38,6 +38,7 @@ export default function TimerPage() {
   const stored = useStored("timer");
   const sessions = useStored("sessions");
   const plan = useStored("plan");
+  const test = useStored("test");
   const profile = useStored("profile");
   const flock = useStored("flock");
   const now = useNow();
@@ -101,7 +102,7 @@ export default function TimerPage() {
   const friedFresh = fried && now - timer.fried.at < FLIGHT_WINDOW_MS && landedAt !== timer.fried.at;
   const holding = !fried ? "egg" : friedFresh && !flight ? "fried" : "none";
 
-  const currentId = plan ? currentSectionId(plan) : null;
+  const currentId = plan ? currentSectionId(plan, goalFraction(test)) : null;
   const currentLevel = currentId ? findSection(plan, currentId).title : null;
 
   const today = todayString();
@@ -489,7 +490,7 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
           <p className="text-sm text-muted">
             {drumsticks === 0
               ? "No drumsticks. Your chicks are safe!"
-              : `${drumsticks} drumstick${drumsticks === 1 ? "" : "s"} (missed study-plan days)`}
+              : `${drumsticks} drumstick${drumsticks === 1 ? "" : "s"} (missed plan days or failed quizzes)`}
           </p>
         </div>
       </div>

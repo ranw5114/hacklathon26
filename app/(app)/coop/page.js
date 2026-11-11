@@ -8,7 +8,7 @@ import { Diagram, Practice } from "@/components/RichParts";
 import PageTour from "@/components/PageTour";
 import { useConfirm } from "@/components/Modal";
 import { resizeImage } from "@/lib/images";
-import { findSection, currentSectionId } from "@/lib/progress";
+import { findSection, currentSectionId, goalFraction } from "@/lib/progress";
 import { remove, save, useStored } from "@/lib/storage";
 import { parseReply } from "@/lib/tutorReply";
 
@@ -39,7 +39,7 @@ export default function CoopPage() {
   const fileRef = useRef(null);
 
   const messages = savedChat ?? [];
-  const currentId = plan ? currentSectionId(plan) : null;
+  const currentId = plan ? currentSectionId(plan, goalFraction(test)) : null;
   const currentLevel = currentId ? findSection(plan, currentId).title : null;
 
   // Scroll to the newest message whenever the conversation changes.

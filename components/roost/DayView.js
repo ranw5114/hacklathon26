@@ -144,7 +144,7 @@ export default function DayView({ info, plan, suggestion, now, isToday }) {
             <p className="text-sm text-muted">{info.studyMinutes} minutes planned</p>
             <ul className="mt-3 flex flex-col gap-2">
               {info.planDay.sections.map((section) => {
-                const unlocked = isUnlocked(plan, section.id);
+                const unlocked = isUnlocked(plan, section.id, goal);
                 const cook = section.completed ? eggResult(section.score, goal) : null;
                 const label = (
                   <>

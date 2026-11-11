@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Chick from "@/components/Chick";
-import { FriedEgg, HatchedChick, PathEgg } from "@/components/EggArt";
+import { Drumstick, FriedEgg, HatchedChick, PathEgg } from "@/components/EggArt";
 import Modal from "@/components/Modal";
 import Lesson from "@/components/Lesson";
 import Quiz from "@/components/Quiz";
-import { addCorn, hatchChicks, quizRewards } from "@/lib/flock";
+import { addCorn, chickCount, hatchChicks, loseChickToQuiz, quizRewards } from "@/lib/flock";
+import { todayString } from "@/lib/dates";
 import { save, update, useStored } from "@/lib/storage";
-import { completeSection, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
+import { completeSection, conceptSummary, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
@@ -19,6 +20,7 @@ export default function LevelPage() {
   const test = useStored("test");
   const plan = useStored("plan");
   const levels = useStored("levels");
+  const flock = useStored("flock");
 
   const [stage, setStage] = useState("lesson"); // "lesson" → "quiz" → "results"
   const [result, setResult] = useState(null); // { correct, total, chicks, corn, egg, flagged }
@@ -30,7 +32,7 @@ export default function LevelPage() {
 
   const section = plan ? findSection(plan, id) : null;
   const level = levels?.[id]; // saved lesson + quiz, if we've generated it before
-  const canPlay = plan && section && isUnlocked(plan, id);
+  const canPlay = plan && section && isUnlocked(plan, id, goalFraction(test));
 
   // Generate the lesson + quiz the first time this level is opened, then save it.
   useEffect(() => {
@@ -53,18 +55,22 @@ export default function LevelPage() {
       });
   }, [canPlay, level, levels, profile, test, section, id, attempt]);
 
-  // `total` leaves out any questions the student flagged as wrong.
-  function finishQuiz(correct, total) {
-    // 100% hatches a chick; the goal grade or higher earns corn; below the goal fries the egg.
-    const score = correct / total;
+  // `total` leaves out any questions the student flagged as wrong. answers[i] = { correct, flagged }.
+  function finishQuiz(correct, total, answers) {
+    // 100% hatches a chick; each understood concept earns corn; below the goal fries the egg
+    // AND one of your chicks (it becomes a drumstick).
+    const score = total ? correct / total : 0;
     const goal = goalFraction(test);
-    const { chicks, corn } = quizRewards(section, score, goal);
+    const concepts = conceptSummary(level.quiz, answers ?? []);
+    const { chicks, corn, newConcepts, loseChick } = quizRewards(section, score, goal, concepts.understood);
     const egg = eggResult(score, goal);
+    const lostChick = loseChick && chickCount(flock) > 0;
 
-    save("plan", completeSection(plan, id, score));
+    save("plan", completeSection(plan, id, score, newConcepts));
     if (chicks) update("flock", (f) => hatchChicks(f, chicks, "quiz"));
     if (corn) update("flock", (f) => addCorn(f, corn));
-    setResult({ correct, total, chicks, corn, egg, goal, flagged: level.quiz.length - total });
+    if (lostChick) update("flock", (f) => loseChickToQuiz(f, todayString()));
+    setResult({ correct, total, chicks, corn, egg, goal, concepts, lostChick, flagged: level.quiz.length - total });
     setStage("results");
     setShowFriedPopup(egg.id === "fried");
   }
@@ -91,7 +97,7 @@ export default function LevelPage() {
   if (!canPlay) {
     return (
       <Message bubble="This level is still in its shell!" avatar={profile.avatar}>
-        Finish the levels before it first.
+        Pass the levels before it first (reach your goal grade on each one).
       </Message>
     );
   }
@@ -163,6 +169,10 @@ export default function LevelPage() {
 
 // What the chicken says when a quiz scores below the goal grade.
 const FRIED_POPUP = "Don't fry my kids like how u are fried on the test! Let's retry that.";
+// The summary's verdicts.
+const PASSED_LINE = "You ate that lesson, here's some corn for your chicks to eat!";
+const FAILED_LINE = "You gotta lock in before you run out of chicks to fry.";
+const COOKED_LINE = "You are cooked for this test if you don't work on these concepts:";
 
 function Results({ result, onRetry, onReview }) {
   const { egg } = result;
@@ -194,13 +204,12 @@ function Results({ result, onRetry, onReview }) {
           </Link>
         </p>
       )}
-      {result.corn > 0 && <p className="font-display font-semibold">🌽 +{result.corn} corn to spend in the Henhouse</p>}
-      {egg.id === "golden" && result.corn === 0 && (
-        <p className="text-sm text-muted">Get 100% to hatch a chick from this egg!</p>
-      )}
+      {egg.id === "golden" && <p className="text-sm text-muted">Get 100% to hatch a chick from this egg!</p>}
       {egg.id === "fried" && (
-        <p className="text-muted">Score your goal grade or higher to save this egg.</p>
+        <p className="text-muted">Score your goal grade or higher to save this egg and unlock the next one.</p>
       )}
+
+      <LessonSummary result={result} />
       <div className="mt-4 flex flex-wrap justify-center gap-3">
         {egg.id === "fried" && (
           <button type="button" onClick={onReview} className="btn-secondary">
@@ -215,6 +224,57 @@ function Results({ result, onRetry, onReview }) {
         </Link>
       </div>
     </div>
+  );
+}
+
+// After the quiz: which concepts you understood (corn) and which you didn't (drumsticks).
+function LessonSummary({ result }) {
+  const { egg, concepts, corn, lostChick } = result;
+  const passed = egg.id !== "fried";
+  return (
+    <section className="mt-4 w-full max-w-md rounded-3xl border-[3px] border-line bg-chick/40 p-4 text-left">
+      <p className="label-small">Lesson summary</p>
+      <p className="mt-1 font-display text-lg font-semibold">{passed ? PASSED_LINE : FAILED_LINE}</p>
+
+      {concepts.understood.length > 0 && (
+        <>
+          <p className="mt-3 text-sm font-semibold">Concepts you got 🌽</p>
+          <ul className="mt-1 flex flex-col gap-1">
+            {concepts.understood.map((c) => (
+              <li key={c} className="flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 text-sm">
+                <span aria-hidden="true">🌽</span> {c}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {concepts.missed.length > 0 && (
+        <>
+          <p className="mt-3 text-sm font-semibold">Concepts to work on</p>
+          <ul className="mt-1 flex flex-col gap-1">
+            {concepts.missed.map((c) => (
+              <li key={c} className="flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 text-sm">
+                <Drumstick size={22} /> {c}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <div className="mt-3 flex flex-col gap-1 font-semibold">
+        {corn > 0 && <p>🌽 +{corn} corn for your chicks (spend it in the Henhouse)</p>}
+        {corn === 0 && concepts.understood.length > 0 && (
+          <p className="text-sm text-muted">You already earned corn for these concepts on this lesson.</p>
+        )}
+        {lostChick && <p className="text-red-700">🍗 One of your chicks got fried into a drumstick.</p>}
+      </div>
+
+      {concepts.missed.length > 0 && (
+        <p className="mt-3 rounded-2xl bg-white p-3 text-sm font-semibold">
+          {COOKED_LINE} {concepts.missed.join(", ")}.
+        </p>
+      )}
+    </section>
   );
 }
 

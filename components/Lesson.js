@@ -62,7 +62,8 @@ export default function Lesson({ lesson, avatar, videoSources }) {
       )}
 
       <section className="card">
-        <h2 className="text-xl">Remember</h2>
+        <h2 className="text-xl">Summary</h2>
+        <p className="text-sm text-muted">The key ideas from this lesson, before you take the quiz.</p>
         <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
           {lesson.keyPoints.map((point) => (
             <li key={point}>{point}</li>
