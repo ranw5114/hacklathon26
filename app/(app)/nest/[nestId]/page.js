@@ -74,6 +74,27 @@ export default function NestPage() {
         </div>
       </div>
       <p className="mt-4 text-sm text-muted">{plan.overview}</p>
+      {test.brief && (
+        <details className="mt-3 rounded-2xl border-2 border-line/30 bg-white px-4 py-2 text-sm">
+          <summary className="cursor-pointer font-semibold">
+            📚 What we found about {test.subject}
+            {test.basis?.length > 0 && <span className="font-normal text-muted"> · {test.basis.join(" + ")}</span>}
+          </summary>
+          <p className="mt-2 whitespace-pre-line text-muted">{test.brief}</p>
+          {test.sources?.length > 0 && (
+            <ul className="mt-2 flex flex-col gap-1">
+              {test.sources.map((source) => (
+                <li key={source.url}>
+                  <a href={source.url} target="_blank" rel="noopener noreferrer" className="underline">
+                    {source.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-xs text-muted">Every lesson, quiz, and mock exam in this nest uses this.</p>
+        </details>
+      )}
 
       <div className="mt-8">
         <NestPath nestId={nestId} plan={plan} profile={profile} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />

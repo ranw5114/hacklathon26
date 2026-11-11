@@ -1,6 +1,8 @@
 import { generateJSON } from "@/lib/gemini";
 import { addDays, daysBetween } from "@/lib/dates";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
+import { researchSubject } from "@/lib/research";
+import { subjectBriefText } from "@/lib/briefPrompt";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
 export const maxDuration = 60;
@@ -59,13 +61,14 @@ Student:
 - Goal grade: ${test.goalGrade}%
 - Study time available: about ${test.hoursPerDay} hour(s) per day
 - Learning style: ${LEARNING_STYLES[learner.learningStyle].prompt}
-${notes ? `\nThe student's class notes (use these to decide what to cover):\n"""\n${notes}\n"""\n` : ""}
+${subjectBriefText(test)}${notes ? `\nThe student's class notes (use these to decide what to cover):\n"""\n${notes}\n"""\n` : ""}
 Rules:
 - Create exactly ${lessonDays} day(s). A mock exam is scheduled separately after the last day, so don't include one.
 - Each day has 2-4 sections. Each section's minutes add up to about ${test.hoursPerDay * 60} minutes per day.
 - Start with the basic concepts and build up to harder material. Use the last day for review.
 - Every section ends with a short quiz, so each one should cover a single, testable idea.
-- The bigger the gap between the current grade and goal grade, the more practice-heavy the plan should be.`;
+- The bigger the gap between the current grade and goal grade, the more practice-heavy the plan should be.
+- Use the facts about this class/test: cover its real topics, spend more time on the ones that count most, and include practice in its real question format (for a timed test or competition, include timing strategy).`;
 }
 
 function errorResponse(message, status) {
@@ -87,7 +90,10 @@ export async function POST(request) {
   // Study every day until the test (up to the max). The last day ends with the mock exam.
   const studyDays = Math.min(daysUntilTest, MAX_STUDY_DAYS);
 
-  const { data: aiPlan, error, status } = await generateJSON(buildPrompt(learner, test, studyDays), planSchema);
+  // First learn about the class or test, then plan with what was found.
+  const research = await researchSubject(test);
+  const researchedTest = { ...test, brief: research.brief };
+  const { data: aiPlan, error, status } = await generateJSON(buildPrompt(learner, researchedTest, studyDays), planSchema);
   if (error) return errorResponse(error, status);
 
   if (!aiPlan.days?.length) {
@@ -114,5 +120,7 @@ export async function POST(request) {
     createdOn: today,
     days,
     mockExam: { date: days.at(-1).date, completed: false, score: null },
+    // Saved with the nest's test, and sent along with every lesson, exam, and tutor request.
+    research,
   });
 }

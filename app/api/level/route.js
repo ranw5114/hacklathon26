@@ -1,6 +1,7 @@
 import { generateJSON, PLAIN_TEXT_RULE, questionSchema } from "@/lib/gemini";
 import { GRAPH_RULES, SVG_RULES } from "@/lib/drawingRules";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
+import { subjectBriefText } from "@/lib/briefPrompt";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
 export const maxDuration = 60;
@@ -124,11 +125,11 @@ export async function POST(request) {
 
 Student: studying ${test.subject} (test on: ${test.topic}). They are ${LEARNING_STYLES[learner.learningStyle].prompt}.
 Lesson: "${section.title}". Goal: ${section.goal}
-
+${subjectBriefText(test)}
 Rules:
 - ${STYLE_INSTRUCTIONS[learner.learningStyle]}
 - Keep the lesson short enough to work through in about 5-10 minutes. Use a warm, encouraging tone.
-- Write exactly ${QUESTIONS_PER_LEVEL} multiple-choice questions that test the lesson's goal, from easier to harder.
+- Write exactly ${QUESTIONS_PER_LEVEL} multiple-choice questions that test the lesson's goal, from easier to harder. Make them look like real questions from this class/test (for a competition or standardized test, use its style and difficulty).
 - Tag every question with the "concept" it tests. Use 2-4 different concepts across the quiz (matching the lesson's sections), and spell a concept exactly the same way each time it's used.
 - Each question has exactly 4 choices and one correct answer. Vary which position the correct answer is in.
 - ${PLAIN_TEXT_RULE}`;
