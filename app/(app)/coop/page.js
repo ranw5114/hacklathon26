@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
+import ChickCamera from "@/components/ChickCamera";
+import Graph from "@/components/Graph";
 import PageTour from "@/components/PageTour";
 import { useConfirm } from "@/components/Modal";
 import { resizeImage } from "@/lib/images";
 import { findSection, currentSectionId } from "@/lib/progress";
 import { remove, save, useStored } from "@/lib/storage";
+import { parseReply } from "@/lib/tutorReply";
 
 // Keep the saved conversation from growing forever.
 const MAX_SAVED_MESSAGES = 40;
@@ -191,10 +194,11 @@ export default function CoopPage() {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="shrink-0 rounded-2xl px-2 py-2 text-2xl hover:bg-chick/40"
-            aria-label="Add a photo"
+            className="shrink-0 rounded-2xl p-1.5 transition hover:-translate-y-0.5 hover:bg-chick/40"
+            aria-label="Snap a photo of your homework"
+            title="Snap a photo of your homework"
           >
-            📷
+            <ChickCamera size={34} />
           </button>
           <input ref={fileRef} type="file" accept="image/*" onChange={pickPhoto} className="hidden" />
           <textarea
@@ -228,7 +232,11 @@ function Message({ message, preview }) {
           // eslint-disable-next-line @next/next/no-img-element -- local preview, not a hosted image
           <img src={preview} alt="Your photo" className="max-h-56 rounded-2xl border-[3px] border-line" />
         ) : (
-          message.hasPhoto && <span className="text-sm text-muted">📷 Photo</span>
+          message.hasPhoto && (
+            <span className="flex items-center gap-1 text-sm text-muted">
+              <ChickCamera size={18} /> Photo
+            </span>
+          )
         )}
         {message.text && (
           <div className="max-w-[85%] rounded-3xl rounded-br-md border-[3px] border-line bg-chick px-4 py-2 whitespace-pre-line">
@@ -242,9 +250,67 @@ function Message({ message, preview }) {
   return (
     <div className="flex items-end gap-2">
       <Chick variant="scholar" size={40} className="shrink-0" />
-      <div className="max-w-[85%] rounded-3xl rounded-bl-md border-[3px] border-line bg-white px-4 py-3 leading-relaxed whitespace-pre-line">
-        {message.text}
+      <div className="flex max-w-[85%] flex-col gap-3 rounded-3xl rounded-bl-md border-[3px] border-line bg-white px-4 py-3 leading-relaxed">
+        {parseReply(message.text).map((piece, i) => {
+          if (piece.type === "graph") return <Graph key={i} spec={piece.spec} />;
+          if (piece.type === "diagram") return <Diagram key={i} src={piece.src} />;
+          if (piece.type === "practice") {
+            return <Practice key={i} number={piece.number} problem={piece.problem} solution={piece.solution} />;
+          }
+          return <ReplyText key={i} text={piece.text} />;
+        })}
       </div>
+    </div>
+  );
+}
+
+// Plain text, where a line starting with "# " is a section heading (used for lecture learners).
+function ReplyText({ text }) {
+  const blocks = [];
+  for (const line of text.split("\n")) {
+    const heading = line.match(/^\s*#+\s+(.*)/);
+    if (heading) blocks.push({ heading: heading[1] });
+    else if (blocks.length && !blocks.at(-1).heading) blocks.at(-1).text += "\n" + line;
+    else blocks.push({ text: line });
+  }
+  return blocks.map((block, i) =>
+    block.heading ? (
+      <h3 key={i} className="text-lg leading-snug [&:not(:first-child)]:mt-2">
+        {block.heading}
+      </h3>
+    ) : (
+      block.text.trim() && (
+        <p key={i} className="whitespace-pre-line">
+          {block.text.trim()}
+        </p>
+      )
+    )
+  );
+}
+
+// A diagram the tutor drew (for visual learners). Click it to open it full size.
+function Diagram({ src }) {
+  return (
+    <a href={src} target="_blank" rel="noreferrer" title="Open the diagram full size">
+      {/* eslint-disable-next-line @next/next/no-img-element -- drawn by the AI, not a hosted image */}
+      <img src={src} alt="Diagram from Scholar" className="w-full rounded-2xl border-[3px] border-line bg-white" />
+    </a>
+  );
+}
+
+// A practice problem with its solution hidden until they're ready (for examples learners).
+function Practice({ number, problem, solution }) {
+  return (
+    <div className="rounded-2xl border-[3px] border-line bg-chick/40 p-3">
+      <p className="label-small">Practice {number}</p>
+      <p className="mt-1 whitespace-pre-line">{problem}</p>
+      <details className="group mt-2">
+        <summary className="btn-secondary inline-block list-none px-3 py-1 text-sm [&::-webkit-details-marker]:hidden">
+          <span className="group-open:hidden">Show solution</span>
+          <span className="hidden group-open:inline">Hide solution</span>
+        </summary>
+        <p className="mt-2 rounded-xl bg-white p-3 whitespace-pre-line">{solution}</p>
+      </details>
     </div>
   );
 }
