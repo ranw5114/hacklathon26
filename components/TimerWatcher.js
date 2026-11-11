@@ -18,8 +18,8 @@ import {
   formatTime,
   MIN_FOCUS_MIN,
   pauseTimer,
+  fryTimer,
   progress,
-  resetTimer,
   startTimer,
   timeLeft,
 } from "@/lib/timer";
@@ -105,7 +105,7 @@ export default function TimerWatcher() {
     if (!timer || coldIn(timer, now) !== 0) return;
     update("flock", (f) => fryEgg(f, "cold"));
     save("timer", {
-      ...resetTimer(timer),
+      ...fryTimer(timer, "cold"),
       notice: "Your egg was left alone for too long and went cold. It got fried! 🍳",
     });
     playDing();
@@ -207,7 +207,16 @@ export default function TimerWatcher() {
 function TimerIcon({ timer, now, avatar, lastChick, size }) {
   if (timer.mode === "break") return <HatchedChick color={lastChick} size={size} />;
   const animate = timer.status === "running";
-  return <BroodingChick avatar={avatar} cracks={broodStage(progress(timer, now)).cracks} animate={animate} size={size} />;
+  if (timer.status === "idle" && timer.fried) return <BroodingChick avatar={avatar} holding="none" mood="sad" size={size} />;
+  return (
+    <BroodingChick
+      avatar={avatar}
+      cracks={broodStage(progress(timer, now)).cracks}
+      animate={animate}
+      eggStyle={timer.eggStyle}
+      size={size}
+    />
+  );
 }
 
 // What shows inside the floating pop-out window.

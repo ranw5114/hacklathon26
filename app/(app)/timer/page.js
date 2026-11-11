@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
-import { BroodingChick, Drumstick, FriedEgg, HatchedChick } from "@/components/EggArt";
+import { BroodingChick, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
 import { useConfirm } from "@/components/Modal";
 import PageTour from "@/components/PageTour";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
@@ -23,6 +23,7 @@ import {
   PRESETS,
   progress,
   resetTimer,
+  fryTimer,
   setDurations,
   startTimer,
   timeLeft,
@@ -43,6 +44,47 @@ export default function TimerPage() {
   // Re-render after the notification prompt is answered.
   const [, setAlertsAsked] = useState(0);
 
+  // When an egg gets fried while you watch: the sad chick holds it for a moment, then it pops
+  // up and flies onto the plate in "Your flock".
+  const ringRef = useRef(null);
+  const plateRef = useRef(null);
+  const flyingRef = useRef(null);
+  const [flight, setFlight] = useState(null); // { at, from: {x, y}, to: {x, y} } while flying
+  const [landedAt, setLandedAt] = useState(null); // which fried egg (by its time) has landed
+  const friedAt = stored?.fried?.at ?? null;
+
+  useEffect(() => {
+    if (!friedAt || Date.now() - friedAt > FLIGHT_WINDOW_MS) return;
+    const wait = setTimeout(() => {
+      const center = (el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      };
+      if (!ringRef.current || !plateRef.current) return setLandedAt(friedAt);
+      setFlight({ at: friedAt, from: center(ringRef.current), to: center(plateRef.current) });
+    }, HOLD_FRIED_MS);
+    return () => clearTimeout(wait);
+  }, [friedAt]);
+
+  useEffect(() => {
+    if (!flight || !flyingRef.current) return;
+    const dx = flight.to.x - flight.from.x;
+    const dy = flight.to.y - flight.from.y;
+    const animation = flyingRef.current.animate(
+      [
+        { transform: "translate(-50%, -50%) scale(1)" },
+        { transform: `translate(calc(-50% + ${dx * 0.2}px), calc(-50% - 90px)) scale(1.35) rotate(-20deg)`, offset: 0.3 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.7) rotate(200deg)` },
+      ],
+      { duration: 1100, easing: "ease-in-out", fill: "forwards" }
+    );
+    animation.onfinish = () => {
+      setLandedAt(flight.at);
+      setFlight(null);
+    };
+    return () => animation.cancel();
+  }, [flight]);
+
   if (stored === undefined) return null;
   const timer = stored ?? DEFAULT_TIMER;
 
@@ -52,6 +94,10 @@ export default function TimerPage() {
   const stage = broodStage(fraction);
   const coldLeft = coldIn(timer, now);
   const newestChick = flock?.chicks?.at(-1)?.color;
+  // A fried egg is shown until the next egg is started. It sits in the chick's wings until it flies away.
+  const fried = idle && timer.mode === "focus" && timer.fried;
+  const friedFresh = fried && now - timer.fried.at < FLIGHT_WINDOW_MS && landedAt !== timer.fried.at;
+  const holding = !fried ? "egg" : friedFresh && !flight ? "fried" : "none";
 
   const currentId = plan ? currentSectionId(plan) : null;
   const currentLevel = currentId ? findSection(plan, currentId).title : null;
@@ -80,7 +126,7 @@ export default function TimerPage() {
       });
       if (!ok) return;
       update("flock", (f) => fryEgg(f, "stopped"));
-      save("timer", { ...resetTimer(timer), notice: "You stopped early, so your egg got fried. 🍳 Try again!" });
+      save("timer", fryTimer(timer, "stopped"));
       return;
     }
     save("timer", resetTimer(timer));
@@ -126,7 +172,9 @@ export default function TimerPage() {
       {/* The big timer: a ring that fills up as time passes, with the chick keeping its egg warm inside */}
       <section className="card mt-6 flex flex-col items-center gap-5 py-8">
         <p className="label-small">{timer.mode === "focus" ? "Focus time" : "Break time"}</p>
+        {fried && <span className="bubble max-w-xs text-center text-sm">{FRIED_MESSAGE}</span>}
         <div
+          ref={ringRef}
           className="flex h-64 w-64 items-center justify-center rounded-full border-[3px] border-line"
           style={{
             background: `conic-gradient(var(--chick-beak) ${fraction * 360}deg, var(--chick-body) 0deg)`,
@@ -134,13 +182,27 @@ export default function TimerPage() {
         >
           <div className="flex h-52 w-52 flex-col items-center justify-center rounded-full border-[3px] border-line bg-white">
             {timer.mode === "focus" ? (
-              <BroodingChick avatar={profile?.avatar} cracks={idle ? 0 : stage.cracks} animate={running} size={112} />
+              <BroodingChick
+                avatar={profile?.avatar}
+                cracks={idle ? 0 : stage.cracks}
+                animate={running}
+                eggStyle={timer.eggStyle}
+                holding={holding}
+                mood={fried ? "sad" : "happy"}
+                size={112}
+              />
             ) : (
               <HatchedChick color={newestChick} size={112} />
             )}
             <span className="font-display text-4xl font-semibold tabular-nums">{formatTime(timeLeft(timer, now))}</span>
             <span className="text-sm text-muted">
-              {timer.mode === "break" ? "A new chick hatched!" : idle ? "Ready to keep it warm" : stage.name}
+              {timer.mode === "break"
+                ? "A new chick hatched!"
+                : fried
+                  ? "Your egg got fried…"
+                  : idle
+                    ? "Ready to keep it warm"
+                    : stage.name}
             </span>
           </div>
         </div>
@@ -160,7 +222,7 @@ export default function TimerPage() {
             </button>
           ) : (
             <button type="button" onClick={start} className="btn-primary">
-              {idle ? (timer.mode === "focus" ? "Start focus" : "Start break") : "Resume"}
+              {idle ? (timer.mode === "focus" ? (fried ? "Try a new egg" : "Start focus") : "Start break") : "Resume"}
             </button>
           )}
           {!idle && (
@@ -254,7 +316,22 @@ export default function TimerPage() {
         )}
       </section>
 
-      <FlockSection flock={flock} sessions={sessions} today={today} plan={plan} />
+      <FlockSection
+        flock={flock}
+        sessions={sessions}
+        today={today}
+        plan={plan}
+        avatar={profile?.avatar}
+        plateRef={plateRef}
+        hideNewestFried={Boolean(friedFresh)}
+      />
+
+      {/* The fried egg on its way from the timer to the plate */}
+      {flight && (
+        <div ref={flyingRef} className="pointer-events-none fixed z-40" style={{ left: flight.from.x, top: flight.from.y }}>
+          <FriedEgg size={76} />
+        </div>
+      )}
 
       {/* Today's log */}
       <section className="card mt-6">
@@ -315,17 +392,27 @@ function MinutesInput({ value, min, max, disabled, onCommit }) {
 // How many chicks to draw before showing "+N more", so a big flock doesn't fill the page.
 const MAX_DRAWN_CHICKS = 48;
 
-// Your flock: every chick you've hatched, your streak, and what got fried.
-function FlockSection({ flock, sessions, today, plan }) {
+// What the sad chick says after its egg gets fried, and what the crying chick by the plate says.
+const FRIED_MESSAGE = "Study more or u will be cooked on the exam like my egg!";
+const PLATE_MESSAGE = "Don't fry my children anymore!!";
+// How long the sad chick holds the fried egg before it flies, and how recent a fry must be to animate.
+const HOLD_FRIED_MS = 1600;
+const FLIGHT_WINDOW_MS = 6000;
+
+// Your flock: the coop with every chick you've hatched, the plate of fried eggs,
+// and the takeout bucket of drumsticks.
+function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewestFried }) {
   const f = withDefaults(flock);
   const count = chickCount(f);
   const streak = hatchStreak(sessions, today, addDays);
-  const studiedToday = (sessions ?? []).some((s) => s.date === today);
+  const hatchedToday = (sessions ?? []).some((s) => s.date === today && s.minutes >= MIN_FOCUS_MIN);
   const planDayToday = plan?.days?.some((d) => d.date === today);
   const shown = f.chicks.slice(-MAX_DRAWN_CHICKS);
+  const friedCount = Math.max(0, f.friedEggs.length - (hideNewestFried ? 1 : 0));
+  const drumsticks = f.drumsticks.length;
 
   return (
-    <section className="card mt-6 flex flex-col gap-4">
+    <section className="card mt-6 flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl">Your flock</h2>
         <p className="font-display font-semibold">
@@ -334,38 +421,70 @@ function FlockSection({ flock, sessions, today, plan }) {
         </p>
       </div>
 
-      {count > 0 ? (
-        <div className="flex flex-wrap items-end gap-1 rounded-2xl bg-chick/40 p-3">
-          {shown.map((chick) => (
-            <span key={chick.id} title={`Hatched ${new Date(chick.hatchedAt).toLocaleDateString()}`}>
-              <Chick variant={chick.color} size={34} />
-            </span>
-          ))}
-          {count > shown.length && (
-            <span className="ml-2 font-display font-semibold text-muted">+{count - shown.length} more</span>
+      {/* The coop, where every chick you've hatched lives */}
+      <div>
+        <CoopRoof />
+        <div className="-mt-px rounded-b-2xl border-[3px] border-line bg-[oklch(90%_0.06_75)] p-3">
+          <p className="label-small mb-2 text-center text-foreground/70">The Coop</p>
+          {count > 0 ? (
+            <div className="flex flex-wrap items-end justify-center gap-1 rounded-xl bg-[oklch(94%_0.07_95)] p-3">
+              {shown.map((chick) => (
+                <span key={chick.id} title={`Hatched ${new Date(chick.hatchedAt).toLocaleDateString()}`}>
+                  <Chick variant={chick.color} size={36} />
+                </span>
+              ))}
+              {count > shown.length && (
+                <span className="ml-2 font-display font-semibold text-muted">+{count - shown.length} more</span>
+              )}
+            </div>
+          ) : (
+            <p className="rounded-xl bg-[oklch(94%_0.07_95)] p-4 text-center text-muted">
+              The coop is empty. Finish a focus session to hatch your first chick!
+            </p>
           )}
         </div>
-      ) : (
-        <p className="rounded-2xl bg-chick/40 p-4 text-center text-muted">
-          No chicks yet. Finish a focus session to hatch your first one!
-        </p>
-      )}
+      </div>
 
-      {planDayToday && !studiedToday && count > 0 && (
+      {planDayToday && !hatchedToday && count > 0 && (
         <p className="rounded-2xl border-2 border-dashed border-line/40 px-4 py-2 text-sm font-semibold">
           Today is a study-plan day. Hatch at least one egg today or a chick gets fried into a drumstick!
         </p>
       )}
 
-      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
-        <span className="flex items-center gap-1.5">
-          <FriedEgg size={26} /> {f.friedEggs.length} fried egg{f.friedEggs.length === 1 ? "" : "s"} (stopped early or
-          went cold)
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Drumstick size={26} /> {f.drumsticks.length} drumstick{f.drumsticks.length === 1 ? "" : "s"} (missed
-          study-plan days)
-        </span>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* Fried eggs, stacked on a plate, with a heartbroken chick */}
+        <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
+          <p className="label-small">Fried eggs</p>
+          {friedCount > 0 && <span className="bubble text-sm">{PLATE_MESSAGE}</span>}
+          <div className="mt-1 flex items-end gap-1">
+            <Chick variant={avatar} mood={friedCount > 0 ? "crying" : "happy"} size={64} className="mb-3 shrink-0" />
+            <div ref={plateRef}>
+              <FriedEggPlate count={friedCount} size={150} />
+            </div>
+          </div>
+          <p className="text-sm text-muted">
+            {friedCount === 0
+              ? "No fried eggs. Keep it that way!"
+              : `${friedCount} fried egg${friedCount === 1 ? "" : "s"} (stopped early or went cold)`}
+          </p>
+        </div>
+
+        {/* Drumsticks, in a takeout bucket */}
+        <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
+          <p className="label-small">Drumsticks</p>
+          {drumsticks > 0 ? (
+            <TakeoutBucket count={drumsticks} size={150} />
+          ) : (
+            <div className="flex h-[140px] items-center">
+              <TakeoutBucket count={0} size={120} className="opacity-40" />
+            </div>
+          )}
+          <p className="text-sm text-muted">
+            {drumsticks === 0
+              ? "No drumsticks. Your chicks are safe!"
+              : `${drumsticks} drumstick${drumsticks === 1 ? "" : "s"} (missed study-plan days)`}
+          </p>
+        </div>
       </div>
     </section>
   );
