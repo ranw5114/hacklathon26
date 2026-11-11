@@ -15,6 +15,21 @@ export const CHICKS = {
   berry: { name: "Berry", body: "oklch(0.92 0.06 330)", belly: "oklch(0.86 0.08 330)", extra: "bow" },
 };
 
+// Extra colors a chick can be painted in the Henhouse (the avatar colors above are free).
+export const CHICK_COLORS = {
+  sunny: { name: "Sunny", body: "var(--chick-body)", belly: "var(--chick-belly)" },
+  peach: { name: "Peach", body: "oklch(0.93 0.07 50)", belly: "oklch(0.87 0.09 45)" },
+  mint: { name: "Mint", body: "oklch(0.93 0.07 165)", belly: "oklch(0.87 0.09 165)" },
+  berry: { name: "Berry", body: "oklch(0.92 0.06 330)", belly: "oklch(0.86 0.08 330)" },
+  sky: { name: "Sky", body: "oklch(0.92 0.06 235)", belly: "oklch(0.85 0.08 235)" },
+  lavender: { name: "Lavender", body: "oklch(0.91 0.06 295)", belly: "oklch(0.84 0.08 295)" },
+  lime: { name: "Lime", body: "oklch(0.94 0.1 125)", belly: "oklch(0.88 0.13 125)" },
+  cocoa: { name: "Cocoa", body: "oklch(0.78 0.06 55)", belly: "oklch(0.7 0.07 55)" },
+  midnight: { name: "Midnight", body: "oklch(0.55 0.08 270)", belly: "oklch(0.47 0.09 270)" },
+};
+
+const INK = "var(--chick-line)";
+
 function Accessory({ type }) {
   if (type === "cap") {
     return (
@@ -34,6 +49,45 @@ function Accessory({ type }) {
         strokeWidth="3"
         strokeLinejoin="round"
       />
+    );
+  }
+  if (type === "party") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M46 24 L60 -8 L74 24 Z" fill="oklch(0.8 0.13 330)" />
+        <path d="M51 13 L69 13 M55 3 L65 3" stroke="white" strokeWidth="3" />
+        <circle cx="60" cy="-9" r="5" fill="oklch(0.85 0.15 90)" />
+      </g>
+    );
+  }
+  if (type === "crown") {
+    return (
+      <path
+        d="M38 26 L42 6 L51 17 L60 2 L69 17 L78 6 L82 26 Z"
+        fill="oklch(0.85 0.15 85)"
+        stroke={INK}
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+    );
+  }
+  if (type === "flower") {
+    return (
+      <g stroke={INK} strokeWidth="2.5">
+        {[0, 72, 144, 216, 288].map((angle) => (
+          <circle key={angle} cx={84 + 7 * Math.cos((angle * Math.PI) / 180)} cy={22 + 7 * Math.sin((angle * Math.PI) / 180)} r="6" fill="oklch(0.88 0.08 330)" />
+        ))}
+        <circle cx="84" cy="22" r="5" fill="oklch(0.88 0.15 90)" />
+      </g>
+    );
+  }
+  if (type === "beanie") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M26 34 C 28 6 92 6 94 34 Z" fill="oklch(0.7 0.13 250)" />
+        <rect x="24" y="28" width="72" height="9" rx="4" fill="oklch(0.62 0.13 250)" />
+        <circle cx="60" cy="6" r="7" fill="white" />
+      </g>
     );
   }
   if (type === "bow") {
@@ -88,8 +142,58 @@ function Face({ mood }) {
   );
 }
 
-export default function Chick({ variant = "sunny", size = 96, className = "", mood = "happy" }) {
-  const chick = CHICKS[variant] || CHICKS.sunny;
+// Things a chick can wear on its face or neck (bought in the Henhouse).
+function FaceWear({ type }) {
+  if (type === "glasses") {
+    return (
+      <g fill="none" stroke={INK} strokeWidth="2.5">
+        <circle cx="40" cy="60" r="9" fill="white" fillOpacity="0.25" />
+        <circle cx="80" cy="60" r="9" fill="white" fillOpacity="0.25" />
+        <path d="M49 59 Q60 54 71 59" />
+      </g>
+    );
+  }
+  if (type === "shades") {
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
+        <path d="M28 54 L52 54 L50 66 Q40 70 30 66 Z" fill={INK} />
+        <path d="M68 54 L92 54 L90 66 Q80 70 70 66 Z" fill={INK} />
+        <path d="M52 56 L68 56" fill="none" />
+        <path d="M33 57 l5 0" stroke="white" strokeWidth="2" />
+      </g>
+    );
+  }
+  return null;
+}
+
+function NeckWear({ type }) {
+  if (type === "scarf") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round" fill="oklch(0.65 0.18 25)">
+        <path d="M14 76 Q60 88 106 76 L106 85 Q60 97 14 85 Z" />
+        <path d="M80 86 L92 86 L94 99 L82 99 Z" />
+      </g>
+    );
+  }
+  if (type === "bowtie") {
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round" fill="oklch(0.6 0.16 280)">
+        <path d="M60 80 L46 72 L46 88 Z" />
+        <path d="M60 80 L74 72 L74 88 Z" />
+        <circle cx="60" cy="80" r="4" />
+      </g>
+    );
+  }
+  return null;
+}
+
+// variant: an avatar from CHICKS. Optional `color` (a CHICK_COLORS id) repaints it, and
+// `wear` ({ head, face, neck }) dresses it up; head "none" hides the avatar's own hat or bow.
+export default function Chick({ variant = "sunny", size = 96, className = "", mood = "happy", color, wear }) {
+  const base = CHICKS[variant] || CHICKS.sunny;
+  const paint = CHICK_COLORS[color];
+  const chick = paint ? { ...base, body: paint.body, belly: paint.belly } : base;
+  const head = wear?.head === "none" ? null : wear?.head || base.extra;
   // Each chick needs its own unique ID for the clip path, even if two chicks look the same.
   const clipId = useId();
 
@@ -111,8 +215,10 @@ export default function Chick({ variant = "sunny", size = 96, className = "", mo
         <rect y="72" width="120" height="30" fill={chick.belly} />
       </g>
       <path d={BODY} fill="none" stroke="var(--chick-line)" strokeWidth="4" />
+      <NeckWear type={wear?.neck} />
       <Face mood={mood} />
-      <Accessory type={chick.extra} />
+      <FaceWear type={wear?.face} />
+      <Accessory type={head} />
     </svg>
   );
 }

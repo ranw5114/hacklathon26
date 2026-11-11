@@ -1,5 +1,6 @@
 import { generateText, PLAIN_TEXT_RULE } from "@/lib/gemini";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
+import { GRAPH_RULES, SVG_RULES } from "@/lib/drawingRules";
 import { shortenForHistory } from "@/lib/tutorReply";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
@@ -15,11 +16,10 @@ const STYLE_RULES = {
   visual: `Teach mainly through pictures. This student understands drawings far better than paragraphs.
 - Include 1-2 diagrams in every explanation (skip them only for greetings or a quick yes/no). Pick what fits: a labeled diagram, flowchart, graph, number line, table, timeline, or before/after picture.
 - For a graph of any equation or function, do NOT draw it yourself. Write a <graph> tag with JSON, and the app draws it perfectly to scale:
-  <graph>{"curves":[{"expr":"x^2 - 6x + 5","label":"y = x² − 6x + 5"}],"points":[{"x":3,"y":-4,"label":"Vertex (3, −4)"}],"x":[-1,7],"y":[-5,7]}</graph>
-  "expr" uses x, numbers, + - * / ^, parentheses, and sin cos tan sqrt abs ln log exp pi. "points" marks key points (vertex, intercepts, intersections) with short labels; work out their exact coordinates. "x" and "y" are the visible ranges; choose them so every marked point and the interesting part of each curve is visible. You can put up to 4 curves on one graph to compare them. Curves are drawn in this color order: orange, blue, green, pink. Use those colors if you refer to them.
-- For every other kind of diagram, draw it as one complete SVG: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260"> … </svg>. You may change the viewBox height (up to 400) if you need more room.
-- SVG style: start with a white background rect. Outlines and text in #4a2e1f, stroke-width 2-3. Fill shapes with these soft colors: #FFF3B0, #FFD6A5, #BDE8D3, #F9C6D9, #CFE3FF, and #F59E42 for highlights. font-family="sans-serif", font-size 13-16. Label every part. Keep all text inside the viewBox with room to spare.
-- Never use <script>, <image>, <foreignObject>, links, or external fonts.
+  <graph>{"curves":[{"expr":"x^2 - 6x + 5","label":"y = x² − 6x + 5"}],"points":[{"x":3,"y":-4,"label":"Vertex (3, −4)"}],"verticals":[{"x":3,"label":"Axis x = 3"}],"x":[-1,7],"y":[-5,7]}</graph>
+  ${GRAPH_RULES}
+- For every other kind of diagram, draw it as one complete SVG: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260"> … </svg>.
+- ${SVG_RULES}
 - Around each graph or diagram, write only 1-3 short sentences telling them what to look at. Put each diagram on its own line.`,
   lecture: `Explain thoroughly, like a great teacher giving a lecture. This student wants the full reasoning, not a short answer.
 - For anything beyond a greeting, organize the answer into 3-5 sections. Start each section with its title on its own line, beginning with "# " (for example "# The big idea").

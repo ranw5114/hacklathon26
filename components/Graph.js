@@ -1,6 +1,7 @@
 // Draws a graph to scale from a description the tutor writes, for example:
 //   { "curves": [{ "expr": "x^2 - 6x + 5", "label": "y = x² − 6x + 5" }],
 //     "points": [{ "x": 3, "y": -4, "label": "Vertex (3, −4)" }],
+//     "verticals": [{ "x": 3, "label": "Axis x = 3" }],
 //     "x": [-1, 7], "y": [-5, 6] }
 // The AI only says WHAT to plot; this file works out WHERE, so graphs are always accurate.
 
@@ -13,6 +14,7 @@ const LEGEND_ROW = 20;
 const PAD = { left: 34, right: 14, top: 14, bottom: 28 };
 const CURVE_COLORS = ["#F59E42", "#4F9DDE", "#3DB38A", "#D96BA0"];
 const INK = "var(--chick-line)";
+const VERTICAL_COLOR = "#8A6FD1";
 const SAMPLES = 240;
 
 export default function Graph({ spec }) {
@@ -25,10 +27,12 @@ export default function Graph({ spec }) {
     }
   });
   const points = (spec.points || []).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  const verticals = (spec.verticals || []).filter((v) => Number.isFinite(v.x));
   if (!curves.length && !points.length) return null;
 
-  // The color key sits under the graph, one row per curve.
-  const height = PLOT_HEIGHT + curves.length * LEGEND_ROW + (curves.length ? 6 : 0);
+  // The color key sits under the graph, one row per curve or vertical line.
+  const keyRows = curves.length + verticals.filter((v) => v.label).length;
+  const height = PLOT_HEIGHT + keyRows * LEGEND_ROW + (keyRows ? 6 : 0);
   const [xMin, xMax] = pickXRange(spec.x, points);
   const [yMin, yMax] = pickYRange(spec.y, curves, points, xMin, xMax);
 
@@ -81,6 +85,13 @@ export default function Graph({ spec }) {
         ))}
       </g>
 
+      {/* Vertical lines (dashed), like an axis of symmetry */}
+      <g clipPath={`url(#${clipId})`} stroke={VERTICAL_COLOR} strokeWidth="2.5" strokeDasharray="7 5">
+        {verticals.map((v, i) => (
+          <line key={i} x1={px(v.x)} x2={px(v.x)} y1={PAD.top} y2={PAD.top + plotH} />
+        ))}
+      </g>
+
       {/* Marked points, with labels kept inside the picture */}
       {points.map((p, i) => {
         const x = px(p.x);
@@ -120,6 +131,16 @@ export default function Graph({ spec }) {
             </text>
           </g>
         ))}
+        {verticals
+          .filter((v) => v.label)
+          .map((v, i) => (
+            <g key={`v${i}`} transform={`translate(${PAD.left}, ${PLOT_HEIGHT + 8 + (curves.length + i) * LEGEND_ROW})`}>
+              <line x1="0" x2="18" y1="-3.5" y2="-3.5" stroke={VERTICAL_COLOR} strokeWidth="2.5" strokeDasharray="5 3" />
+              <text x="26" y="0" fill={INK}>
+                {v.label}
+              </text>
+            </g>
+          ))}
       </g>
     </svg>
   );

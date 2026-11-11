@@ -1,6 +1,9 @@
 import Chick from "@/components/Chick";
+import Graph from "@/components/Graph";
+import { Diagram, Practice } from "@/components/RichParts";
 
-// Shows an AI-written lesson: intro, teaching sections, worked example, key points, video link.
+// Shows an AI-written lesson: intro, teaching sections (with graphs and diagrams for visual
+// learners), worked example, practice problems, key points, and a video link.
 export default function Lesson({ lesson, avatar, videoSources }) {
   // Search YouTube for the topic, preferring the student's favorite channel if they named one.
   const favoriteChannel = videoSources?.split(",")[0]?.trim();
@@ -18,6 +21,16 @@ export default function Lesson({ lesson, avatar, videoSources }) {
         <section key={section.heading} className="card">
           <h2 className="text-xl">{section.heading}</h2>
           <p className="mt-2 leading-relaxed whitespace-pre-line">{section.body}</p>
+          {section.graph?.curves?.length > 0 && (
+            <div className="mt-3">
+              <Graph spec={section.graph} />
+            </div>
+          )}
+          {section.svg && (
+            <div className="mt-3">
+              <Diagram svg={section.svg} />
+            </div>
+          )}
         </section>
       ))}
 
@@ -37,6 +50,16 @@ export default function Lesson({ lesson, avatar, videoSources }) {
         </ol>
         <p className="mt-3 font-semibold">Answer: {lesson.example.answer}</p>
       </section>
+
+      {lesson.practice?.length > 0 && (
+        <section className="card flex flex-col gap-3">
+          <h2 className="text-xl">Your turn</h2>
+          <p className="text-sm text-muted">Try these before the quiz, then check your work.</p>
+          {lesson.practice.map((p, i) => (
+            <Practice key={i} number={i + 1} problem={p.problem} solution={p.solution} />
+          ))}
+        </section>
+      )}
 
       <section className="card">
         <h2 className="text-xl">Remember</h2>

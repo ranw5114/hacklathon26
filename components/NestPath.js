@@ -1,13 +1,23 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
+import { PathEgg } from "@/components/EggArt";
 import { formatDate } from "@/lib/dates";
-import { allSections, cookLevel, currentSectionId, hasChestAfter } from "@/lib/progress";
+import { BABY_COLORS } from "@/lib/flock";
+import { allSections, currentSectionId, eggResult, hasChestAfter } from "@/lib/progress";
+
+// How long the egg takes to crack open before the lesson appears.
+const CRACK_MS = 650;
 
 // Sideways offsets (in px) that make the path wind left and right.
 const WIGGLE = [0, 50, 80, 50, 0, -50, -80, -50];
 
-// The Duolingo-style path: day banners, level buttons, chick chests, then the mock exam.
-export default function NestPath({ plan, profile, today, onOpenChest }) {
+// The Duolingo-style path: day banners, an egg for each level, corn chests, then the mock exam.
+// `goal` is the goal grade as a fraction (0.9 = 90%), which decides golden vs fried eggs.
+export default function NestPath({ plan, profile, today, goal, onOpenChest }) {
   const currentId = currentSectionId(plan);
   const allDone = currentId === null;
   const totalLevels = allSections(plan).length;
@@ -38,12 +48,14 @@ export default function NestPath({ plan, profile, today, onOpenChest }) {
                   offset={levelOffset}
                   isCurrent={section.id === currentId}
                   avatar={profile.avatar}
+                  goal={goal}
+                  chickColor={BABY_COLORS[levelNumber % BABY_COLORS.length]}
                 />
                 {chestOffset !== null && (
                   <ChestNode
                     offset={chestOffset}
                     unlocked={section.completed}
-                    chicks={plan.chests?.[section.id]}
+                    corn={plan.chests?.[section.id]}
                     onOpen={() => onOpenChest(section.id)}
                   />
                 )}
@@ -59,38 +71,58 @@ export default function NestPath({ plan, profile, today, onOpenChest }) {
   );
 }
 
-function LevelNode({ section, offset, isCurrent, avatar }) {
+function LevelNode({ section, offset, isCurrent, avatar, goal, chickColor }) {
+  const router = useRouter();
+  const [cracking, setCracking] = useState(false);
   const locked = !section.completed && !isCurrent;
-  const cook = section.completed ? cookLevel(section.score) : null;
+  const result = section.completed ? eggResult(section.score, goal) : null;
+  const state = locked ? "locked" : result ? result.id : "ready";
+  const href = `/nest/${section.id}`;
 
-  const circle = (
-    <span
-      className={`flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-line text-3xl shadow-[0_6px_0_var(--chick-line)] transition ${
-        locked ? "bg-zinc-200 opacity-70" : "hover:-translate-y-0.5 active:translate-y-1 active:shadow-none"
-      } ${isCurrent ? "animate-bounce bg-chick" : ""}`}
-      style={cook ? { background: cook.color } : undefined}
-    >
-      {locked ? "🔒" : cook ? cook.emoji : "⭐"}
-    </span>
-  );
+  // Unopened eggs crack open first, then the lesson appears. Finished ones open right away.
+  function open() {
+    if (state !== "ready" && state !== "golden") return router.push(href);
+    setCracking(true);
+    setTimeout(() => router.push(href), CRACK_MS);
+  }
+
+  const label = locked
+    ? `${section.title} (locked)`
+    : result
+      ? `${section.title}: ${result.name} (${Math.round(section.score * 100)}%)`
+      : `Open the lesson: ${section.title}`;
 
   return (
     <div className="relative flex flex-col items-center" style={{ transform: `translateX(${offset}px)` }}>
-      {isCurrent && <span className="bubble mb-3 text-sm">Start here!</span>}
-      {locked ? circle : <Link href={`/nest/${section.id}`}>{circle}</Link>}
-      <p className="mt-3 max-w-44 text-center text-sm font-semibold">{section.title}</p>
-      {cook && <p className="text-xs text-muted">{cook.name}</p>}
+      {isCurrent && !cracking && <span className="bubble mb-3 text-sm">{result ? "Try again!" : "Tap to crack!"}</span>}
+      <button
+        type="button"
+        onClick={open}
+        disabled={locked || cracking}
+        aria-label={label}
+        className={`flex h-24 items-end justify-center transition ${
+          locked ? "cursor-not-allowed opacity-80" : "hover:-translate-y-1 active:translate-y-0.5"
+        } ${isCurrent && !cracking ? "animate-egg-wiggle" : ""}`}
+      >
+        <PathEgg state={state} cracking={cracking} chickColor={chickColor} />
+      </button>
+      <p className="mt-2 max-w-44 text-center text-sm font-semibold">{section.title}</p>
+      {result && (
+        <p className="text-xs text-muted">
+          {result.name} · {Math.round(section.score * 100)}%
+        </p>
+      )}
       {/* The user's chick cheers next to the level they're on. */}
       {isCurrent && (
-        <Chick variant={avatar} size={64} className={`absolute top-8 ${offset > 0 ? "-left-24" : "-right-24"}`} />
+        <Chick variant={avatar} size={64} className={`absolute top-10 ${offset > 0 ? "-left-24" : "-right-24"}`} />
       )}
     </div>
   );
 }
 
-// A chick chest: locked until the level before it is done, then tap once to hatch 1-2 chicks.
-function ChestNode({ offset, unlocked, chicks, onOpen }) {
-  const opened = chicks !== undefined;
+// A corn chest: locked until the level before it is done, then tap once to collect corn.
+function ChestNode({ offset, unlocked, corn, onOpen }) {
+  const opened = corn !== undefined;
   const ready = unlocked && !opened;
 
   return (
@@ -99,15 +131,15 @@ function ChestNode({ offset, unlocked, chicks, onOpen }) {
         type="button"
         onClick={onOpen}
         disabled={!ready}
-        aria-label={opened ? `Chest opened: ${chicks} chicks` : ready ? "Open chest" : "Locked chest"}
+        aria-label={opened ? `Chest opened: ${corn} corn` : ready ? "Open chest" : "Locked chest"}
         className={`flex h-16 w-20 items-center justify-center rounded-2xl border-[3px] border-line text-3xl shadow-[0_5px_0_var(--chick-line)] transition ${
           opened ? "bg-white" : ready ? "animate-pulse bg-beak hover:-translate-y-0.5" : "bg-zinc-200 opacity-70"
         }`}
       >
-        {opened ? "🐣" : "🎁"}
+        {opened ? "🌽" : "🎁"}
       </button>
       <p className="mt-2 text-xs font-semibold text-muted">
-        {opened ? `+${chicks} chick${chicks === 1 ? "" : "s"} hatched!` : ready ? "Tap to open!" : "Chick chest"}
+        {opened ? `+${corn} corn collected!` : ready ? "Tap to open!" : "Corn chest"}
       </p>
     </div>
   );

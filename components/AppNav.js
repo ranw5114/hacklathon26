@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Chick from "@/components/Chick";
-import { chickCount } from "@/lib/flock";
+import { chickCount, withDefaults } from "@/lib/flock";
 import { useStored } from "@/lib/storage";
 
 // Placeholder icons (emoji) until the custom graphics are ready.
@@ -34,11 +34,12 @@ export default function AppNav({ avatar }) {
             <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
           ))}
           <Link
-            href="/timer"
+            href="/henhouse"
             className="ml-auto flex items-center gap-1 rounded-full border-2 border-line bg-white py-0.5 pr-3 pl-2 font-display font-semibold"
-            title="Your flock of chicks"
+            title="Visit the Henhouse: your chicks and corn"
           >
             <Chick variant="sunny" size={26} /> {chickCount(flock)}
+            <span className="ml-1.5">🌽 {withDefaults(flock).corn}</span>
           </Link>
         </nav>
       </header>

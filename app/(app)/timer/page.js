@@ -9,6 +9,8 @@ import { askForNotifications, notificationsSupported } from "@/lib/alerts";
 import { popOutSupported, requestPopOut } from "@/lib/popout";
 import { addDays, todayString } from "@/lib/dates";
 import { chickCount, fryEgg, hatchStreak, withDefaults } from "@/lib/flock";
+import { chickLook, chickName } from "@/lib/henhouse";
+import Link from "next/link";
 import { currentSectionId, findSection } from "@/lib/progress";
 import { save, update, useStored } from "@/lib/storage";
 import {
@@ -425,12 +427,17 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
       <div>
         <CoopRoof />
         <div className="-mt-px rounded-b-2xl border-[3px] border-line bg-[oklch(90%_0.06_75)] p-3">
-          <p className="label-small mb-2 text-center text-foreground/70">The Coop</p>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="label-small text-foreground/70">The Coop</p>
+            <Link href="/henhouse" className="text-sm font-semibold underline">
+              Name &amp; dress them in the Henhouse →
+            </Link>
+          </div>
           {count > 0 ? (
             <div className="flex flex-wrap items-end justify-center gap-1 rounded-xl bg-[oklch(94%_0.07_95)] p-3">
               {shown.map((chick) => (
-                <span key={chick.id} title={`Hatched ${new Date(chick.hatchedAt).toLocaleDateString()}`}>
-                  <Chick variant={chick.color} size={36} />
+                <span key={chick.id} title={chickName(chick, f.chicks.indexOf(chick))}>
+                  <Chick {...chickLook(chick)} size={36} />
                 </span>
               ))}
               {count > shown.length && (

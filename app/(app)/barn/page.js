@@ -5,7 +5,7 @@ import Link from "next/link";
 import Chick from "@/components/Chick";
 import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
-import { chickCount } from "@/lib/flock";
+import { chickCount, withDefaults } from "@/lib/flock";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { formatTime, timeLeft } from "@/lib/timer";
 import { useNow } from "@/lib/useNow";
@@ -74,7 +74,9 @@ export default function BarnPage() {
           <span className="bubble text-sm sm:text-base">Welcome to the barn, {profile.name}!</span>
           <h1 className="mt-4 text-4xl sm:text-5xl">The Barn</h1>
           <p className="mt-1 font-display font-semibold text-muted">
-            {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}{chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"} in your flock
+            {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}<Link href="/henhouse" className="underline decoration-2 underline-offset-2 hover:text-foreground">
+              {chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"} · 🌽 {withDefaults(flock).corn} corn
+            </Link>
           </p>
         </div>
         <div className="ml-auto self-start">

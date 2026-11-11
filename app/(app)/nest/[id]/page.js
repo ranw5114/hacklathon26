@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Chick from "@/components/Chick";
+import { FriedEgg, HatchedChick, PathEgg } from "@/components/EggArt";
+import Modal from "@/components/Modal";
 import Lesson from "@/components/Lesson";
 import Quiz from "@/components/Quiz";
-import { chicksForQuiz, hatchChicks } from "@/lib/flock";
+import { addCorn, hatchChicks, quizRewards } from "@/lib/flock";
 import { save, update, useStored } from "@/lib/storage";
-import { completeSection, cookLevel, findSection, isUnlocked } from "@/lib/progress";
+import { completeSection, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
@@ -19,7 +21,8 @@ export default function LevelPage() {
   const levels = useStored("levels");
 
   const [stage, setStage] = useState("lesson"); // "lesson" → "quiz" → "results"
-  const [result, setResult] = useState(null); // { correct, total, earned }
+  const [result, setResult] = useState(null); // { correct, total, chicks, corn, egg, flagged }
+  const [showFriedPopup, setShowFriedPopup] = useState(false);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0); // bumped by "Try again" to re-run the loading effect
   const [quizRound, setQuizRound] = useState(0); // bumped to restart the quiz from question 1
@@ -52,13 +55,18 @@ export default function LevelPage() {
 
   // `total` leaves out any questions the student flagged as wrong.
   function finishQuiz(correct, total) {
-    // Chicks hatch the first time you finish a level and the first time you ace it, so replaying can't farm them.
-    const earned = chicksForQuiz(section, correct, total);
+    // 100% hatches a chick; the goal grade or higher earns corn; below the goal fries the egg.
+    const score = correct / total;
+    const goal = goalFraction(test);
+    const { chicks, corn } = quizRewards(section, score, goal);
+    const egg = eggResult(score, goal);
 
-    save("plan", completeSection(plan, id, correct / total));
-    if (earned) update("flock", (f) => hatchChicks(f, earned, "quiz"));
-    setResult({ correct, total, earned, flagged: level.quiz.length - total });
+    save("plan", completeSection(plan, id, score));
+    if (chicks) update("flock", (f) => hatchChicks(f, chicks, "quiz"));
+    if (corn) update("flock", (f) => addCorn(f, corn));
+    setResult({ correct, total, chicks, corn, egg, goal, flagged: level.quiz.length - total });
     setStage("results");
+    setShowFriedPopup(egg.id === "fried");
   }
 
   function retryLoad() {
@@ -67,8 +75,15 @@ export default function LevelPage() {
   }
 
   function retryQuiz() {
+    setShowFriedPopup(false);
     setQuizRound(quizRound + 1);
     setStage("quiz");
+  }
+
+  function reviewLesson() {
+    setShowFriedPopup(false);
+    setStage("lesson");
+    window.scrollTo({ top: 0 });
   }
 
   if (plan === undefined || levels === undefined) return null;
@@ -121,43 +136,81 @@ export default function LevelPage() {
         {/* A new key makes React start a fresh Quiz (back to question 1) */}
         {level && stage === "quiz" && <Quiz key={quizRound} questions={level.quiz} onFinish={finishQuiz} topic={section.title} />}
 
-        {stage === "results" && result && <Results result={result} onRetry={retryQuiz} />}
+        {stage === "results" && result && <Results result={result} onRetry={retryQuiz} onReview={reviewLesson} />}
+
+        {/* A failed quiz: a heartbroken chicken pops up */}
+        <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={profile.avatar} chickMood="sad">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex items-end gap-2">
+              <Chick variant={profile.avatar} mood="crying" size={90} />
+              <FriedEgg size={70} />
+            </div>
+            <p className="font-display text-lg font-semibold">{FRIED_POPUP}</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button type="button" onClick={reviewLesson} className="btn-secondary">
+                Review the lesson
+              </button>
+              <button type="button" onClick={retryQuiz} className="btn-primary">
+                Retry the quiz
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </main>
   );
 }
 
-function Results({ result, onRetry }) {
-  const cook = cookLevel(result.correct / result.total);
+// What the chicken says when a quiz scores below the goal grade.
+const FRIED_POPUP = "Don't fry my kids like how u are fried on the test! Let's retry that.";
+
+function Results({ result, onRetry, onReview }) {
+  const { egg } = result;
+  const percent = Math.round((result.correct / result.total) * 100);
 
   return (
     <div className="card flex flex-col items-center gap-3 py-10 text-center">
-      <span
-        className="flex h-28 w-28 items-center justify-center rounded-full border-[3px] border-line text-6xl"
-        style={{ background: cook.color }}
-      >
-        {cook.emoji}
-      </span>
-      <p className="label-small">You&apos;re</p>
-      <h2 className="text-4xl">{cook.name}!</h2>
+      <div className="flex h-32 items-end justify-center">
+        {egg.id === "hatched" && <HatchedChick size={130} />}
+        {egg.id === "golden" && <PathEgg state="golden" size={100} />}
+        {egg.id === "fried" && <FriedEgg size={120} />}
+      </div>
+      <h2 className="text-4xl">
+        {egg.id === "hatched" ? "It hatched!" : egg.id === "golden" ? "Golden egg!" : "Your egg got fried…"}
+      </h2>
       <p className="text-lg">
-        {result.correct} of {result.total} correct
+        {result.correct} of {result.total} correct ({percent}%) · goal {Math.round(result.goal * 100)}%
       </p>
       {result.flagged > 0 && (
         <p className="text-sm text-muted">
           🚩 {result.flagged} flagged question{result.flagged === 1 ? "" : "s"} didn&apos;t count
         </p>
       )}
-      {result.earned > 0 && (
+      {result.chicks > 0 && (
         <p className="font-display font-semibold">
-          🐣 +{result.earned} chick{result.earned === 1 ? "" : "s"} hatched!
+          🐣 A new chick joined your coop!{" "}
+          <Link href="/henhouse" className="underline">
+            Visit the Henhouse
+          </Link>
         </p>
       )}
+      {result.corn > 0 && <p className="font-display font-semibold">🌽 +{result.corn} corn to spend in the Henhouse</p>}
+      {egg.id === "golden" && result.corn === 0 && (
+        <p className="text-sm text-muted">Get 100% to hatch a chick from this egg!</p>
+      )}
+      {egg.id === "fried" && (
+        <p className="text-muted">Score your goal grade or higher to save this egg.</p>
+      )}
       <div className="mt-4 flex flex-wrap justify-center gap-3">
-        <button type="button" onClick={onRetry} className="btn-secondary">
-          Try again
+        {egg.id === "fried" && (
+          <button type="button" onClick={onReview} className="btn-secondary">
+            Review the lesson
+          </button>
+        )}
+        <button type="button" onClick={onRetry} className={egg.id === "fried" ? "btn-primary" : "btn-secondary"}>
+          {egg.id === "fried" ? "Retry the quiz" : "Try again"}
         </button>
-        <Link href="/nest" className="btn-primary">
+        <Link href="/nest" className={egg.id === "fried" ? "btn-secondary" : "btn-primary"}>
           Back to nest
         </Link>
       </div>
