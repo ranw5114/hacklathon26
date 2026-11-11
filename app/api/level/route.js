@@ -1,4 +1,5 @@
 import { generateJSON, PLAIN_TEXT_RULE, questionSchema } from "@/lib/gemini";
+import { GRAPH_RULES, SVG_RULES } from "@/lib/drawingRules";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
@@ -6,14 +7,57 @@ export const maxDuration = 60;
 
 const QUESTIONS_PER_LEVEL = 5;
 
-// How the lesson changes for each learning style.
+// How the lesson changes for each learning style. The lesson page draws each section's
+// "graph" (to scale) and "svg" (a diagram), and shows "practice" problems with hidden solutions.
 const STYLE_INSTRUCTIONS = {
-  visual:
-    "Make it visual: use vivid mental pictures and analogies, and use the 'steps' list as a step-by-step flow (like a diagram in words, with arrows →).",
-  lecture:
-    "Teach it like a great lecture: clear, thorough explanations in a logical order, building each idea on the last.",
-  examples:
-    "Teach mostly through examples: keep explanations short and make the worked example detailed, with every step shown.",
+  visual: `This student learns through pictures, so TEACH WITH DRAWINGS.
+- Give EVERY section a picture: a "graph" for anything about an equation or function, otherwise an "svg" diagram (labeled diagram, flowchart, number line, table, before/after picture). Keep each section's "body" to 2-3 short sentences that say what to look at in the picture.
+- "graph": the app draws it perfectly to scale from your description. ${GRAPH_RULES}
+- "svg": one complete <svg xmlns="http://www.w3.org/2000/svg" …>…</svg> string. ${SVG_RULES}
+- Give 1 practice problem.`,
+  lecture: `This student wants a thorough lecture, so EXPLAIN FULLY.
+- Write 3-4 sections in a logical order: the big picture first, then each key idea one at a time, building on the last.
+- Each "body" is 2-3 full paragraphs: explain WHY each idea works, not just what to do, define every new term, and point out common mistakes.
+- Make the worked example's steps explain the reasoning behind each move.
+- Give 1 practice problem. No "graph" or "svg".`,
+  examples: `This student learns from examples, so SHOW, THEN LET THEM TRY.
+- Keep each section's "body" short (2-4 sentences), and include a small worked example inside each body.
+- Make the main worked example detailed, with every step shown.
+- Give exactly 3 practice problems from easier to harder, each with a full step-by-step solution ending in the answer. No "graph" or "svg".`,
+};
+
+// A graph the app draws to scale (see components/Graph.js).
+const graphSchema = {
+  type: "object",
+  properties: {
+    curves: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { expr: { type: "string" }, label: { type: "string" } },
+        required: ["expr"],
+      },
+    },
+    points: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { x: { type: "number" }, y: { type: "number" }, label: { type: "string" } },
+        required: ["x", "y"],
+      },
+    },
+    verticals: {
+      type: "array",
+      description: "Vertical lines, like an axis of symmetry",
+      items: {
+        type: "object",
+        properties: { x: { type: "number" }, label: { type: "string" } },
+        required: ["x"],
+      },
+    },
+    x: { type: "array", items: { type: "number" }, description: "Visible x range [min, max]" },
+    y: { type: "array", items: { type: "number" }, description: "Visible y range [min, max]" },
+  },
 };
 
 // One level = a short lesson followed by a quiz. Both come from a single AI request.
@@ -26,10 +70,15 @@ const levelSchema = {
         hook: { type: "string", description: "One friendly sentence on why this matters" },
         sections: {
           type: "array",
-          description: "2-3 short teaching sections",
+          description: "2-4 teaching sections",
           items: {
             type: "object",
-            properties: { heading: { type: "string" }, body: { type: "string" } },
+            properties: {
+              heading: { type: "string" },
+              body: { type: "string" },
+              graph: { ...graphSchema, description: "Optional: a graph for this section (visual learners)" },
+              svg: { type: "string", description: "Optional: an SVG diagram for this section (visual learners)" },
+            },
             required: ["heading", "body"],
           },
         },
@@ -41,6 +90,18 @@ const levelSchema = {
             answer: { type: "string" },
           },
           required: ["problem", "steps", "answer"],
+        },
+        practice: {
+          type: "array",
+          description: "Practice problems to try before the quiz",
+          items: {
+            type: "object",
+            properties: {
+              problem: { type: "string" },
+              solution: { type: "string", description: "Numbered steps, then the final answer" },
+            },
+            required: ["problem", "solution"],
+          },
         },
         keyPoints: { type: "array", items: { type: "string" }, description: "3-4 things to remember" },
         videoSearch: { type: "string", description: "A short YouTube search phrase for this exact topic" },
@@ -66,7 +127,7 @@ Lesson: "${section.title}". Goal: ${section.goal}
 
 Rules:
 - ${STYLE_INSTRUCTIONS[learner.learningStyle]}
-- Keep the lesson short enough to read in about 5 minutes. Use a warm, encouraging tone.
+- Keep the lesson short enough to work through in about 5-10 minutes. Use a warm, encouraging tone.
 - Write exactly ${QUESTIONS_PER_LEVEL} multiple-choice questions that test the lesson's goal, from easier to harder.
 - Each question has exactly 4 choices and one correct answer. Vary which position the correct answer is in.
 - ${PLAIN_TEXT_RULE}`;

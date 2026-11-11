@@ -5,7 +5,7 @@ import Chick from "@/components/Chick";
 
 // A pop-up card in the middle of the screen, in the chicken style.
 // Closes with the ✕ button, the Escape key, or a click on the dimmed background.
-export default function Modal({ open, onClose, title, chick = "sunny", children, wide = false }) {
+export default function Modal({ open, onClose, title, chick = "sunny", chickMood = "happy", children, wide = false }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -35,7 +35,7 @@ export default function Modal({ open, onClose, title, chick = "sunny", children,
           ✕
         </button>
         <div className="flex items-end gap-3 pr-6">
-          <Chick variant={chick} size={56} className="shrink-0" />
+          <Chick variant={chick} mood={chickMood} size={56} className="shrink-0" />
           <span className="bubble text-sm">{title}</span>
         </div>
         <div className="mt-5">{children}</div>

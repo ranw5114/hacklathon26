@@ -6,9 +6,9 @@ import EditGradesButton from "@/components/EditGrades";
 import { useConfirm } from "@/components/Modal";
 import NestForm from "@/components/NestForm";
 import NestPath from "@/components/NestPath";
-import { chickCount, hatchChicks, randomChestChicks } from "@/lib/flock";
+import { addCorn, chickCount, randomChestCorn, withDefaults } from "@/lib/flock";
 import { resetNest, save, update, useStored } from "@/lib/storage";
-import { openChest } from "@/lib/progress";
+import { goalFraction, openChest } from "@/lib/progress";
 import { daysBetween, formatDate, todayString } from "@/lib/dates";
 
 // Nest Builder: shows the form until a plan exists, then shows the level path.
@@ -40,9 +40,9 @@ export default function NestPage() {
   }
 
   function collectChest(sectionId) {
-    const chicks = randomChestChicks();
-    save("plan", openChest(plan, sectionId, chicks));
-    update("flock", (f) => hatchChicks(f, chicks, "chest"));
+    const corn = randomChestCorn();
+    save("plan", openChest(plan, sectionId, corn));
+    update("flock", (f) => addCorn(f, corn));
   }
 
   async function startNewNest() {
@@ -78,12 +78,13 @@ export default function NestPage() {
             🎯 {test.currentGrade}% → {test.goalGrade}% <EditGradesButton test={test} />
           </span>
           <span>🐣 {chickCount(flock)} chicks</span>
+          <span>🌽 {withDefaults(flock).corn} corn</span>
         </div>
       </div>
       <p className="mt-4 text-sm text-muted">{plan.overview}</p>
 
       <div className="mt-8">
-        <NestPath plan={plan} profile={profile} today={today} onOpenChest={collectChest} />
+        <NestPath plan={plan} profile={profile} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />
       </div>
 
       <div className="mt-12 text-center">

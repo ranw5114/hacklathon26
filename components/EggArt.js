@@ -278,3 +278,91 @@ export function CoopRoof({ className = "" }) {
     </svg>
   );
 }
+
+// --- Eggs on the Nest path ---------------------------------------------------
+
+const PATH_EGG = "M50 6 C 76 6 90 44 90 66 C 90 92 72 106 50 106 C 28 106 10 92 10 66 C 10 44 24 6 50 6 Z";
+// The zigzag where the egg cracks open, and the shapes above and below it.
+const CRACK_LINE = "8,60 20,50 32,60 44,50 56,60 68,50 80,60 92,52";
+const TOP_HALF = `0,0 100,0 100,52 ${CRACK_LINE.split(" ").reverse().join(" ")} 0,60`;
+const BOTTOM_HALF = `0,60 ${CRACK_LINE} 100,52 100,120 0,120`;
+
+// One level on the Nest path, drawn as an egg.
+//   state: "locked" | "ready" | "golden" | "fried" | "hatched"
+//   cracking: true while it splits open (the lesson opens right after)
+export function PathEgg({ state, cracking = false, chickColor = "sunny", size = 84 }) {
+  const ids = useId();
+  if (state === "fried") {
+    return (
+      <svg viewBox="0 0 60 50" width={size * 1.15} height={size * 0.96} aria-hidden="true" className="overflow-visible">
+        <FriedEggShape />
+      </svg>
+    );
+  }
+  if (state === "hatched") {
+    return <HatchedChick color={chickColor} size={size * 1.15} />;
+  }
+
+  const golden = state === "golden";
+  const locked = state === "locked";
+  const fill = locked ? "oklch(90% 0.005 80)" : golden ? `url(#${ids}-gold)` : SHELL;
+  const shell = (
+    <>
+      <path d={PATH_EGG} fill={fill} />
+      {state === "ready" && (
+        <g fill="oklch(85% 0.07 70)">
+          <circle cx="36" cy="40" r="3" />
+          <circle cx="62" cy="30" r="2.5" />
+          <circle cx="66" cy="72" r="3.5" />
+          <circle cx="34" cy="84" r="2.5" />
+        </g>
+      )}
+      <path d={PATH_EGG} fill="none" stroke={LINE} strokeWidth="4" />
+      <ellipse cx="36" cy="32" rx="6" ry="10" fill="white" opacity={locked ? 0.4 : 0.8} transform="rotate(20 36 32)" />
+    </>
+  );
+
+  return (
+    <svg viewBox="0 0 100 112" width={size} height={size * 1.12} aria-hidden="true" className="overflow-visible">
+      <defs>
+        <linearGradient id={`${ids}-gold`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="oklch(93% 0.12 95)" />
+          <stop offset="1" stopColor="oklch(78% 0.16 75)" />
+        </linearGradient>
+        <clipPath id={`${ids}-top`}>
+          <polygon points={TOP_HALF} />
+        </clipPath>
+        <clipPath id={`${ids}-bottom`}>
+          <polygon points={BOTTOM_HALF} />
+        </clipPath>
+      </defs>
+      {/* Bottom half stays put; the top half flips off when it cracks */}
+      <g clipPath={`url(#${ids}-bottom)`}>{shell}</g>
+      <g
+        style={{
+          transformBox: "fill-box",
+          transformOrigin: "100% 100%",
+          transition: "transform 0.45s cubic-bezier(.3,1.6,.5,1), opacity 0.45s",
+          transform: cracking ? "translate(18px, -26px) rotate(35deg)" : "none",
+          opacity: cracking ? 0 : 1,
+        }}
+      >
+        <g clipPath={`url(#${ids}-top)`}>{shell}</g>
+      </g>
+      {cracking && <polyline points={CRACK_LINE} fill="none" stroke={LINE} strokeWidth="3" strokeLinejoin="round" />}
+      {golden && !cracking && (
+        <g fill="white" stroke={LINE} strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M80 18 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3 l7 -3 z" />
+          <path d="M16 54 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 l4 -2 z" />
+        </g>
+      )}
+      {locked && (
+        <g stroke={LINE} strokeWidth="3.5" strokeLinejoin="round">
+          <path d="M40 62 v-8 a10 10 0 0 1 20 0 v8" fill="none" />
+          <rect x="34" y="60" width="32" height="24" rx="5" fill="oklch(80% 0.01 80)" />
+          <circle cx="50" cy="72" r="3" fill={LINE} stroke="none" />
+        </g>
+      )}
+    </svg>
+  );
+}

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { DAY_END_HOUR, DAY_START_HOUR, formatClock, studyEgg } from "@/lib/calendar";
-import { cookLevel, isUnlocked } from "@/lib/progress";
+import { eggResult, goalFraction, isUnlocked } from "@/lib/progress";
+import { useStored } from "@/lib/storage";
 
 const HOUR_PX = 56; // height of one hour on the timeline
 
@@ -29,6 +30,7 @@ function layoutEvents(events) {
 // The expanded view of one day: study plan, suggested study time, and an hour-by-hour timeline.
 export default function DayView({ info, plan, suggestion, now, isToday }) {
   const scrollRef = useRef(null);
+  const goal = goalFraction(useStored("test"));
   const egg = studyEgg(info.studiedMinutes);
   const timed = info.events.filter((e) => !e.allDay);
   const allDay = info.events.filter((e) => e.allDay);
@@ -143,7 +145,7 @@ export default function DayView({ info, plan, suggestion, now, isToday }) {
             <ul className="mt-3 flex flex-col gap-2">
               {info.planDay.sections.map((section) => {
                 const unlocked = isUnlocked(plan, section.id);
-                const cook = section.completed ? cookLevel(section.score) : null;
+                const cook = section.completed ? eggResult(section.score, goal) : null;
                 const label = (
                   <>
                     <span>{cook ? cook.emoji : unlocked ? "⭐" : "🔒"}</span>
