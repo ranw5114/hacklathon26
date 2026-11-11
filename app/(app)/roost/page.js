@@ -10,6 +10,7 @@ import WeekView from "@/components/roost/WeekView";
 import { addMonths, dayInfo, formatLongDate, formatMonth, suggestStudySlot, weekDays } from "@/lib/calendar";
 import { addDays, formatDate, todayString } from "@/lib/dates";
 import { save, useStored } from "@/lib/storage";
+import { useNests } from "@/lib/nests";
 import { useNow } from "@/lib/useNow";
 
 const VIEWS = [
@@ -23,8 +24,7 @@ const REFRESH_AFTER_MS = 30 * 60_000;
 
 // The Roost: a calendar with the study plan, synced events, and suggested study times.
 export default function RoostPage() {
-  const plan = useStored("plan");
-  const test = useStored("test");
+  const nests = useNests();
   const sessions = useStored("sessions");
   const calendar = useStored("calendar");
   const prefs = useStored("prefs");
@@ -47,10 +47,10 @@ export default function RoostPage() {
 
   if (calendar === undefined) return null;
 
-  const data = { plan, test, events: calendar?.events, sessions };
+  const data = { nests, events: calendar?.events, sessions };
   // A suggested study slot for days with unfinished plan work.
   const suggestFor = (info) =>
-    info.planDay && !info.planDone ? suggestStudySlot(info.date, info.studyMinutes, data.events, now) : null;
+    info.plans.length && !info.planDone ? suggestStudySlot(info.date, info.studyMinutes, data.events, now) : null;
 
   function move(direction) {
     if (view === "month") setFocusDate(addMonths(focusDate, direction));
@@ -142,7 +142,7 @@ export default function RoostPage() {
           (() => {
             const info = dayInfo(focusDate, data);
             return (
-              <DayView info={info} plan={plan} suggestion={suggestFor(info)} now={now} isToday={focusDate === today} />
+              <DayView info={info} suggestion={suggestFor(info)} now={now} isToday={focusDate === today} />
             );
           })()}
       </div>

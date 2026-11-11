@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Field } from "@/components/ProfileFields";
-import { save } from "@/lib/storage";
+import { useRouter } from "next/navigation";
+import { addNest } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { checkGrades } from "@/lib/grades";
 
@@ -28,6 +29,7 @@ function validate(test) {
 
 // The form that collects test details and asks the AI to build a study plan.
 export default function NestForm({ learner }) {
+  const router = useRouter();
   const [test, setTest] = useState(EMPTY_TEST);
   const [error, setError] = useState("");
   const [canSwap, setCanSwap] = useState(false);
@@ -70,9 +72,9 @@ export default function NestForm({ learner }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Saving makes the Nest page switch from this form to the plan automatically.
-      save("test", finalTest);
-      save("plan", data);
+      // Saved as a new nest next to any others, then open it.
+      const id = addNest(finalTest, data);
+      router.push(`/nest/${id}`);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);

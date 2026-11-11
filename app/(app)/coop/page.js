@@ -10,6 +10,8 @@ import { useConfirm } from "@/components/Modal";
 import { resizeImage } from "@/lib/images";
 import { findSection, currentSectionId, goalFraction } from "@/lib/progress";
 import { remove, save, useStored } from "@/lib/storage";
+import { focusNest, useNests } from "@/lib/nests";
+import { todayString } from "@/lib/dates";
 import { parseReply } from "@/lib/tutorReply";
 
 // Keep the saved conversation from growing forever.
@@ -25,8 +27,10 @@ function newMessageId() {
 // The Chicken Coop: chat with the AI tutor, including homework photos.
 export default function CoopPage() {
   const profile = useStored("profile");
-  const test = useStored("test");
-  const plan = useStored("plan");
+  // Suggestions and the tutor focus on the nest whose test is soonest.
+  const focus = focusNest(useNests(), todayString());
+  const test = focus?.test ?? null;
+  const plan = focus?.plan ?? null;
   const savedChat = useStored("chat");
 
   const [text, setText] = useState("");

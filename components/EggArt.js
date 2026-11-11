@@ -366,3 +366,39 @@ export function PathEgg({ state, cracking = false, chickColor = "sunny", size = 
     </svg>
   );
 }
+
+// --- A chick sitting in its nest (one per test, on the Nests page) ----------------------
+
+// `wear` dresses the chick for the subject (see subjectOutfit in lib/nests.js).
+export function ChickInNest({ avatar = "sunny", wear, mood = "happy", size = 150, className = "" }) {
+  const twig = "oklch(0.55 0.08 60)";
+  return (
+    <svg viewBox="0 0 140 130" width={size} height={size * (130 / 140)} className={`overflow-visible ${className}`} aria-hidden="true">
+      {/* Back of the nest */}
+      <path d="M10 82 Q70 66 130 82 L126 90 Q70 76 14 90 Z" fill="oklch(0.6 0.08 60)" stroke={LINE} strokeWidth="3" strokeLinejoin="round" />
+      {/* The chick, sitting low */}
+      <svg x="10" y="-6" width="120" height="100" viewBox="0 0 120 100" overflow="visible">
+        <Chick variant={avatar} wear={wear} mood={mood} size={120} />
+      </svg>
+      {/* Front of the nest, with twigs */}
+      <path
+        d="M6 84 Q70 100 134 84 C 134 108 110 124 70 124 C 30 124 6 108 6 84 Z"
+        fill="oklch(0.7 0.09 65)"
+        stroke={LINE}
+        strokeWidth="3.5"
+        strokeLinejoin="round"
+      />
+      <g fill="none" stroke={twig} strokeWidth="3" strokeLinecap="round">
+        <path d="M16 96 Q40 104 62 100" />
+        <path d="M54 110 Q84 114 120 98" />
+        <path d="M26 112 Q48 118 70 116" />
+        <path d="M82 104 Q100 106 124 92" />
+      </g>
+      <g stroke={LINE} strokeWidth="2.5" strokeLinecap="round">
+        <path d="M2 82 L14 88" />
+        <path d="M138 80 L126 88" />
+        <path d="M60 124 L52 128" />
+      </g>
+    </svg>
+  );
+}

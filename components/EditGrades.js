@@ -5,10 +5,10 @@ import Modal from "@/components/Modal";
 import { Field } from "@/components/ProfileFields";
 import { formatDate } from "@/lib/dates";
 import { checkGrades } from "@/lib/grades";
-import { save } from "@/lib/storage";
+import { updateNest } from "@/lib/nests";
 
 // "✏️ Edit" on the Nest banner: change the current and goal grade without rebuilding the plan.
-export default function EditGradesButton({ test }) {
+export default function EditGradesButton({ test, nestId }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -23,13 +23,13 @@ export default function EditGradesButton({ test }) {
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Update your grades" chick="mint">
         {/* A key resets the form to the saved grades each time it opens */}
-        {open && <EditGradesForm key={open} test={test} onDone={() => setOpen(false)} />}
+        {open && <EditGradesForm key={open} test={test} nestId={nestId} onDone={() => setOpen(false)} />}
       </Modal>
     </>
   );
 }
 
-function EditGradesForm({ test, onDone }) {
+function EditGradesForm({ test, nestId, onDone }) {
   const [current, setCurrent] = useState(String(test.currentGrade));
   const [goal, setGoal] = useState(String(test.goalGrade));
   const [error, setError] = useState("");
@@ -42,7 +42,7 @@ function EditGradesForm({ test, onDone }) {
       setCanSwap(Boolean(check.canSwap));
       return;
     }
-    save("test", { ...test, currentGrade: Number(current), goalGrade: Number(goal) });
+    updateNest(nestId, (n) => ({ ...n, test: { ...n.test, currentGrade: Number(current), goalGrade: Number(goal) } }));
     onDone();
   }
 

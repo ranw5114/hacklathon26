@@ -5,22 +5,28 @@ import Link from "next/link";
 import Chick from "@/components/Chick";
 import Quiz from "@/components/Quiz";
 import { chicksForExam, hatchChicks } from "@/lib/flock";
-import { remove, save, update, useStored } from "@/lib/storage";
+import { useParams } from "next/navigation";
+import MissingNest from "@/components/MissingNest";
+import { updateNest, useNest } from "@/lib/nests";
+import { update, useStored } from "@/lib/storage";
 import { allSections, currentSectionId, goalFraction, predictedGrade, quizAverage } from "@/lib/progress";
 
 // The mock exam: a practice test on everything, ending with a predicted grade.
 export default function ExamPage() {
+  const { nestId } = useParams();
+  const nest = useNest(nestId);
   const profile = useStored("profile");
-  const test = useStored("test");
-  const plan = useStored("plan");
-  const exam = useStored("exam"); // saved questions, so a refresh doesn't make a new exam
+  const test = nest?.test;
+  const plan = nest?.plan;
+  const exam = nest?.exam; // saved questions, so a refresh doesn't make a new exam
   const [earned, setEarned] = useState(0); // chicks hatched by this attempt (first try only)
 
   const [stage, setStage] = useState("intro"); // "intro" → "exam" → "results"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  if (plan === undefined || exam === undefined) return null;
+  if (nest === undefined) return null;
+  if (!nest) return <MissingNest />;
 
   const unlocked = plan && (currentSectionId(plan, goalFraction(test)) === null || plan.demo);
   if (!unlocked) {
@@ -28,7 +34,7 @@ export default function ExamPage() {
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
         <span className="bubble">Pass every level to unlock the mock exam!</span>
         <Chick variant={profile.avatar} size={110} />
-        <Link href="/nest" className="btn-primary">
+        <Link href={`/nest/${nestId}`} className="btn-primary">
           Back to nest
         </Link>
       </main>
@@ -47,7 +53,7 @@ export default function ExamPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      save("exam", data.questions);
+      updateNest(nestId, (n) => ({ ...n, exam: data.questions }));
       setStage("exam");
     } catch (err) {
       setError(err.message || "Couldn't make the exam. Please try again.");
@@ -61,7 +67,7 @@ export default function ExamPage() {
     const predicted = predictedGrade(score, quizAverage(plan));
     const firstTry = !plan.mockExam.completed;
 
-    save("plan", { ...plan, mockExam: { ...plan.mockExam, completed: true, score, predicted } });
+    updateNest(nestId, (n) => ({ ...n, plan: { ...n.plan, mockExam: { ...n.plan.mockExam, completed: true, score, predicted } } }));
     const chicks = firstTry ? chicksForExam(score) : 0;
     if (chicks) update("flock", (f) => hatchChicks(f, chicks, "exam"));
     setEarned(chicks);
@@ -70,13 +76,13 @@ export default function ExamPage() {
 
   // A retake uses brand-new questions.
   function retake() {
-    remove("exam");
+    updateNest(nestId, (n) => ({ ...n, exam: null }));
     setStage("intro");
   }
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-      <Link href="/nest" className="text-sm font-semibold text-muted hover:underline">
+      <Link href={`/nest/${nestId}`} className="text-sm font-semibold text-muted hover:underline">
         ← Back to nest
       </Link>
       <p className="label-small mt-4">
@@ -104,13 +110,13 @@ export default function ExamPage() {
 
         {stage === "exam" && exam && <Quiz questions={exam} onFinish={finishExam} topic="Mock exam" />}
 
-        {stage === "results" && <ExamResults plan={plan} test={test} avatar={profile.avatar} earned={earned} onRetake={retake} />}
+        {stage === "results" && <ExamResults nestId={nestId} plan={plan} test={test} avatar={profile.avatar} earned={earned} onRetake={retake} />}
       </div>
     </main>
   );
 }
 
-function ExamResults({ plan, test, avatar, earned, onRetake }) {
+function ExamResults({ nestId, plan, test, avatar, earned, onRetake }) {
   const { predicted, score } = plan.mockExam;
   const gap = test.goalGrade - predicted;
   // Levels scored under 80% are the ones worth reviewing.
@@ -141,7 +147,7 @@ function ExamResults({ plan, test, avatar, earned, onRetake }) {
           <ul className="mt-3 flex flex-col gap-2">
             {weakSpots.map((s) => (
               <li key={s.id}>
-                <Link href={`/nest/${s.id}`} className="font-semibold underline">
+                <Link href={`/nest/${nestId}/${s.id}`} className="font-semibold underline">
                   {s.title}
                 </Link>{" "}
                 <span className="text-sm text-muted">({Math.round(s.score * 100)}%)</span>
@@ -159,7 +165,7 @@ function ExamResults({ plan, test, avatar, earned, onRetake }) {
         <button type="button" onClick={onRetake} className="btn-secondary">
           Retake with new questions
         </button>
-        <Link href="/nest" className="btn-primary">
+        <Link href={`/nest/${nestId}`} className="btn-primary">
           Back to nest
         </Link>
       </div>

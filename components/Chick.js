@@ -90,6 +90,44 @@ function Accessory({ type }) {
       </g>
     );
   }
+  if (type === "beret") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M24 30 C 22 14 56 6 86 14 C 98 18 96 28 86 30 C 66 34 40 34 24 30 Z" fill="oklch(0.5 0.15 20)" />
+        <path d="M58 9 l2 -6" strokeLinecap="round" />
+      </g>
+    );
+  }
+  if (type === "explorer") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <ellipse cx="60" cy="27" rx="44" ry="7" fill="oklch(0.78 0.07 85)" />
+        <path d="M30 26 C 30 2 90 2 90 26 Z" fill="oklch(0.82 0.07 85)" />
+        <path d="M31 21 Q60 26 89 21" fill="none" stroke="oklch(0.55 0.08 60)" strokeWidth="4" />
+      </g>
+    );
+  }
+  if (type === "headphones") {
+    return (
+      <g stroke={INK} strokeWidth="3" strokeLinejoin="round">
+        <path d="M17 58 C 14 4 106 4 103 58" fill="none" strokeWidth="6" />
+        <path d="M17 58 C 14 4 106 4 103 58" fill="none" stroke="oklch(0.6 0.15 280)" strokeWidth="2.5" />
+        <rect x="6" y="46" width="15" height="24" rx="6" fill="oklch(0.6 0.15 280)" />
+        <rect x="99" y="46" width="15" height="24" rx="6" fill="oklch(0.6 0.15 280)" />
+      </g>
+    );
+  }
+  if (type === "headband") {
+    return (
+      <path
+        d="M20 42 Q60 22 100 42 L100 51 Q60 31 20 51 Z"
+        fill="oklch(0.62 0.2 25)"
+        stroke={INK}
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+    );
+  }
   if (type === "bow") {
     return (
       <g fill="var(--chick-heart)" stroke="var(--chick-line)" strokeWidth="3" strokeLinejoin="round">
@@ -153,6 +191,16 @@ function FaceWear({ type }) {
       </g>
     );
   }
+  if (type === "goggles") {
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
+        <path d="M12 58 L108 58" strokeWidth="4" stroke="oklch(0.55 0.08 60)" />
+        <rect x="27" y="49" width="27" height="21" rx="9" fill="oklch(0.9 0.06 220)" fillOpacity="0.85" />
+        <rect x="66" y="49" width="27" height="21" rx="9" fill="oklch(0.9 0.06 220)" fillOpacity="0.85" />
+        <path d="M54 59 L66 59" />
+      </g>
+    );
+  }
   if (type === "shades") {
     return (
       <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
@@ -160,6 +208,92 @@ function FaceWear({ type }) {
         <path d="M68 54 L92 54 L90 66 Q80 70 70 66 Z" fill={INK} />
         <path d="M52 56 L68 56" fill="none" />
         <path d="M33 57 l5 0" stroke="white" strokeWidth="2" />
+      </g>
+    );
+  }
+  return null;
+}
+
+// Clothes on the body (drawn inside the body outline).
+function BodyWear({ type }) {
+  if (type === "labcoat") {
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
+        {/* White coat with a V of shirt showing, lapels, buttons, and a pocket */}
+        <path d="M0 64 L46 64 L60 84 L74 64 L120 64 L120 110 L0 110 Z" fill="white" />
+        <path d="M46 64 L60 84 L74 64 Z" fill="oklch(0.82 0.06 230)" />
+        <path d="M46 64 L52 76 L44 74 Z M74 64 L68 76 L76 74 Z" fill="oklch(0.95 0 0)" />
+        <circle cx="60" cy="88" r="1.8" fill={INK} />
+        <path d="M20 76 h13 v9 h-13 z" fill="none" />
+      </g>
+    );
+  }
+  return null;
+}
+
+// Something the chick holds, in front of its body on the right.
+function Prop({ type }) {
+  if (!type) return null;
+  const common = { stroke: INK, strokeWidth: 2.5, strokeLinejoin: "round", strokeLinecap: "round" };
+  if (type === "flask") {
+    return (
+      <g {...common}>
+        <path d="M88 62 L96 62 L96 70 L106 92 L78 92 L88 70 Z" fill="white" />
+        <path d="M82 84 L102 84 L106 92 L78 92 Z" fill="oklch(0.82 0.17 145)" />
+        <path d="M86 62 L98 62" />
+      </g>
+    );
+  }
+  if (type === "leaf") {
+    return (
+      <g {...common}>
+        <path d="M84 92 C 82 72 96 62 108 60 C 110 76 100 90 84 92 Z" fill="oklch(0.75 0.17 145)" />
+        <path d="M86 90 C 92 80 98 72 106 63" fill="none" />
+      </g>
+    );
+  }
+  if (type === "apple") {
+    return (
+      <g {...common}>
+        <path d="M95 70 C 86 64 78 72 80 82 C 82 92 90 96 95 92 C 100 96 108 92 110 82 C 112 72 104 64 95 70 Z" fill="oklch(0.62 0.2 25)" />
+        <path d="M95 70 L96 63" fill="none" />
+        <path d="M96 64 C 100 60 104 61 105 63 C 101 66 98 66 96 64 Z" fill="oklch(0.72 0.17 145)" />
+      </g>
+    );
+  }
+  if (type === "pencil") {
+    return (
+      <g {...common} transform="rotate(-35 96 78)">
+        <rect x="88" y="62" width="10" height="28" fill="oklch(0.88 0.15 90)" />
+        <path d="M88 90 L93 99 L98 90 Z" fill="oklch(0.9 0.04 70)" />
+        <rect x="88" y="58" width="10" height="5" fill="oklch(0.8 0.1 15)" />
+      </g>
+    );
+  }
+  if (type === "book") {
+    return (
+      <g {...common}>
+        <rect x="80" y="66" width="28" height="28" rx="3" fill="oklch(0.62 0.13 250)" />
+        <path d="M84 70 L104 70 L104 90" fill="none" stroke="white" strokeWidth="2" />
+        <path d="M87 76 h12" stroke="white" strokeWidth="2" />
+      </g>
+    );
+  }
+  if (type === "scroll") {
+    return (
+      <g {...common}>
+        <rect x="82" y="66" width="24" height="26" fill="oklch(0.94 0.05 85)" />
+        <rect x="79" y="62" width="30" height="7" rx="3.5" fill="oklch(0.85 0.07 70)" />
+        <rect x="79" y="89" width="30" height="7" rx="3.5" fill="oklch(0.85 0.07 70)" />
+        <path d="M87 75 h14 M87 81 h10" />
+      </g>
+    );
+  }
+  if (type === "paintbrush") {
+    return (
+      <g {...common} transform="rotate(30 96 78)">
+        <rect x="93" y="70" width="6" height="26" fill="oklch(0.65 0.1 55)" />
+        <path d="M92 70 C 92 60 100 60 100 70 Z" fill="oklch(0.65 0.2 300)" />
       </g>
     );
   }
@@ -188,7 +322,7 @@ function NeckWear({ type }) {
 }
 
 // variant: an avatar from CHICKS. Optional `color` (a CHICK_COLORS id) repaints it, and
-// `wear` ({ head, face, neck }) dresses it up; head "none" hides the avatar's own hat or bow.
+// `wear` ({ head, face, neck, body, prop }) dresses it up; head "none" hides the avatar's own hat or bow.
 export default function Chick({ variant = "sunny", size = 96, className = "", mood = "happy", color, wear }) {
   const base = CHICKS[variant] || CHICKS.sunny;
   const paint = CHICK_COLORS[color];
@@ -213,12 +347,14 @@ export default function Chick({ variant = "sunny", size = 96, className = "", mo
       <g clipPath={`url(#${clipId})`}>
         <rect width="120" height="100" fill={chick.body} />
         <rect y="72" width="120" height="30" fill={chick.belly} />
+        <BodyWear type={wear?.body} />
       </g>
       <path d={BODY} fill="none" stroke="var(--chick-line)" strokeWidth="4" />
       <NeckWear type={wear?.neck} />
       <Face mood={mood} />
       <FaceWear type={wear?.face} />
       <Accessory type={head} />
+      <Prop type={wear?.prop} />
     </svg>
   );
 }

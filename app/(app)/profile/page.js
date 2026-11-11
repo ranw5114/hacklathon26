@@ -6,13 +6,14 @@ import Chick from "@/components/Chick";
 import { useConfirm } from "@/components/Modal";
 import { ExitDemoButton, TryDemoButton } from "@/components/DemoButtons";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
-import { clearAll, resetNest, save, useStored } from "@/lib/storage";
+import { clearAll, remove, save, useStored } from "@/lib/storage";
+import { useNests } from "@/lib/nests";
 
 // Profile (edit name, avatar, learning style) and settings (reset data).
 export default function ProfilePage() {
   const router = useRouter();
   const profile = useStored("profile");
-  const plan = useStored("plan");
+  const nests = useNests();
   const prefs = useStored("prefs");
   // Edit a copy, so nothing changes until "Save" is clicked.
   const [draft, setDraft] = useState(profile);
@@ -33,19 +34,19 @@ export default function ProfilePage() {
 
   async function deletePlan() {
     const ok = await confirm({
-      title: "Delete your study plan?",
-      message: "Your nest, levels, and mock exam will be deleted. Your profile and chicks stay. This can't be undone.",
-      confirmLabel: "Delete plan",
+      title: "Delete all your nests?",
+      message: "Every nest, with its study plan, lessons, and mock exam, will be deleted. Your profile and chicks stay. This can't be undone. (To delete just one, open it and use \"Delete this nest\".)",
+      confirmLabel: "Delete all nests",
       danger: true,
     });
     if (!ok) return;
-    resetNest();
+    remove("nests");
   }
 
   async function deleteEverything() {
     const ok = await confirm({
       title: "Delete everything?",
-      message: "Your profile, study plan, chicks, chats, and timer history will all be deleted. This can't be undone.",
+      message: "Your profile, nests, chicks, chats, and timer history will all be deleted. This can't be undone.",
       confirmLabel: "Delete everything",
       danger: true,
     });
@@ -108,8 +109,8 @@ export default function ProfilePage() {
           {toursReset && <span className="text-sm text-muted">Done! Each page will show its tour again.</span>}
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={deletePlan} disabled={!plan} className="btn-secondary">
-            Delete study plan
+          <button type="button" onClick={deletePlan} disabled={!nests?.length} className="btn-secondary">
+            Delete all nests
           </button>
           {/* In the demo, "Delete all" is hidden so the user's saved real data can't be wiped by accident. */}
           {!profile.demo && (

@@ -1,15 +1,19 @@
 import { formatClock } from "@/lib/calendar";
 
 // Small colored labels for a day, used by the Month and Week views.
-// 🎯 test, 🏆 mock exam, 🟡 study plan, 🔵 synced events.
+// 🎯 test, 🏆 mock exam, 🟡 study plan (one per nest, labeled with its subject), 🔵 synced events.
 export function dayChips(info, suggestion) {
   const chips = [];
-  if (info.isTest) chips.push({ key: "test", label: "🎯 Test day", className: "bg-red-100 border-red-700" });
-  if (info.isMock) chips.push({ key: "mock", label: "🏆 Mock exam", className: "bg-beak/60 border-line" });
-  if (info.planDay) {
+  for (const nest of info.tests) {
+    chips.push({ key: `test-${nest.id}`, label: `🎯 ${nest.test.subject} test`, className: "bg-red-100 border-red-700" });
+  }
+  for (const nest of info.mocks) {
+    chips.push({ key: `mock-${nest.id}`, label: `🏆 ${nest.test.subject} mock`, className: "bg-beak/60 border-line" });
+  }
+  for (const plan of info.plans) {
     chips.push({
-      key: "plan",
-      label: `${info.planDone ? "✅" : "🟡"} ${info.planDay.focus}`,
+      key: `plan-${plan.nest.id}`,
+      label: `${plan.done ? "✅" : "🟡"} ${plan.nest.test.subject}: ${plan.day.focus}`,
       className: "bg-chick border-line",
     });
   }
