@@ -4,14 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import Chick from "@/components/Chick";
 import Quiz from "@/components/Quiz";
-import { remove, save, useStored } from "@/lib/storage";
-import {
-  allSections,
-  currentSectionId,
-  POINTS_PER_CORRECT,
-  predictedGrade,
-  quizAverage,
-} from "@/lib/progress";
+import { chicksForExam, hatchChicks } from "@/lib/flock";
+import { remove, save, update, useStored } from "@/lib/storage";
+import { allSections, currentSectionId, predictedGrade, quizAverage } from "@/lib/progress";
 
 // The mock exam: a practice test on everything, ending with a predicted grade.
 export default function ExamPage() {
@@ -19,7 +14,7 @@ export default function ExamPage() {
   const test = useStored("test");
   const plan = useStored("plan");
   const exam = useStored("exam"); // saved questions, so a refresh doesn't make a new exam
-  const points = useStored("points");
+  const [earned, setEarned] = useState(0); // chicks hatched by this attempt (first try only)
 
   const [stage, setStage] = useState("intro"); // "intro" → "exam" → "results"
   const [loading, setLoading] = useState(false);
@@ -67,7 +62,9 @@ export default function ExamPage() {
     const firstTry = !plan.mockExam.completed;
 
     save("plan", { ...plan, mockExam: { ...plan.mockExam, completed: true, score, predicted } });
-    if (firstTry) save("points", (points ?? 0) + correct * POINTS_PER_CORRECT);
+    const chicks = firstTry ? chicksForExam(score) : 0;
+    if (chicks) update("flock", (f) => hatchChicks(f, chicks, "exam"));
+    setEarned(chicks);
     setStage("results");
   }
 
@@ -107,13 +104,13 @@ export default function ExamPage() {
 
         {stage === "exam" && exam && <Quiz questions={exam} onFinish={finishExam} topic="Mock exam" />}
 
-        {stage === "results" && <ExamResults plan={plan} test={test} avatar={profile.avatar} onRetake={retake} />}
+        {stage === "results" && <ExamResults plan={plan} test={test} avatar={profile.avatar} earned={earned} onRetake={retake} />}
       </div>
     </main>
   );
 }
 
-function ExamResults({ plan, test, avatar, onRetake }) {
+function ExamResults({ plan, test, avatar, earned, onRetake }) {
   const { predicted, score } = plan.mockExam;
   const gap = test.goalGrade - predicted;
   // Levels scored under 80% are the ones worth reviewing.
@@ -128,6 +125,11 @@ function ExamResults({ plan, test, avatar, onRetake }) {
         <p className="text-muted">
           Mock exam: {Math.round(score * 100)}% · Goal: {test.goalGrade}%
         </p>
+        {earned > 0 && (
+          <p className="font-display font-semibold">
+            🐣 +{earned} chick{earned === 1 ? "" : "s"} hatched!
+          </p>
+        )}
         <span className="bubble mt-4">
           {gap <= 0 ? "You're on track to hit your goal! 🎉" : `${gap} points from your goal. You can do it!`}
         </span>

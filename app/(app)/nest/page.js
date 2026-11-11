@@ -6,8 +6,9 @@ import EditGradesButton from "@/components/EditGrades";
 import { useConfirm } from "@/components/Modal";
 import NestForm from "@/components/NestForm";
 import NestPath from "@/components/NestPath";
-import { resetNest, save, useStored } from "@/lib/storage";
-import { openChest, randomChestCorn } from "@/lib/progress";
+import { chickCount, hatchChicks, randomChestChicks } from "@/lib/flock";
+import { resetNest, save, update, useStored } from "@/lib/storage";
+import { openChest } from "@/lib/progress";
 import { daysBetween, formatDate, todayString } from "@/lib/dates";
 
 // Nest Builder: shows the form until a plan exists, then shows the level path.
@@ -15,7 +16,7 @@ export default function NestPage() {
   const profile = useStored("profile");
   const test = useStored("test");
   const plan = useStored("plan");
-  const points = useStored("points");
+  const flock = useStored("flock");
   const { confirm, dialog } = useConfirm();
 
   if (test === undefined || plan === undefined) return null;
@@ -39,15 +40,15 @@ export default function NestPage() {
   }
 
   function collectChest(sectionId) {
-    const corn = randomChestCorn();
-    save("plan", openChest(plan, sectionId, corn));
-    save("points", (points ?? 0) + corn);
+    const chicks = randomChestChicks();
+    save("plan", openChest(plan, sectionId, chicks));
+    update("flock", (f) => hatchChicks(f, chicks, "chest"));
   }
 
   async function startNewNest() {
     const ok = await confirm({
       title: "Build a new nest?",
-      message: "This plan, its lessons, and its mock exam will be deleted so you can start fresh. Your corn stays.",
+      message: "This plan, its lessons, and its mock exam will be deleted so you can start fresh. Your chicks stay.",
       confirmLabel: "Start fresh",
       danger: true,
       chick: "mint",
@@ -76,7 +77,7 @@ export default function NestPage() {
           <span className="flex items-center gap-2">
             🎯 {test.currentGrade}% → {test.goalGrade}% <EditGradesButton test={test} />
           </span>
-          <span>🌽 {points ?? 0} corn</span>
+          <span>🐣 {chickCount(flock)} chicks</span>
         </div>
       </div>
       <p className="mt-4 text-sm text-muted">{plan.overview}</p>

@@ -6,7 +6,7 @@ import { allSections, cookLevel, currentSectionId, hasChestAfter } from "@/lib/p
 // Sideways offsets (in px) that make the path wind left and right.
 const WIGGLE = [0, 50, 80, 50, 0, -50, -80, -50];
 
-// The Duolingo-style path: day banners, level buttons, corn chests, then the mock exam.
+// The Duolingo-style path: day banners, level buttons, chick chests, then the mock exam.
 export default function NestPath({ plan, profile, today, onOpenChest }) {
   const currentId = currentSectionId(plan);
   const allDone = currentId === null;
@@ -43,7 +43,7 @@ export default function NestPath({ plan, profile, today, onOpenChest }) {
                   <ChestNode
                     offset={chestOffset}
                     unlocked={section.completed}
-                    corn={plan.chests?.[section.id]}
+                    chicks={plan.chests?.[section.id]}
                     onOpen={() => onOpenChest(section.id)}
                   />
                 )}
@@ -88,9 +88,9 @@ function LevelNode({ section, offset, isCurrent, avatar }) {
   );
 }
 
-// A corn chest: locked until the level before it is done, then tap once to collect corn.
-function ChestNode({ offset, unlocked, corn, onOpen }) {
-  const opened = corn !== undefined;
+// A chick chest: locked until the level before it is done, then tap once to hatch 1-2 chicks.
+function ChestNode({ offset, unlocked, chicks, onOpen }) {
+  const opened = chicks !== undefined;
   const ready = unlocked && !opened;
 
   return (
@@ -99,15 +99,15 @@ function ChestNode({ offset, unlocked, corn, onOpen }) {
         type="button"
         onClick={onOpen}
         disabled={!ready}
-        aria-label={opened ? `Chest opened: ${corn} corn` : ready ? "Open chest" : "Locked chest"}
+        aria-label={opened ? `Chest opened: ${chicks} chicks` : ready ? "Open chest" : "Locked chest"}
         className={`flex h-16 w-20 items-center justify-center rounded-2xl border-[3px] border-line text-3xl shadow-[0_5px_0_var(--chick-line)] transition ${
           opened ? "bg-white" : ready ? "animate-pulse bg-beak hover:-translate-y-0.5" : "bg-zinc-200 opacity-70"
         }`}
       >
-        {opened ? "🌽" : "🎁"}
+        {opened ? "🐣" : "🎁"}
       </button>
       <p className="mt-2 text-xs font-semibold text-muted">
-        {opened ? `+${corn} corn collected!` : ready ? "Tap to open!" : "Corn chest"}
+        {opened ? `+${chicks} chick${chicks === 1 ? "" : "s"} hatched!` : ready ? "Tap to open!" : "Chick chest"}
       </p>
     </div>
   );
