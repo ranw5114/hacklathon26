@@ -8,8 +8,8 @@ import { save, useStored } from "@/lib/storage";
 const MAX_FLAGS = 2;
 
 // Multiple-choice quiz, one question at a time. Used by levels and the mock exam.
-// When the last question is answered, it calls onFinish(numberCorrect, numberCounted),
-// where numberCounted leaves out flagged questions.
+// When the last question is answered, it calls onFinish(numberCorrect, numberCounted, answers),
+// where numberCounted leaves out flagged questions and answers[i] = { correct, flagged } per question.
 export default function Quiz({ questions, onFinish, topic }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null); // index of the chosen answer
@@ -45,7 +45,8 @@ export default function Quiz({ questions, onFinish, topic }) {
     if (isLast) {
       const counted = questions.length - flagged.length;
       const correct = results.filter((right, i) => right && !flagged.includes(i)).length;
-      return onFinish(correct, counted);
+      const answers = questions.map((_, i) => ({ correct: Boolean(results[i]), flagged: flagged.includes(i) }));
+      return onFinish(correct, counted, answers);
     }
     setIndex(index + 1);
     setSelected(null);

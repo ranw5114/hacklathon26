@@ -6,7 +6,7 @@ import Chick from "@/components/Chick";
 import Quiz from "@/components/Quiz";
 import { chicksForExam, hatchChicks } from "@/lib/flock";
 import { remove, save, update, useStored } from "@/lib/storage";
-import { allSections, currentSectionId, predictedGrade, quizAverage } from "@/lib/progress";
+import { allSections, currentSectionId, goalFraction, predictedGrade, quizAverage } from "@/lib/progress";
 
 // The mock exam: a practice test on everything, ending with a predicted grade.
 export default function ExamPage() {
@@ -22,11 +22,11 @@ export default function ExamPage() {
 
   if (plan === undefined || exam === undefined) return null;
 
-  const unlocked = plan && (currentSectionId(plan) === null || plan.demo);
+  const unlocked = plan && (currentSectionId(plan, goalFraction(test)) === null || plan.demo);
   if (!unlocked) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-        <span className="bubble">Finish every level to unlock the mock exam!</span>
+        <span className="bubble">Pass every level to unlock the mock exam!</span>
         <Chick variant={profile.avatar} size={110} />
         <Link href="/nest" className="btn-primary">
           Back to nest
