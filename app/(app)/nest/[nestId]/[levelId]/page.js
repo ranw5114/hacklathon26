@@ -10,16 +10,20 @@ import Lesson from "@/components/Lesson";
 import Quiz from "@/components/Quiz";
 import { addCorn, chickCount, hatchChicks, loseChickToQuiz, quizRewards } from "@/lib/flock";
 import { todayString } from "@/lib/dates";
-import { save, update, useStored } from "@/lib/storage";
+import MissingNest from "@/components/MissingNest";
+import { updateNest, useNest } from "@/lib/nests";
+import { update, useStored } from "@/lib/storage";
 import { completeSection, conceptSummary, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
-  const { id } = useParams(); // the [id] part of the URL, e.g. "d1-s2"
+  // The URL is /nest/<nestId>/<levelId>, e.g. /nest/nabc123/d1-s2
+  const { nestId, levelId: id } = useParams();
+  const nest = useNest(nestId);
   const profile = useStored("profile");
-  const test = useStored("test");
-  const plan = useStored("plan");
-  const levels = useStored("levels");
+  const test = nest?.test;
+  const plan = nest?.plan;
+  const levels = nest?.levels;
   const flock = useStored("flock");
 
   const [stage, setStage] = useState("lesson"); // "lesson" → "quiz" → "results"
@@ -36,7 +40,7 @@ export default function LevelPage() {
 
   // Generate the lesson + quiz the first time this level is opened, then save it.
   useEffect(() => {
-    if (!canPlay || level || levels === undefined || requested.current) return;
+    if (!canPlay || level || requested.current) return;
     requested.current = true;
 
     fetch("/api/level", {
@@ -47,13 +51,14 @@ export default function LevelPage() {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
-        save("levels", { ...levels, [id]: data }); // saving re-renders the page with the lesson
+        // Saving re-renders the page with the lesson.
+        updateNest(nestId, (n) => ({ ...n, levels: { ...n.levels, [id]: data } }));
       })
       .catch((err) => {
         setError(err.message || "Couldn't load this level.");
         requested.current = false; // allow "Try again"
       });
-  }, [canPlay, level, levels, profile, test, section, id, attempt]);
+  }, [canPlay, level, profile, test, section, id, nestId, attempt]);
 
   // `total` leaves out any questions the student flagged as wrong. answers[i] = { correct, flagged }.
   function finishQuiz(correct, total, answers) {
@@ -66,7 +71,7 @@ export default function LevelPage() {
     const egg = eggResult(score, goal);
     const lostChick = loseChick && chickCount(flock) > 0;
 
-    save("plan", completeSection(plan, id, score, newConcepts));
+    updateNest(nestId, (n) => ({ ...n, plan: completeSection(n.plan, id, score, newConcepts) }));
     if (chicks) update("flock", (f) => hatchChicks(f, chicks, "quiz"));
     if (corn) update("flock", (f) => addCorn(f, corn));
     if (lostChick) update("flock", (f) => loseChickToQuiz(f, todayString()));
@@ -92,11 +97,12 @@ export default function LevelPage() {
     window.scrollTo({ top: 0 });
   }
 
-  if (plan === undefined || levels === undefined) return null;
+  if (nest === undefined) return null;
+  if (!nest) return <MissingNest />;
 
   if (!canPlay) {
     return (
-      <Message bubble="This level is still in its shell!" avatar={profile.avatar}>
+      <Message bubble="This level is still in its shell!" avatar={profile.avatar} nestId={nestId}>
         Pass the levels before it first (reach your goal grade on each one).
       </Message>
     );
@@ -104,7 +110,7 @@ export default function LevelPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-      <Link href="/nest" className="text-sm font-semibold text-muted hover:underline">
+      <Link href={`/nest/${nestId}`} className="text-sm font-semibold text-muted hover:underline">
         ← Back to nest
       </Link>
       <p className="label-small mt-4">{test.subject}</p>
@@ -142,7 +148,7 @@ export default function LevelPage() {
         {/* A new key makes React start a fresh Quiz (back to question 1) */}
         {level && stage === "quiz" && <Quiz key={quizRound} questions={level.quiz} onFinish={finishQuiz} topic={section.title} />}
 
-        {stage === "results" && result && <Results result={result} onRetry={retryQuiz} onReview={reviewLesson} />}
+        {stage === "results" && result && <Results result={result} nestId={nestId} onRetry={retryQuiz} onReview={reviewLesson} />}
 
         {/* A failed quiz: a heartbroken chicken pops up */}
         <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={profile.avatar} chickMood="sad">
@@ -174,7 +180,7 @@ const PASSED_LINE = "You ate that lesson, here's some corn for your chicks to ea
 const FAILED_LINE = "You gotta lock in before you run out of chicks to fry.";
 const COOKED_LINE = "You are cooked for this test if you don't work on these concepts:";
 
-function Results({ result, onRetry, onReview }) {
+function Results({ result, nestId, onRetry, onReview }) {
   const { egg } = result;
   const percent = Math.round((result.correct / result.total) * 100);
 
@@ -219,7 +225,7 @@ function Results({ result, onRetry, onReview }) {
         <button type="button" onClick={onRetry} className={egg.id === "fried" ? "btn-primary" : "btn-secondary"}>
           {egg.id === "fried" ? "Retry the quiz" : "Try again"}
         </button>
-        <Link href="/nest" className={egg.id === "fried" ? "btn-secondary" : "btn-primary"}>
+        <Link href={`/nest/${nestId}`} className={egg.id === "fried" ? "btn-secondary" : "btn-primary"}>
           Back to nest
         </Link>
       </div>
@@ -278,13 +284,13 @@ function LessonSummary({ result }) {
   );
 }
 
-function Message({ bubble, avatar, children }) {
+function Message({ bubble, avatar, nestId, children }) {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
       <span className="bubble">{bubble}</span>
       <Chick variant={avatar} size={110} />
       <p className="text-muted">{children}</p>
-      <Link href="/nest" className="btn-primary">
+      <Link href={`/nest/${nestId}`} className="btn-primary">
         Back to nest
       </Link>
     </main>

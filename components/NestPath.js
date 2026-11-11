@@ -17,7 +17,7 @@ const WIGGLE = [0, 50, 80, 50, 0, -50, -80, -50];
 
 // The Duolingo-style path: day banners, an egg for each level, corn chests, then the mock exam.
 // `goal` is the goal grade as a fraction (0.9 = 90%), which decides golden vs fried eggs.
-export default function NestPath({ plan, profile, today, goal, onOpenChest }) {
+export default function NestPath({ nestId, plan, profile, today, goal, onOpenChest }) {
   const currentId = currentSectionId(plan, goal);
   const allDone = currentId === null;
   const totalLevels = allSections(plan).length;
@@ -44,6 +44,7 @@ export default function NestPath({ plan, profile, today, goal, onOpenChest }) {
             return (
               <div key={section.id} className="flex flex-col items-center gap-6">
                 <LevelNode
+                  nestId={nestId}
                   section={section}
                   offset={levelOffset}
                   isCurrent={section.id === currentId}
@@ -66,18 +67,18 @@ export default function NestPath({ plan, profile, today, goal, onOpenChest }) {
       ))}
 
       {/* In demo mode the exam is open early, so visitors can try it without finishing every level. */}
-      <ExamNode plan={plan} unlocked={allDone || plan.demo} />
+      <ExamNode nestId={nestId} plan={plan} unlocked={allDone || plan.demo} />
     </div>
   );
 }
 
-function LevelNode({ section, offset, isCurrent, avatar, goal, chickColor }) {
+function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColor }) {
   const router = useRouter();
   const [cracking, setCracking] = useState(false);
   const locked = !section.completed && !isCurrent;
   const result = section.completed ? eggResult(section.score, goal) : null;
   const state = locked ? "locked" : result ? result.id : "ready";
-  const href = `/nest/${section.id}`;
+  const href = `/nest/${nestId}/${section.id}`;
 
   // Unopened eggs crack open first, then the lesson appears. Finished ones open right away.
   function open() {
@@ -145,7 +146,7 @@ function ChestNode({ offset, unlocked, corn, onOpen }) {
   );
 }
 
-function ExamNode({ plan, unlocked }) {
+function ExamNode({ nestId, plan, unlocked }) {
   const exam = plan.mockExam;
   const sectionsLeft = allSections(plan).filter((s) => !s.completed).length;
 
@@ -161,7 +162,7 @@ function ExamNode({ plan, unlocked }) {
 
   return (
     <div className="mt-4 flex flex-col items-center">
-      {unlocked ? <Link href="/nest/exam">{content}</Link> : content}
+      {unlocked ? <Link href={`/nest/${nestId}/exam`}>{content}</Link> : content}
       <p className="mt-3 font-display text-lg font-semibold">Mock exam</p>
       <p className="text-sm text-muted">
         {exam.completed

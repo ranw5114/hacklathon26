@@ -13,6 +13,7 @@ import { chickLook, chickName } from "@/lib/henhouse";
 import Link from "next/link";
 import { currentSectionId, findSection, goalFraction } from "@/lib/progress";
 import { save, update, useStored } from "@/lib/storage";
+import { allPlanDays, focusNest, useNests } from "@/lib/nests";
 import {
   broodStage,
   coldIn,
@@ -37,8 +38,11 @@ import { useNow } from "@/lib/useNow";
 export default function TimerPage() {
   const stored = useStored("timer");
   const sessions = useStored("sessions");
-  const plan = useStored("plan");
-  const test = useStored("test");
+  // "Focus on my current level" uses the nest whose test is soonest.
+  const nests = useNests();
+  const focus = focusNest(nests, todayString());
+  const plan = focus?.plan ?? null;
+  const test = focus?.test ?? null;
   const profile = useStored("profile");
   const flock = useStored("flock");
   const now = useNow();
@@ -323,7 +327,7 @@ export default function TimerPage() {
         flock={flock}
         sessions={sessions}
         today={today}
-        plan={plan}
+        plan={allPlanDays(nests)}
         avatar={profile?.avatar}
         plateRef={plateRef}
         hideNewestFried={Boolean(friedFresh)}

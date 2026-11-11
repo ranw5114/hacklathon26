@@ -8,6 +8,7 @@ import { notify, playDing } from "@/lib/alerts";
 import { BroodingChick, HatchedChick } from "@/components/EggArt";
 import { formatDate, localDateString, todayString } from "@/lib/dates";
 import { fryEgg, hatchChicks, judgeMissedDays } from "@/lib/flock";
+import { allPlanDays, useNests } from "@/lib/nests";
 import { onPopOutRequest, openPopOutWindow, popOutSupported, requestPopOut } from "@/lib/popout";
 import { load, save, update, useStored } from "@/lib/storage";
 import {
@@ -33,7 +34,7 @@ const APP_TITLE = "Chick Study Buddy";
 export default function TimerWatcher() {
   const timer = useStored("timer");
   const sessions = useStored("sessions");
-  const plan = useStored("plan");
+  const nests = useNests();
   const profile = useStored("profile");
   const flock = useStored("flock");
   const now = useNow();
@@ -115,8 +116,9 @@ export default function TimerWatcher() {
   // Checked when the app opens and again after midnight (the date is part of the dependencies).
   const today = todayString();
   useEffect(() => {
-    if (plan === undefined || sessions === undefined || flock === undefined || !plan) return;
-    const result = judgeMissedDays(load("flock"), plan, sessions, today);
+    if (nests === undefined || sessions === undefined || flock === undefined || !nests.length) return;
+    // Every nest's plan days count (a day with plans for two tests is still one day).
+    const result = judgeMissedDays(load("flock"), allPlanDays(nests), sessions, today);
     if (!result.missed.length && result.flock.judgedDays.length === (flock?.judgedDays?.length ?? 0)) return;
     save("flock", result.flock);
     if (!result.lost) return;
@@ -126,7 +128,7 @@ export default function TimerWatcher() {
         ? `You missed your study plan on ${days}. One chick got fried into a drumstick. 🍗`
         : `You missed your study plan on ${days}. ${result.lost} chicks got fried into drumsticks. 🍗`;
     update("timer", (t) => ({ ...(t ?? DEFAULT_TIMER), notice: message }));
-  }, [plan, sessions, flock, today]);
+  }, [nests, sessions, flock, today]);
 
   // Show the countdown in the browser tab, so it's visible from other tabs too.
   const running = timer?.status === "running";

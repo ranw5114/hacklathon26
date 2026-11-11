@@ -5,12 +5,15 @@ import AppNav from "@/components/AppNav";
 import Chick from "@/components/Chick";
 import TimerWatcher from "@/components/TimerWatcher";
 import { ExitDemoButton } from "@/components/DemoButtons";
+import { useMoveOldNest } from "@/lib/nests";
 import { useStored } from "@/lib/storage";
 
 // Shared layout for every page in the (app) folder: Barn, Nest, Coop, Timer, Roost, Profile.
 // The (app) folder name is in parentheses, so it doesn't appear in the URL (/barn, not /app/barn).
 export default function AppLayout({ children }) {
   const profile = useStored("profile");
+  // Plans saved before multiple nests existed move into the new nests list (once).
+  useMoveOldNest();
 
   // Still reading saved data from the browser.
   if (profile === undefined) return null;

@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { DAY_END_HOUR, DAY_START_HOUR, formatClock, studyEgg } from "@/lib/calendar";
 import { eggResult, goalFraction, isUnlocked } from "@/lib/progress";
-import { useStored } from "@/lib/storage";
 
 const HOUR_PX = 56; // height of one hour on the timeline
 
@@ -28,9 +27,8 @@ function layoutEvents(events) {
 }
 
 // The expanded view of one day: study plan, suggested study time, and an hour-by-hour timeline.
-export default function DayView({ info, plan, suggestion, now, isToday }) {
+export default function DayView({ info, suggestion, now, isToday }) {
   const scrollRef = useRef(null);
-  const goal = goalFraction(useStored("test"));
   const egg = studyEgg(info.studiedMinutes);
   const timed = info.events.filter((e) => !e.allDay);
   const allDay = info.events.filter((e) => e.allDay);
@@ -128,68 +126,79 @@ export default function DayView({ info, plan, suggestion, now, isToday }) {
 
       {/* Side panel: what to study today */}
       <aside className="flex flex-col gap-4">
-        {info.isTest && (
-          <div className="card bg-red-50 font-display text-lg font-semibold">🎯 Test day! You&apos;ve got this.</div>
-        )}
-        {info.isMock && (
-          <Link href="/nest/exam" className="card-link bg-beak/40 font-display text-lg font-semibold">
-            🏆 Mock exam day
+        {info.tests.map((nest) => (
+          <div key={nest.id} className="card bg-red-50 font-display text-lg font-semibold">
+            🎯 {nest.test.subject} test day! You&apos;ve got this.
+          </div>
+        ))}
+        {info.mocks.map((nest) => (
+          <Link key={nest.id} href={`/nest/${nest.id}/exam`} className="card-link bg-beak/40 font-display text-lg font-semibold">
+            🏆 {nest.test.subject} mock exam
           </Link>
-        )}
+        ))}
 
-        {info.planDay ? (
-          <div className="card">
-            <p className="label-small">Study plan · Day {info.planDayNumber}</p>
-            <h3 className="mt-1 text-xl">{info.planDay.focus}</h3>
-            <p className="text-sm text-muted">{info.studyMinutes} minutes planned</p>
-            <ul className="mt-3 flex flex-col gap-2">
-              {info.planDay.sections.map((section) => {
-                const unlocked = isUnlocked(plan, section.id, goal);
-                const cook = section.completed ? eggResult(section.score, goal) : null;
-                const label = (
-                  <>
-                    <span>{cook ? cook.emoji : unlocked ? "⭐" : "🔒"}</span>
-                    <span className="flex-1">{section.title}</span>
-                    <span className="text-xs text-muted">{section.minutes}m</span>
-                  </>
-                );
-                return (
-                  <li key={section.id}>
-                    {unlocked ? (
-                      <Link
-                        href={`/nest/${section.id}`}
-                        className="flex items-center gap-2 rounded-xl bg-chick/40 px-3 py-2 text-sm font-semibold hover:bg-chick"
-                      >
-                        {label}
-                      </Link>
-                    ) : (
-                      <span className="flex items-center gap-2 rounded-xl bg-zinc-100 px-3 py-2 text-sm text-muted">
-                        {label}
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-            {suggestion && !info.planDone && (
-              <p className="mt-3 rounded-xl border-2 border-dashed border-line px-3 py-2 text-sm">
-                💡 {suggestion.fits ? "Free" : "Longest free gap"}:{" "}
+        {info.plans.map((plan) => {
+          const goal = goalFraction(plan.nest.test);
+          return (
+            <div key={plan.nest.id} className="card">
+              <p className="label-small">
+                {plan.nest.test.subject} · Day {plan.number}
+              </p>
+              <h3 className="mt-1 text-xl">{plan.day.focus}</h3>
+              <p className="text-sm text-muted">{plan.minutes} minutes planned</p>
+              <ul className="mt-3 flex flex-col gap-2">
+                {plan.day.sections.map((section) => {
+                  const unlocked = isUnlocked(plan.nest.plan, section.id, goal);
+                  const cook = section.completed ? eggResult(section.score, goal) : null;
+                  const label = (
+                    <>
+                      <span>{cook ? cook.emoji : unlocked ? "🥚" : "🔒"}</span>
+                      <span className="flex-1">{section.title}</span>
+                      <span className="text-xs text-muted">{section.minutes}m</span>
+                    </>
+                  );
+                  return (
+                    <li key={section.id}>
+                      {unlocked ? (
+                        <Link
+                          href={`/nest/${plan.nest.id}/${section.id}`}
+                          className="flex items-center gap-2 rounded-xl bg-chick/40 px-3 py-2 text-sm font-semibold hover:bg-chick"
+                        >
+                          {label}
+                        </Link>
+                      ) : (
+                        <span className="flex items-center gap-2 rounded-xl bg-zinc-100 px-3 py-2 text-sm text-muted">
+                          {label}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {plan.done && <p className="mt-3 font-semibold">✅ All done for this test today!</p>}
+            </div>
+          );
+        })}
+
+        {info.plans.length > 0 && !info.planDone && (
+          <>
+            {suggestion && (
+              <p className="rounded-xl border-2 border-dashed border-line px-3 py-2 text-sm">
+                💡 {suggestion.fits ? "Free" : "Longest free gap"} for {info.studyMinutes} min of study:{" "}
                 <strong>
                   {formatClock(suggestion.start)} – {formatClock(suggestion.end)}
                 </strong>
                 {!suggestion.fits && ` (${suggestion.minutes} min, so split your study time)`}
               </p>
             )}
-            {!suggestion && !info.planDone && isToday && (
-              <p className="mt-3 rounded-xl bg-chick/40 px-3 py-2 text-sm">
+            {!suggestion && isToday && (
+              <p className="rounded-xl bg-chick/40 px-3 py-2 text-sm">
                 🌙 It&apos;s getting late. Do what you can, or catch up tomorrow.
               </p>
             )}
-            {info.planDone && <p className="mt-3 font-semibold">✅ All done for this day!</p>}
-          </div>
-        ) : (
-          <div className="card text-muted">No study plan for this day.</div>
+          </>
         )}
+        {info.plans.length === 0 && <div className="card text-muted">No study plan for this day.</div>}
 
         {egg && (
           <div className="card">
