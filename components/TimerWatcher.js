@@ -16,6 +16,7 @@ import {
   coldIn,
   DEFAULT_TIMER,
   formatTime,
+  MIN_FOCUS_MIN,
   pauseTimer,
   progress,
   resetTimer,
@@ -79,19 +80,20 @@ export default function TimerWatcher() {
       next = advance(next);
     }
 
-    const hatched = newSessions.length;
+    // Only sessions of at least MIN_FOCUS_MIN minutes hatch (older saved timers may be shorter).
+    const hatched = newSessions.filter((s) => s.minutes >= MIN_FOCUS_MIN).length;
+    const tooShort = newSessions.length - hatched;
     const notice = [
       hatched === 1 && "Your egg hatched! A new chick joined your flock. 🐣",
       hatched > 1 && `${hatched} eggs hatched! New chicks joined your flock. 🐣`,
+      tooShort > 0 && `Focus done! Sessions need ${MIN_FOCUS_MIN}+ minutes to hatch an egg.`,
       breakEnded ? "Break's over, ready for another round?" : `Break time (${next.breakMin} min).`,
     ]
       .filter(Boolean)
       .join(" ");
 
-    if (hatched) {
-      save("sessions", [...(sessions ?? []), ...newSessions].slice(-200));
-      update("flock", (f) => hatchChicks(f, hatched, "timer", newSessions.at(-1).endedAt));
-    }
+    if (newSessions.length) save("sessions", [...(sessions ?? []), ...newSessions].slice(-200));
+    if (hatched) update("flock", (f) => hatchChicks(f, hatched, "timer", newSessions.at(-1).endedAt));
     save("timer", { ...next, notice });
 
     playDing();

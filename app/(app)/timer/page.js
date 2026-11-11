@@ -17,6 +17,7 @@ import {
   DEFAULT_TIMER,
   formatTime,
   hasEgg,
+  MIN_FOCUS_MIN,
   PAUSE_LIMIT_MS,
   pauseTimer,
   PRESETS,
@@ -92,7 +93,8 @@ export default function TimerPage() {
   }
 
   function setCustom(field, value) {
-    const minutes = Math.min(field === "focusMin" ? 120 : 60, Math.max(1, Number(value) || 1));
+    const shortest = field === "focusMin" ? MIN_FOCUS_MIN : 1;
+    const minutes = Math.min(field === "focusMin" ? 120 : 60, Math.max(shortest, Number(value) || shortest));
     const focusMin = field === "focusMin" ? minutes : timer.focusMin;
     const breakMin = field === "breakMin" ? minutes : timer.breakMin;
     save("timer", setDurations(timer, "custom", focusMin, breakMin));
@@ -202,27 +204,23 @@ export default function TimerPage() {
         {timer.preset === "custom" && (
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-semibold">Focus (minutes)</span>
-              <input
-                type="number"
-                min={1}
+              <span className="text-sm font-semibold">Focus (minutes, at least {MIN_FOCUS_MIN})</span>
+              <MinutesInput
+                min={MIN_FOCUS_MIN}
                 max={120}
                 disabled={!idle}
-                className="input"
                 value={timer.focusMin}
-                onChange={(e) => setCustom("focusMin", e.target.value)}
+                onCommit={(value) => setCustom("focusMin", value)}
               />
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-sm font-semibold">Break (minutes)</span>
-              <input
-                type="number"
+              <MinutesInput
                 min={1}
                 max={60}
                 disabled={!idle}
-                className="input"
                 value={timer.breakMin}
-                onChange={(e) => setCustom("breakMin", e.target.value)}
+                onCommit={(value) => setCustom("breakMin", value)}
               />
             </label>
           </div>
@@ -244,7 +242,8 @@ export default function TimerPage() {
         )}
 
         <p className="text-sm text-muted">
-          Finish a focus session and your egg hatches into a chick. Stop early and it gets fried. You can pause for up
+          Finish a focus session ({MIN_FOCUS_MIN} minutes or longer) and your egg hatches into a chick. Stop early
+          and it gets fried. You can pause for up
           to {PAUSE_LIMIT_MS / 60_000} minutes before your egg goes cold. The timer keeps going on other pages and tabs.
         </p>
         {notificationsSupported() && Notification.permission === "denied" && (
@@ -287,6 +286,29 @@ export default function TimerPage() {
         )}
       </section>
     </main>
+  );
+}
+
+// A minutes box you can type into freely. The number is checked (and fixed if it's out of range)
+// when you click away or press Enter, so typing "15" doesn't get corrected halfway through.
+function MinutesInput({ value, min, max, disabled, onCommit }) {
+  const [draft, setDraft] = useState(null); // what's being typed, or null when not editing
+  const commit = () => {
+    if (draft !== null) onCommit(draft);
+    setDraft(null);
+  };
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      disabled={disabled}
+      className="input"
+      value={draft ?? value}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === "Enter" && commit()}
+    />
   );
 }
 
