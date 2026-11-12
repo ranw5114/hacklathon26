@@ -12,6 +12,7 @@ const PAUSE_MS = 6000; // wait between AI requests so we stay under the free per
 
 const learner = { name: "Demo Chick", learningStyle: "examples" };
 const test = {
+  subjectId: "alg2", // "Algebra II" in the Nest Builder's subject menu
   subject: "Algebra II",
   topic: "Quadratic functions: factoring, vertex form, and the quadratic formula",
   currentGrade: 76,
@@ -40,10 +41,13 @@ async function post(path, body) {
   throw new Error(`${path} kept failing`);
 }
 
-console.log("Generating study plan…");
-const plan = await post("/api/plan", { learner, test: { ...test, testDate: TEST_DATE }, today: TODAY });
+console.log("Researching the subject and generating the study plan…");
+const { research, ...plan } = await post("/api/plan", { learner, test: { ...test, testDate: TEST_DATE }, today: TODAY });
 const sections = plan.days.flatMap((d) => d.sections);
 console.log(`  ${plan.days.length} days, ${sections.length} levels: "${plan.title}"`);
+// Like the Nest Builder, keep the researched brief with the test, so lessons and the exam match the class.
+Object.assign(test, { brief: research?.brief ?? "", sources: research?.sources ?? [], basis: research?.basis ?? [] });
+console.log(`  Brief based on: ${test.basis.join(", ") || "nothing"}`);
 
 const levels = {};
 for (const [i, section] of sections.entries()) {
