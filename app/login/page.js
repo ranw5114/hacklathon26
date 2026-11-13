@@ -7,6 +7,7 @@ import Chick from "@/components/Chick";
 import { Field } from "@/components/ProfileFields";
 import { PasswordInput } from "@/components/AccountFields";
 import { logIn } from "@/lib/account";
+import ChangePassword from "@/components/ChangePassword";
 
 // Log in to an account, on any device. Your progress comes with you.
 export default function LoginPage() {
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
 
   async function submit(e) {
     e.preventDefault();
@@ -46,6 +48,11 @@ export default function LoginPage() {
         <button type="submit" disabled={busy} className="btn-primary">
           {busy ? "Logging in…" : "Log in"}
         </button>
+        {!forgot && (
+          <button type="button" onClick={() => setForgot(true)} className="text-sm font-semibold text-muted underline">
+            Forgot your password?
+          </button>
+        )}
         <p className="text-center text-sm text-muted">
           New here?{" "}
           <Link href="/setup" className="font-semibold underline">
@@ -53,6 +60,11 @@ export default function LoginPage() {
           </Link>
         </p>
       </form>
+      {forgot && (
+        <div className="mt-4 w-full">
+          <ChangePassword needLogin login={login} onCancel={() => setForgot(false)} onDone={() => router.push("/barn")} />
+        </div>
+      )}
       <Link href="/" className="mt-4 text-sm font-semibold text-muted hover:underline">
         ← Back
       </Link>
