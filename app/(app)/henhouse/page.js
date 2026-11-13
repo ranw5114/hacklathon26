@@ -63,12 +63,14 @@ export default function HenhousePage() {
                   key={chick.id}
                   type="button"
                   onClick={() => setSelectedId(chick.id)}
-                  className={`flex w-20 flex-col items-center rounded-2xl border-[3px] p-1 transition hover:-translate-y-0.5 ${
+                  className={`group flex w-20 flex-col items-center rounded-2xl border-[3px] p-1 transition ${
                     i === selectedIndex ? "border-line bg-white shadow-[0_3px_0_var(--chick-line)]" : "border-transparent"
                   }`}
                 >
                   <span className="relative">
-                    <Chick {...chickLook(chick)} size={52} />
+                    <span className="inline-block group-hover:anim-hop group-active:anim-jump">
+                      <Chick {...chickLook(chick)} size={52} />
+                    </span>
                     {chick.id === profile?.avatarChickId && (
                       <span className="absolute -top-2 -right-2 text-base" title="Your avatar">
                         <Icon name="star" size={18} />

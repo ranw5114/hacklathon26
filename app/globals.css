@@ -125,3 +125,214 @@ h3 {
     animation: none;
   }
 }
+
+/* ---- Playful motion ---------------------------------------------------------------
+   Chicks blink on their own; cards, menu icons, and chicks react to hover and clicks.
+   The anim-* utilities work with hover:, group-hover:, and active: (e.g. group-hover:anim-peck). */
+@keyframes chick-blink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+.chick-blink {
+  animation: chick-blink 5s infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-18%) scaleY(1.05);
+  }
+  55% {
+    transform: translateY(0) scaleY(0.92) scaleX(1.06);
+  }
+  75% {
+    transform: translateY(-6%);
+  }
+}
+@keyframes jump {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  35% {
+    transform: translateY(-35%) rotate(-8deg);
+  }
+  65% {
+    transform: translateY(-10%) rotate(6deg);
+  }
+}
+@keyframes peck {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20%,
+  60% {
+    transform: rotate(18deg) translateY(6%);
+  }
+  40%,
+  80% {
+    transform: rotate(-4deg);
+  }
+}
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(-14deg);
+  }
+  40% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(-8deg);
+  }
+  80% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes flip {
+  0% {
+    transform: perspective(200px) rotateX(0);
+  }
+  50% {
+    transform: perspective(200px) rotateX(-180deg) scale(1.08);
+  }
+  100% {
+    transform: perspective(200px) rotateX(-360deg);
+  }
+}
+@keyframes bounce-twice {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  20%,
+  60% {
+    transform: translateY(-14%);
+  }
+  40%,
+  80% {
+    transform: translateY(0) scaleY(0.94);
+  }
+}
+@keyframes pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.2) rotate(-6deg);
+  }
+  70% {
+    transform: scale(0.95) rotate(3deg);
+  }
+}
+@keyframes peek {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30%,
+  70% {
+    transform: translateY(-10%) scale(1.06);
+  }
+}
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(12deg);
+  }
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tilt {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-8deg) translateY(-4%);
+  }
+}
+@keyframes float-up {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--drift, 0px), -70px) scale(1.1);
+    opacity: 0;
+  }
+}
+@utility anim-hop {
+  animation: hop 0.6s ease-in-out;
+}
+@utility anim-jump {
+  animation: jump 0.7s ease-in-out;
+}
+@utility anim-peck {
+  animation: peck 0.7s ease-in-out;
+  transform-origin: 50% 90%;
+}
+@utility anim-wobble {
+  animation: wobble 0.8s ease-in-out;
+  transform-origin: 50% 90%;
+}
+@utility anim-flip {
+  animation: flip 0.8s ease-in-out;
+}
+@utility anim-bounce {
+  animation: bounce-twice 0.8s ease-in-out;
+}
+@utility anim-pop {
+  animation: pop 0.6s ease-in-out;
+}
+@utility anim-peek {
+  animation: peek 0.9s ease-in-out;
+}
+@utility anim-wiggle {
+  animation: wiggle 0.45s ease-in-out;
+}
+@utility anim-spin {
+  animation: spin 0.7s ease-in-out;
+}
+@utility anim-tilt {
+  animation: tilt 0.6s ease-in-out;
+}
+@utility anim-float-up {
+  animation: float-up 1.1s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chick-blink,
+  [class*="anim-"] {
+    animation: none !important;
+  }
+}

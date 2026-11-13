@@ -60,12 +60,14 @@ function NavLink({ item, active, stacked }) {
   return (
     <Link
       href={item.href}
-      className={`flex items-center rounded-2xl border-2 px-3 py-1.5 font-display font-semibold transition ${
+      className={`group flex items-center rounded-2xl border-2 px-3 py-1.5 font-display font-semibold transition ${
         // Phones fit 7 tabs: narrower padding and labels that never wrap.
         stacked ? "min-w-0 flex-1 flex-col gap-0 px-0.5 text-[11px] whitespace-nowrap" : "gap-1.5 text-sm"
       } ${active ? "border-line bg-chick" : "border-transparent hover:bg-chick/40"}`}
     >
-      <Icon name={item.icon} size={stacked ? 24 : 20} />
+      <span className="inline-flex group-hover:anim-wiggle">
+        <Icon name={item.icon} size={stacked ? 24 : 20} />
+      </span>
       {item.label}
     </Link>
   );
