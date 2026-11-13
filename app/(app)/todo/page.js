@@ -8,7 +8,7 @@ import Icon from "@/components/Icon";
 import PageTour from "@/components/PageTour";
 import { SyncButton, SyncedSources } from "@/components/AssignmentSync";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
-import { addDays, formatDate, todayString } from "@/lib/dates";
+import { addDays, daysBetween, formatDate, todayString } from "@/lib/dates";
 import { useNests } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
 import {
@@ -45,6 +45,7 @@ export default function TodoPage() {
   const overdueHomework = todos.homework.filter((h) => homeworkStatus(h, now) === "overdue");
   const missedLessons = missedPlanItems(nests, today, todos);
   const days = daysToShow(nests, todos, today);
+  const overdueDays = overdueByDay(overdueHomework, missedLessons);
   const subjects = [...new Set(nests.map((n) => n.test.subject))];
 
   const canNotify = notificationsSupported();
@@ -101,23 +102,38 @@ export default function TodoPage() {
 
       <SyncedSources todos={todos} />
 
-      {/* Overdue */}
-      {(overdueHomework.length > 0 || missedLessons.length > 0) && (
-        <section className="card mt-6 border-red-700 bg-red-50">
-          <h2 className="flex items-center gap-2 text-xl text-red-800">
-            <Icon name="fried" size={26} /> Overdue
-          </h2>
-          <p className="text-sm text-red-800/80">Don&apos;t let these get fried! Catch up as soon as you can. Oldest first.</p>
-          <ul className="mt-3 flex flex-col gap-2">
-            {overdueByDate(overdueHomework, missedLessons).map((entry) =>
-              entry.homework ? (
-                <HomeworkRow key={entry.homework.id} homework={entry.homework} now={now} />
-              ) : (
-                <PlanRow key={entry.lesson.key} item={entry.lesson} overdueFrom={entry.lesson.date} />
-              )
-            )}
-          </ul>
-        </section>
+      {/* Overdue: one red card per day it was due, oldest first */}
+      {overdueDays.length > 0 && (
+        <div className="mt-6 flex flex-col gap-4">
+          <p className="flex items-center gap-2 px-2 font-display font-semibold text-red-800">
+            <Icon name="fried" size={22} /> Overdue · don&apos;t let these get fried!
+          </p>
+          {overdueDays.map(({ date, entries }) => {
+            const late = daysBetween(date, today);
+            return (
+              <section key={date} className="card border-red-700 bg-red-50 shadow-[0_4px_0_#991b1b]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="flex items-center gap-2 text-xl text-red-800">
+                    <Icon name="fried" size={26} />
+                    {dayLabel(date, today)} <span className="text-base font-normal text-red-800/70">· {formatDate(date)}</span>
+                  </h2>
+                  <span className="rounded-full bg-red-700 px-3 py-0.5 text-sm font-semibold text-white">
+                    {late === 0 ? "Overdue" : late === 1 ? "1 day late" : `${late} days late`}
+                  </span>
+                </div>
+                <ul className="mt-3 flex flex-col gap-2">
+                  {entries.map((entry) =>
+                    entry.homework ? (
+                      <HomeworkRow key={entry.homework.id} homework={entry.homework} now={now} />
+                    ) : (
+                      <PlanRow key={entry.lesson.key} item={entry.lesson} />
+                    )
+                  )}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
       )}
 
       {/* Day by day */}
@@ -187,21 +203,19 @@ export default function TodoPage() {
   );
 }
 
-// Overdue homework and missed lessons in one list, sorted by due date (oldest first).
-function overdueByDate(homework, lessons) {
-  return [
-    ...homework.map((h) => ({ homework: h, due: dueAt(h), subject: h.subject })),
-    ...lessons.map((l) => ({ lesson: l, due: new Date(`${l.date}T23:59:00`).getTime(), subject: l.subject })),
+// Overdue homework and missed lessons, grouped by the day they were due (oldest day first,
+// and by due time within a day).
+function overdueByDay(homework, lessons) {
+  const entries = [
+    ...homework.map((h) => ({ homework: h, date: h.dueDate, due: dueAt(h), subject: h.subject })),
+    ...lessons.map((l) => ({ lesson: l, date: l.date, due: new Date(`${l.date}T23:59:00`).getTime(), subject: l.subject })),
   ].sort((a, b) => a.due - b.due || (a.subject || "").localeCompare(b.subject || ""));
-}
-
-// The red "Overdue" label that replaces the due date on late items (hover shows when it was due).
-function OverdueTag({ was }) {
-  return (
-    <span className="mr-1 rounded-full bg-red-700 px-2 py-0.5 font-semibold text-white" title={`Was due ${was}`}>
-      Overdue
-    </span>
-  );
+  const days = new Map();
+  for (const entry of entries) {
+    if (!days.has(entry.date)) days.set(entry.date, []);
+    days.get(entry.date).push(entry);
+  }
+  return [...days].map(([date, items]) => ({ date, entries: items }));
 }
 
 // A round checkbox in the chicken style.
@@ -222,7 +236,7 @@ function CheckButton({ done, onClick, label, disabled }) {
   );
 }
 
-function PlanRow({ item, overdueFrom }) {
+function PlanRow({ item }) {
   const meta = [item.subject, item.minutes && `${item.minutes} min`].filter(Boolean).join(" · ");
   return (
     <li className={`flex items-center gap-3 rounded-2xl bg-white px-3 py-2 ${item.done ? "opacity-60" : ""}`}>
@@ -237,7 +251,6 @@ function PlanRow({ item, overdueFrom }) {
       <div className="min-w-0 flex-1">
         <p className={`font-semibold ${item.done ? "line-through" : ""}`}>{item.title}</p>
         <p className="text-xs text-muted">
-          {overdueFrom && <OverdueTag was={formatDate(overdueFrom)} />}
           {meta}
           {item.auto && " · passed"}
         </p>
@@ -253,7 +266,7 @@ function PlanRow({ item, overdueFrom }) {
 
 function HomeworkRow({ homework: h, now }) {
   const status = homeworkStatus(h, now);
-  const when = [status === "overdue" && formatDate(h.dueDate), h.dueTime && `due ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}`]
+  const when = [h.dueTime && `due ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}`]
     .filter(Boolean)
     .join(" ");
   return (
@@ -267,8 +280,7 @@ function HomeworkRow({ homework: h, now }) {
       <div className="min-w-0 flex-1">
         <p className={`font-semibold ${h.done ? "line-through" : ""}`}>{h.title}</p>
         <p className="text-xs text-muted">
-          {status === "overdue" && <OverdueTag was={when} />}
-          {[h.subject, status !== "overdue" && when, h.sourceId && "synced"].filter(Boolean).join(" · ")}
+          {[h.subject, when, h.sourceId && "synced"].filter(Boolean).join(" · ")}
           {status === "soon" && <span className="ml-1 font-semibold text-beak">· Due {dueRelative(h, now)}</span>}
         </p>
       </div>
