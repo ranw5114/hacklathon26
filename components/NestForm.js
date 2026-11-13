@@ -1,13 +1,18 @@
 "use client";
 
 import Icon from "@/components/Icon";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Field } from "@/components/ProfileFields";
 import { useRouter } from "next/navigation";
 import { addNest } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { checkGrades } from "@/lib/grades";
 import { findSubject, SUBJECT_GROUPS, SUBJECTS } from "@/lib/subjects";
+import { isPdf, mergeNotes, readStudyGuide } from "@/lib/studyGuide";
+import { formatBytes } from "@/lib/attachmentTypes";
+
+// More notes than this (from lots of PDFs) get combined into one shorter set before planning.
+const GUIDE_MERGE_CHARS = 40_000;
 
 // The menu value for "type your own subject".
 const OTHER = "other";
@@ -41,6 +46,40 @@ export default function NestForm({ learner }) {
   const [error, setError] = useState("");
   const [canSwap, setCanSwap] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState("");
+  // Study-guide PDFs: { id, name, size, progress, label, status: "waiting" | "working" | "ready" | "error", notes, pages, error }
+  const [guides, setGuides] = useState([]);
+  const queue = useRef(Promise.resolve()); // PDFs are read one at a time, so the free AI isn't overloaded
+  const fileInput = useRef(null);
+  const reading = guides.some((g) => g.status === "waiting" || g.status === "working");
+
+  function changeGuide(id, changes) {
+    setGuides((list) => list.map((g) => (g.id === id ? { ...g, ...changes } : g)));
+  }
+
+  function addGuides(files) {
+    const pdfs = [...files].filter(isPdf);
+    const skipped = files.length - pdfs.length;
+    setError(skipped ? `Only PDFs can be attached here, so ${skipped === 1 ? "1 file was" : `${skipped} files were`} skipped.` : "");
+    const about = { subject: test.subject, topic: test.topic };
+    for (const file of pdfs) {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      setGuides((list) => [...list, { id, name: file.name, size: file.size, progress: 0, label: "Waiting its turn…", status: "waiting" }]);
+      queue.current = queue.current.then(async () => {
+        changeGuide(id, { status: "working", label: "Opening the PDF…" });
+        try {
+          const { notes, pages } = await readStudyGuide(file, about, (progress, label) => changeGuide(id, { progress, label }));
+          changeGuide(id, { status: "ready", progress: 1, notes, pages, label: "Read" });
+        } catch (err) {
+          changeGuide(id, { status: "error", error: err.message || "Couldn't read this PDF." });
+        }
+      });
+    }
+  }
+
+  function removeGuide(id) {
+    setGuides((list) => list.filter((g) => g.id !== id));
+  }
 
   const picked = findSubject(test.subjectId);
   const isTest = picked?.kind === "test";
@@ -66,16 +105,32 @@ export default function NestForm({ learner }) {
       return;
     }
 
+    if (reading) {
+      setError("Hang on, the AI is still reading your PDFs. The button will work once they're done.");
+      return;
+    }
+
     setLoading(true);
+    const ready = guides.filter((g) => g.status === "ready" && g.notes);
     const finalTest = {
       ...test,
       // Tests like the SAT can be studied as a whole, so "what's on it" can be left blank.
       topic: test.topic.trim() || findSubject(test.subjectId)?.defaultTopic || test.topic,
       currentGrade: Number(test.currentGrade),
       goalGrade: Number(test.goalGrade),
+      guideFiles: ready.map((g) => ({ name: g.name, pages: g.pages ?? null })),
     };
 
     try {
+      // Notes from the PDFs are kept with the nest (the PDFs themselves aren't stored).
+      let guide = ready.map((g) => (ready.length > 1 ? `From "${g.name}":\n${g.notes}` : g.notes)).join("\n\n");
+      if (guide.length > GUIDE_MERGE_CHARS && ready.length > 1) {
+        setLoadingLabel("Combining the notes from your PDFs…");
+        guide = await mergeNotes(ready.map((g) => `From "${g.name}":\n${g.notes}`), { subject: finalTest.subject, topic: finalTest.topic });
+      }
+      finalTest.guide = guide;
+      setLoadingLabel("");
+
       const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,6 +148,7 @@ export default function NestForm({ learner }) {
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);
+      setLoadingLabel("");
     }
   }
 
@@ -207,6 +263,59 @@ export default function NestForm({ learner }) {
           onChange={(e) => update("notes", e.target.value)}
         />
       </Field>
+      <div className="-mt-2 flex flex-col gap-2">
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/pdf,.pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            addGuides(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => fileInput.current?.click()} className="btn-secondary px-4 py-1.5 text-sm">
+            <Icon name="plus" size={18} /> Attach study guide PDFs
+          </button>
+          <span className="text-xs text-muted">As many as you like, any size. Big ones are read in parts.</span>
+        </div>
+        {guides.length > 0 && (
+          <ul className="flex flex-col gap-2">
+            {guides.map((g) => (
+              <li key={g.id} className="flex items-center gap-3 rounded-2xl border-2 border-line bg-white px-3 py-2 text-sm">
+                <Icon name={g.status === "error" ? "fried" : g.status === "ready" ? "done" : "book"} size={22} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{g.name}</p>
+                  {g.status === "error" ? (
+                    <p className="text-xs text-red-700">{g.error}</p>
+                  ) : g.status === "ready" ? (
+                    <p className="text-xs text-muted">
+                      {formatBytes(g.size)}
+                      {g.pages ? ` · ${g.pages} ${g.pages === 1 ? "page" : "pages"}` : ""} · {g.notes ? "Read and added to your plan" : "No study notes found in it"}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-muted">
+                        {formatBytes(g.size)} · {g.label}
+                      </p>
+                      <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-chick/50">
+                        <span className="block h-full bg-beak transition-all" style={{ width: `${Math.round(g.progress * 100)}%` }} />
+                      </span>
+                    </>
+                  )}
+                </div>
+                {g.status !== "working" && (
+                  <button type="button" onClick={() => removeGuide(g.id)} className="shrink-0 rounded-xl p-1 hover:bg-red-50" aria-label={`Remove ${g.name}`}>
+                    <Icon name="close" size={18} />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {error && (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-red-50 p-3 text-sm text-red-700">
@@ -219,8 +328,8 @@ export default function NestForm({ learner }) {
         </div>
       )}
 
-      <button type="button" onClick={buildNest} disabled={loading} className="btn-primary self-end">
-        {loading ? `Researching ${test.subject || "your subject"} and building your nest…` : "Build my nest"}
+      <button type="button" onClick={buildNest} disabled={loading || reading} className="btn-primary self-end">
+        {reading ? "Reading your PDFs…" : loadingLabel ? loadingLabel : loading ? `Researching ${test.subject || "your subject"} and building your nest…` : "Build my nest"}
       </button>
     </section>
   );

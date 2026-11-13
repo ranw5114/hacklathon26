@@ -2,7 +2,7 @@ import { generateJSON } from "@/lib/gemini";
 import { addDays, daysBetween } from "@/lib/dates";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { researchSubject } from "@/lib/research";
-import { subjectBriefText } from "@/lib/briefPrompt";
+import { studyGuideText, subjectBriefText } from "@/lib/briefPrompt";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
 export const maxDuration = 60;
@@ -10,6 +10,7 @@ export const maxDuration = 60;
 // Keep plans short enough to read and to stay inside the free AI limits.
 const MAX_STUDY_DAYS = 14;
 const MAX_NOTES_CHARS = 15_000;
+const MAX_GUIDE_CHARS = 40_000; // notes the AI wrote from the student's study-guide PDFs
 
 // The exact JSON shape we want back from Gemini.
 const planSchema = {
@@ -61,11 +62,12 @@ Student:
 - Goal grade: ${test.goalGrade}%
 - Study time available: about ${test.hoursPerDay} hour(s) per day
 - Learning style: ${LEARNING_STYLES[learner.learningStyle].prompt}
-${subjectBriefText(test)}${notes ? `\nThe student's class notes (use these to decide what to cover):\n"""\n${notes}\n"""\n` : ""}
+${subjectBriefText(test, { withGuide: false })}${studyGuideText(test.guide, MAX_GUIDE_CHARS)}${notes ? `\nThe student's class notes (use these to decide what to cover):\n"""\n${notes}\n"""\n` : ""}
 Rules:
 - Create exactly ${lessonDays} day(s). A mock exam is scheduled separately after the last day, so don't include one.
 - Each day has 2-4 sections. Each section's minutes add up to about ${test.hoursPerDay * 60} minutes per day.
 - Start with the basic concepts and build up to harder material. Use the last day for review.
+- If there are notes from the student's study guides, cover every topic in them, using their wording and examples.
 - Every section ends with a short quiz, so each one should cover a single, testable idea.
 - The bigger the gap between the current grade and goal grade, the more practice-heavy the plan should be.
 - Use the facts about this class/test: cover its real topics, spend more time on the ones that count most, and include practice in its real question format (for a timed test or competition, include timing strategy).`;
