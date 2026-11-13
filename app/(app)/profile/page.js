@@ -12,7 +12,9 @@ import { useNests } from "@/lib/nests";
 import { avatarLook } from "@/lib/avatar";
 import { chickName } from "@/lib/henhouse";
 import Link from "next/link";
-import { deleteAccountData, logOut, useAccount, useAccountsAvailable } from "@/lib/account";
+import { deleteAccountData, logOut, signUp, useAccount, useAccountsAvailable } from "@/lib/account";
+import { AccountFields, checkAccount, EMPTY_ACCOUNT } from "@/components/AccountFields";
+import ChangePassword from "@/components/ChangePassword";
 
 // Profile (edit name, avatar, learning style) and settings (reset data).
 export default function ProfilePage() {
@@ -31,6 +33,11 @@ export default function ProfilePage() {
   const account = useAccount();
   const accounts = useAccountsAvailable();
   const [leaving, setLeaving] = useState(false);
+  const [newAccount, setNewAccount] = useState(EMPTY_ACCOUNT);
+  const [accountError, setAccountError] = useState("");
+  const [makingAccount, setMakingAccount] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   // What the avatar will look like after saving.
   const previewProfile = { ...draft, avatarChickId: pickedStarter ? null : profile?.avatarChickId };
@@ -77,6 +84,21 @@ export default function ProfilePage() {
       await logOut();
     } else clearAll();
     router.push("/");
+  }
+
+  async function makeAccount(e) {
+    e.preventDefault();
+    const problem = checkAccount(newAccount);
+    if (problem) return setAccountError(problem);
+    setMakingAccount(true);
+    setAccountError("");
+    try {
+      await signUp({ ...newAccount, email: newAccount.email.trim(), username: newAccount.username.trim() });
+      setNewAccount(EMPTY_ACCOUNT);
+    } catch (err) {
+      setAccountError(err.message);
+    }
+    setMakingAccount(false);
   }
 
   async function leave() {
@@ -149,15 +171,50 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {!profile?.demo && accounts && (
-        <section className="card mt-8 flex flex-col gap-3">
+      {/* Account: make one, see it, change the password, log out */}
+      {!profile?.demo && (
+        <section className="card mt-8 flex flex-col gap-4">
           <h2 className="text-2xl">Account</h2>
-          {account && !account.expired ? (
+          {accounts === false ? (
+            <p className="text-muted">
+              Accounts aren&apos;t switched on for this website yet, so your progress is saved on this device only. (The site owner
+              can turn them on: see docs/accounts-setup.md.)
+            </p>
+          ) : account && !account.expired ? (
             <>
-              <p>
-                Logged in as <strong>{account.username}</strong> <span className="text-muted">({account.email})</span>
-              </p>
-              <p className="text-sm text-muted">Your progress saves to your account automatically, so you can log in on any device.</p>
+              <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2">
+                <dt className="font-display font-semibold">Username</dt>
+                <dd>{account.username}</dd>
+                <dt className="font-display font-semibold">Email</dt>
+                <dd className="break-all">{account.email}</dd>
+                <dt className="font-display font-semibold">Password</dt>
+                <dd className="flex flex-wrap items-center gap-3">
+                  <span className="tracking-widest">••••••••</span>
+                  {!changingPassword && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChangingPassword(true);
+                        setPasswordChanged(false);
+                      }}
+                      className="btn-secondary px-3 py-1 text-sm"
+                    >
+                      Change password
+                    </button>
+                  )}
+                </dd>
+              </dl>
+              {changingPassword && (
+                <ChangePassword
+                  onCancel={() => setChangingPassword(false)}
+                  onDone={() => {
+                    setChangingPassword(false);
+                    setPasswordChanged(true);
+                  }}
+                />
+              )}
+              {passwordChanged && <p className="rounded-2xl bg-green-50 p-3 text-sm font-semibold text-green-800">Your password is changed! Use the new one next time you log in.</p>}
+              <p className="text-sm text-muted">Your progress saves to your account automatically. Log in with this username (or email) on any device.</p>
               <button type="button" onClick={leave} disabled={leaving} className="btn-secondary self-start">
                 {leaving ? "Logging out…" : "Log out"}
               </button>
@@ -169,14 +226,30 @@ export default function ProfilePage() {
                 Log in again
               </Link>
             </>
-          ) : (
-            <>
-              <p className="text-muted">Your progress is only saved on this device. Make an account to keep it safe and use it anywhere.</p>
-              <Link href="/account" className="btn-primary self-start">
-                Make an account
-              </Link>
-            </>
-          )}
+          ) : accounts ? (
+            <form onSubmit={makeAccount} className="flex flex-col gap-4">
+              <p className="text-muted">
+                Your progress is only on this device right now. Add an email, username, and password to save it to an account and
+                log in on any device. Everything you&apos;ve done so far comes with you.
+              </p>
+              <AccountFields
+                value={newAccount}
+                onChange={(v) => {
+                  setNewAccount(v);
+                  setAccountError("");
+                }}
+              />
+              {accountError && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{accountError}</p>}
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="submit" disabled={makingAccount} className="btn-primary">
+                  {makingAccount ? "Making your account…" : "Make my account"}
+                </button>
+                <Link href="/login" className="text-sm font-semibold underline">
+                  I already have one: log in
+                </Link>
+              </div>
+            </form>
+          ) : null}
         </section>
       )}
 
