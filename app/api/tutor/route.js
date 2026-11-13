@@ -10,6 +10,8 @@ export const maxDuration = 60;
 // Only send the most recent messages, to keep requests small and fast.
 const MAX_HISTORY = 12;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+// Files uploaded from the Coop live in Google's AI file storage (see app/api/files/route.js).
+const GEMINI_FILE_PREFIX = "https://generativelanguage.googleapis.com/";
 
 // How the tutor answers for each learning style. The chat page knows how to show the
 // special parts: <graph> graphs, <svg> diagrams, <problem>/<solution> practice, and "# " headings (see lib/tutorReply.js).
@@ -49,7 +51,8 @@ ${subjectBriefText(test)}
 How to help:
 - Be warm and encouraging. Use short paragraphs and numbered steps for problems.${style ? "" : " Keep answers concise."}
 - Help with ANY school subject or homework, not only the test they're studying for. Never refuse schoolwork.
-- For homework problems (typed or in a photo), explain step by step so they learn the method, then give the answer.
+- For homework problems (typed, in a photo, or in an attached file), explain step by step so they learn the method, then give the answer.
+- When a file is attached (a PDF, document, slides, spreadsheet, audio, or video), read it and answer about it. Mention page, slide, or time numbers when it helps them find things.
 - If a photo is unclear, say what you can read and ask them to retake it.
 - Only redirect chats that have nothing to do with school. A light chicken pun now and then is welcome.
 - ${PLAIN_TEXT_RULE}${STYLE_RULES[styleId] ? `
@@ -64,6 +67,12 @@ function toGeminiContents(messages) {
     const parts = [];
     if (message.image) {
       parts.push({ inlineData: { mimeType: message.image.mimeType, data: message.image.data } });
+    }
+    // Uploaded files (PDFs, documents, audio, video...) are sent by reference, with their name,
+    // so follow-up questions like "explain page 3" still have the file.
+    for (const file of message.files ?? []) {
+      parts.push({ text: `[Attached file: ${file.name}${file.note ? `, ${file.note}` : ""}]` });
+      parts.push({ fileData: { fileUri: file.uri, mimeType: file.mimeType } });
     }
     const text = message.role === "user" ? message.text : shortenForHistory(message.text || "");
     parts.push({ text: text || "Please help me with this problem." });
@@ -81,10 +90,16 @@ export async function POST(request) {
   if (recent.some((m) => m.image && !ALLOWED_IMAGE_TYPES.includes(m.image.mimeType))) {
     return Response.json({ error: "Photos must be JPG, PNG, or WebP." }, { status: 400 });
   }
+  const files = recent.flatMap((m) => m.files ?? []);
+  if (files.some((f) => typeof f.uri !== "string" || !f.uri.startsWith(GEMINI_FILE_PREFIX))) {
+    return Response.json({ error: "One of the attached files couldn't be found. Try attaching it again." }, { status: 400 });
+  }
 
   const { data, error, status } = await generateText(
     toGeminiContents(recent),
-    buildInstructions(learner, test, currentLevel)
+    buildInstructions(learner, test, currentLevel),
+    // Reading big files takes longer, so give the AI one long try.
+    { slow: files.length > 0 }
   );
   if (error) return Response.json({ error }, { status });
 

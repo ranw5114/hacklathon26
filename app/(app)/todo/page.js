@@ -15,6 +15,7 @@ import {
   dayLabel,
   daysToShow,
   deleteHomework,
+  dueAt,
   dueRelative,
   homeworkStatus,
   missedPlanItems,
@@ -34,6 +35,7 @@ export default function TodoPage() {
   const stored = useStored("todos");
   const now = useNow();
   const [showAdd, setShowAdd] = useState(false);
+  const [overdueSort, setOverdueSort] = useState("date"); // "date" or "subject"
   const [, setPermissionAsked] = useState(0); // re-render after the browser's permission prompt
 
   if (nests === undefined || stored === undefined) return null;
@@ -105,15 +107,39 @@ export default function TodoPage() {
           <h2 className="flex items-center gap-2 text-xl text-red-800">
             <Icon name="fried" size={26} /> Overdue
           </h2>
-          <p className="text-sm text-red-800/80">Don&apos;t let these get fried! Catch up as soon as you can.</p>
-          <ul className="mt-3 flex flex-col gap-2">
-            {overdueHomework.map((h) => (
-              <HomeworkRow key={h.id} homework={h} now={now} showDate />
-            ))}
-            {missedLessons.map((item) => (
-              <PlanRow key={item.key} item={item} note={`From ${formatDate(item.date)}`} />
-            ))}
-          </ul>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-red-800/80">Don&apos;t let these get fried! Catch up as soon as you can.</p>
+            <div className="flex overflow-hidden rounded-xl border-2 border-red-800/40 text-xs font-semibold" role="group" aria-label="Sort overdue items">
+              {[
+                ["date", "Due date"],
+                ["subject", "Subject"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setOverdueSort(id)}
+                  aria-pressed={overdueSort === id}
+                  className={`px-2.5 py-1 ${overdueSort === id ? "bg-red-800 text-white" : "bg-white text-red-800"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {overdueGroups(overdueHomework, missedLessons, overdueSort).map((group) => (
+            <div key={group.title ?? "all"} className="mt-3">
+              {group.title && <p className="label-small mb-1.5 text-red-800/80">{group.title}</p>}
+              <ul className="flex flex-col gap-2">
+                {group.items.map((entry) =>
+                  entry.homework ? (
+                    <HomeworkRow key={entry.homework.id} homework={entry.homework} now={now} showDate />
+                  ) : (
+                    <PlanRow key={entry.lesson.key} item={entry.lesson} note={`From ${formatDate(entry.lesson.date)}`} />
+                  )
+                )}
+              </ul>
+            </div>
+          ))}
         </section>
       )}
 
@@ -182,6 +208,27 @@ export default function TodoPage() {
       )}
     </main>
   );
+}
+
+// Overdue homework and missed lessons in one list, oldest first. With "subject", they're grouped by
+// class (the class from Schoology or Classroom, or the one typed in), and each group is oldest first.
+function overdueGroups(homework, lessons, sortBy) {
+  const entries = [
+    ...homework.map((h) => ({ homework: h, due: dueAt(h), subject: h.subject })),
+    ...lessons.map((l) => ({ lesson: l, due: new Date(`${l.date}T23:59:00`).getTime(), subject: l.subject })),
+  ].sort((a, b) => a.due - b.due || (a.subject || "").localeCompare(b.subject || ""));
+  if (sortBy !== "subject") return [{ title: null, items: entries }];
+
+  const groups = new Map();
+  for (const entry of entries) {
+    const title = entry.subject?.trim() || "No class";
+    if (!groups.has(title)) groups.set(title, []);
+    groups.get(title).push(entry);
+  }
+  // Classes in A-Z order, with "No class" last.
+  return [...groups]
+    .sort(([a], [b]) => (a === "No class") - (b === "No class") || a.localeCompare(b))
+    .map(([title, items]) => ({ title, items }));
 }
 
 // A round checkbox in the chicken style.

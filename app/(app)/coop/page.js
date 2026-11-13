@@ -7,7 +7,9 @@ import Graph from "@/components/Graph";
 import { Diagram, Practice } from "@/components/RichParts";
 import PageTour from "@/components/PageTour";
 import { useConfirm } from "@/components/Modal";
-import { resizeImage } from "@/lib/images";
+import Icon from "@/components/Icon";
+import { attachmentIcon, formatBytes } from "@/lib/attachmentTypes";
+import { fileStillAvailable, prepareAttachment } from "@/lib/upload";
 import { findSection, currentSectionId, goalFraction } from "@/lib/progress";
 import { remove, save, useStored } from "@/lib/storage";
 import { focusNest, useNests } from "@/lib/nests";
@@ -24,7 +26,11 @@ function newMessageId() {
   return lastId;
 }
 
-// The Chicken Coop: chat with the AI tutor, including homework photos.
+// What the file picker offers. Anything else picked is checked and explained (see lib/attachmentTypes.js).
+const PICKER_ACCEPT =
+  "image/*,application/pdf,audio/*,video/*,text/*,.docx,.pptx,.xlsx,.csv,.md,.json,.py,.js,.java,.c,.cpp,.html,.css,.ts,.rtf,.heic";
+
+// The Chicken Coop: chat with the AI tutor, including homework photos and files of any size.
 export default function CoopPage() {
   const profile = useStored("profile");
   // Suggestions and the tutor focus on the nest whose test is soonest.
@@ -35,6 +41,8 @@ export default function CoopPage() {
 
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState(null); // { mimeType, data, preview } waiting to be sent
+  // Files being attached: { id, name, size, progress, label, status: "working" | "ready" | "error", result, error }
+  const [attachments, setAttachments] = useState([]);
   const [previews, setPreviews] = useState({}); // message id → photo preview (this visit only)
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState("");
@@ -51,34 +59,67 @@ export default function CoopPage() {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, thinking]);
 
-  async function pickPhoto(event) {
-    const file = event.target.files?.[0];
+  function changeAttachment(id, changes) {
+    setAttachments((list) => list.map((a) => (a.id === id ? { ...a, ...changes } : a)));
+  }
+
+  // Each picked file is prepared right away: photos are shrunk, everything else starts uploading.
+  async function pickFiles(event) {
+    const files = [...(event.target.files ?? [])];
     event.target.value = ""; // so picking the same file again still works
-    if (!file) return;
-    try {
-      setPhoto(await resizeImage(file));
-      setError("");
-    } catch (err) {
-      setError(err.message);
+    setError("");
+    for (const file of files) {
+      const id = `${Date.now()}-${Math.random()}`;
+      setAttachments((list) => [...list, { id, name: file.name, size: file.size, progress: 0, label: "Getting ready…", status: "working" }]);
+      prepareAttachment(file, (progress, label) => changeAttachment(id, { progress, label }))
+        .then((result) => {
+          if (result.type === "photo") {
+            // One photo per message, shown as a picture (a new one replaces the old one).
+            setPhoto(result);
+            setAttachments((list) => list.filter((a) => a.id !== id));
+          } else {
+            changeAttachment(id, { status: "ready", result, label: "Ready" });
+          }
+        })
+        .catch((err) => changeAttachment(id, { status: "error", error: err.message }));
     }
   }
 
+  const readyFiles = attachments.filter((a) => a.status === "ready").map((a) => a.result);
+  const stillUploading = attachments.some((a) => a.status === "working");
+
   async function send(messageText = text) {
     const trimmed = messageText.trim();
-    if ((!trimmed && !photo) || thinking) return;
+    if ((!trimmed && !photo && !readyFiles.length) || thinking || stillUploading) return;
 
-    const userMessage = { id: newMessageId(), role: "user", text: trimmed, hasPhoto: Boolean(photo) };
+    const userMessage = {
+      id: newMessageId(),
+      role: "user",
+      text: trimmed || (readyFiles.length ? "Please look at this file." : ""),
+      hasPhoto: Boolean(photo),
+      // Saved with the chat, so follow-up questions can still use the files (Google keeps them 48 hours).
+      ...(readyFiles.length ? { files: readyFiles.map(({ type, ...file }) => file) } : {}),
+    };
     const conversation = [...messages, userMessage];
     save("chat", conversation.slice(-MAX_SAVED_MESSAGES)); // shows the message right away
     if (photo) setPreviews({ ...previews, [userMessage.id]: photo.preview });
 
-    // The photo is only sent with the message it was attached to.
-    const forAI = conversation.map((m) =>
-      m.id === userMessage.id && photo ? { ...m, image: { mimeType: photo.mimeType, data: photo.data } } : m
-    );
+    // The photo is only sent with the message it was attached to. Files are sent while Google still has them.
+    const forAI = conversation.map((m) => {
+      const withPhoto = m.id === userMessage.id && photo ? { ...m, image: { mimeType: photo.mimeType, data: photo.data } } : m;
+      if (!m.files) return withPhoto;
+      const available = m.files.filter((f) => fileStillAvailable(f));
+      const expired = m.files.length - available.length;
+      return {
+        ...withPhoto,
+        files: available,
+        text: expired ? `${withPhoto.text}\n(${expired} attached file${expired === 1 ? " has" : "s have"} expired)` : withPhoto.text,
+      };
+    });
 
     setText("");
     setPhoto(null);
+    setAttachments((list) => list.filter((a) => a.status === "working"));
     setError("");
     setThinking(true);
     try {
@@ -148,7 +189,8 @@ export default function CoopPage() {
           <div className="card flex flex-col items-center gap-3 py-8 text-center">
             <span className="bubble">Ask anything. No question is too fowl!</span>
             <p className="max-w-md text-muted">
-              Type a question or snap a photo of your homework, and I&apos;ll walk you through it step by step.
+              Type a question, snap a photo of your homework, or attach a file (PDFs, slides, docs, spreadsheets,
+              audio, video), and I&apos;ll walk you through it step by step.
             </p>
             <div className="mt-2 flex flex-wrap justify-center gap-2">
               {suggestions.map((s) => (
@@ -180,6 +222,38 @@ export default function CoopPage() {
 
       {/* Message box (sticks to the bottom, above the phone nav bar) */}
       <div className="sticky bottom-20 mt-4 sm:bottom-4">
+        {attachments.length > 0 && (
+          <ul className="mb-2 flex flex-col gap-2">
+            {attachments.map((a) => (
+              <li key={a.id} className="flex items-center gap-3 rounded-2xl border-[3px] border-line bg-white px-3 py-2 text-sm">
+                <Icon name={a.status === "error" ? "close" : attachmentIcon(a.result?.mimeType)} size={22} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{a.name}</p>
+                  {a.status === "error" ? (
+                    <p className="text-red-700">{a.error}</p>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                      <span>{formatBytes(a.size)}</span>
+                      <span>· {a.label}</span>
+                      {a.status === "working" && (
+                        <span className="h-2 flex-1 overflow-hidden rounded-full border border-line bg-chick/40">
+                          <span className="block h-full bg-beak transition-all" style={{ width: `${Math.round(a.progress * 100)}%` }} />
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAttachments((list) => list.filter((x) => x.id !== a.id))}
+                  className="shrink-0 text-xs font-semibold text-muted underline"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {photo && (
           <div className="mb-2 inline-flex items-center gap-3 rounded-2xl border-[3px] border-line bg-white p-2 pr-4">
             {/* eslint-disable-next-line @next/next/no-img-element -- local preview, not a hosted image */}
@@ -200,12 +274,12 @@ export default function CoopPage() {
             type="button"
             onClick={() => fileRef.current?.click()}
             className="shrink-0 rounded-2xl p-1.5 transition hover:-translate-y-0.5 hover:bg-chick/40"
-            aria-label="Snap a photo of your homework"
-            title="Snap a photo of your homework"
+            aria-label="Add a photo or file"
+            title="Add a photo or file (PDF, slides, docs, spreadsheets, audio, video)"
           >
             <ChickCamera size={34} />
           </button>
-          <input ref={fileRef} type="file" accept="image/*" onChange={pickPhoto} className="hidden" />
+          <input ref={fileRef} type="file" multiple accept={PICKER_ACCEPT} onChange={pickFiles} className="hidden" />
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -217,10 +291,15 @@ export default function CoopPage() {
               }
             }}
             rows={1}
-            placeholder={photo ? "Add a note…" : "Ask anything…"}
+            placeholder={photo || attachments.length ? "Ask about it…" : "Ask anything…"}
             className="max-h-32 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 outline-none"
           />
-          <button type="submit" disabled={thinking || (!text.trim() && !photo)} className="btn-primary shrink-0 px-4 py-2">
+          <button
+            type="submit"
+            disabled={thinking || stillUploading || (!text.trim() && !photo && !readyFiles.length)}
+            className="btn-primary shrink-0 px-4 py-2"
+            title={stillUploading ? "Wait for the upload to finish" : undefined}
+          >
             Send
           </button>
         </form>
@@ -243,6 +322,17 @@ function Message({ message, preview }) {
             </span>
           )
         )}
+        {message.files?.map((file) => (
+          <span
+            key={file.uri}
+            className={`flex max-w-[85%] items-center gap-2 rounded-2xl border-2 border-line bg-white px-3 py-1.5 text-sm ${fileStillAvailable(file) ? "" : "opacity-60"}`}
+            title={fileStillAvailable(file) ? undefined : "This file expired after 48 hours. Attach it again to ask more about it."}
+          >
+            <Icon name={attachmentIcon(file.mimeType)} size={20} />
+            <span className="truncate font-semibold">{file.name}</span>
+            <span className="shrink-0 text-xs text-muted">{formatBytes(file.size)}</span>
+          </span>
+        ))}
         {message.text && (
           <div className="max-w-[85%] rounded-3xl rounded-br-md border-[3px] border-line bg-chick px-4 py-2 whitespace-pre-line">
             {message.text}

@@ -5,10 +5,19 @@ import Icon from "@/components/Icon";
 import Modal from "@/components/Modal";
 import { load, save, update } from "@/lib/storage";
 import { addSource, mergeImported, removeSource, RESYNC_AFTER_MS, SOURCE_NAMES, withTodoDefaults } from "@/lib/todos";
+import { fetchClassroomAssignments, googleSignInAvailable, hasGoogleToken, signInWithGoogle } from "@/lib/googleClassroom";
 
 // Downloads a linked calendar's assignments and merges them into the To-Do list.
 // Returns { added, updated } or throws an Error with a message for the student.
 async function syncSource(source, { firstTime = false } = {}) {
+  // Signed in with Google: read Classroom directly (needs a click if this visit has no token yet).
+  if (source.kind === "google") {
+    const accessToken = await signInWithGoogle();
+    const items = await fetchClassroomAssignments(accessToken, { sinceDays: firstTime ? 1 : 14 });
+    const result = mergeImported(load("todos"), source.id, items);
+    save("todos", result.todos);
+    return result;
+  }
   const res = await fetch("/api/assignments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -64,6 +73,7 @@ export function SyncedSources({ todos }) {
     if (refreshed.current) return;
     refreshed.current = true;
     for (const source of sources) {
+      if (source.kind === "google" && !hasGoogleToken()) continue; // Google's pop-up needs a click
       if (!source.syncedAt || Date.now() - source.syncedAt > RESYNC_AFTER_MS) syncSource(source).catch(() => {});
     }
   }, [sources]);
@@ -97,7 +107,7 @@ export function SyncedSources({ todos }) {
                 <span className="flex-1 font-semibold">
                   {source.name}
                   <span className="block text-xs font-normal text-muted">
-                    {SOURCE_NAMES[source.kind]} · {source.syncedAt ? `${source.count} assignments · synced ${timeAgo(source.syncedAt)}` : "not synced yet"}
+                    {source.kind === "google" ? "Signed in with Google" : SOURCE_NAMES[source.kind]} · {source.syncedAt ? `${source.count} assignments · synced ${timeAgo(source.syncedAt)}` : "not synced yet"}
                   </span>
                 </span>
                 <button type="button" onClick={() => syncNow(source)} disabled={busyId === source.id} className="btn-secondary px-3 py-1 text-xs">
@@ -179,7 +189,7 @@ function LinkForm({ onDone }) {
   return (
     <form onSubmit={connect} className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-2">
-        {Object.entries(SOURCE_NAMES).map(([id, label]) => (
+        {["schoology", "classroom"].map((id) => [id, SOURCE_NAMES[id]]).map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -193,6 +203,8 @@ function LinkForm({ onDone }) {
           </button>
         ))}
       </div>
+
+      {kind === "classroom" && <GoogleSignIn onDone={onDone} />}
 
       <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-sm">
         {STEPS[kind].map((step) => (
@@ -235,3 +247,77 @@ function LinkForm({ onDone }) {
     </form>
   );
 }
+
+// The Google Classroom tab's first option: read Classroom directly. Only shown once the site
+// owner has set up Google sign-in (docs/google-classroom-setup.md).
+function GoogleSignIn({ onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [added, setAdded] = useState(null);
+
+  if (!googleSignInAvailable()) {
+    return (
+      <p className="rounded-2xl bg-chick/40 px-4 py-2 text-xs text-muted">
+        Signing in with Google isn&apos;t set up on this site yet, so use your class calendar link below.
+      </p>
+    );
+  }
+
+  async function signIn() {
+    setBusy(true);
+    setError("");
+    const { todos, id } = addSource(load("todos"), { kind: "google", url: "google:classroom", name: "Google Classroom" });
+    save("todos", todos);
+    const source = withTodoDefaults(todos).sources.find((s) => s.id === id);
+    try {
+      const result = await syncSource(source, { firstTime: !source.syncedAt });
+      setAdded(result.added);
+    } catch (err) {
+      if (!source.syncedAt) update("todos", (t) => removeSource(t, id));
+      setError(err.message);
+    }
+    setBusy(false);
+  }
+
+  if (added !== null) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
+        <Icon name="done" size={40} />
+        <p className="font-display font-semibold">
+          {added ? `Added ${added} assignment${added === 1 ? "" : "s"} from Google Classroom!` : "Google Classroom is linked. Nothing new right now."}
+        </p>
+        <p className="text-xs text-muted">Anything you&apos;ve turned in is checked off for you.</p>
+        <button type="button" onClick={onDone} className="btn-primary px-4 py-1.5 text-sm">
+          Done
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl border-[3px] border-line bg-white p-4 text-center">
+      <button type="button" onClick={signIn} disabled={busy} className="btn-primary flex items-center gap-2">
+        <GoogleG /> {busy ? "Reading your classes…" : "Sign in with Google"}
+      </button>
+      <p className="text-xs text-muted">
+        Reads all your classes at once, and checks off what you&apos;ve already turned in. Read-only: it can&apos;t change
+        anything in Classroom.
+      </p>
+      {error && <p className="w-full rounded-2xl bg-red-50 p-2 text-sm text-red-700">{error}</p>}
+      <p className="mt-1 text-xs font-semibold text-muted">or use a class calendar link:</p>
+    </div>
+  );
+}
+
+// Google's "G", drawn in its four colors (Google asks sign-in buttons to show it).
+function GoogleG() {
+  return (
+    <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z" />
+      <path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z" />
+      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z" />
+    </svg>
+  );
+}
+
