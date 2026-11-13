@@ -36,6 +36,19 @@ const ICONS = {
       <path d="M23 21 C 24 24 21 25 21 22" fill={RED} {...stroke} strokeWidth="1.6" />
     </>
   ),
+  // A little wooden coop with a chick peeking out of the door (the Henhouse)
+  henhouse: (
+    <>
+      <path d="M3 15 L16 4 L29 15" fill="none" {...stroke} strokeWidth="2.6" />
+      <path d="M6 14 L16 6 L26 14 L26 28 L6 28 Z" fill={BROWN} {...stroke} />
+      <path d="M2.5 15.5 L16 4 L29.5 15.5" fill="none" stroke={RED} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 28 L9.5 18.5 C 9.5 13 22.5 13 22.5 18.5 L22.5 28 Z" fill="oklch(0.42 0.07 50)" {...stroke} />
+      <path d="M10.8 28 C 10.8 17.5 21.2 17.5 21.2 28 Z" fill={YOLK} stroke={LINE} strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="14" cy="22.8" r="1.2" fill={LINE} />
+      <circle cx="18" cy="22.8" r="1.2" fill={LINE} />
+      <path d="M15 24.4 L17 24.4 L16 25.8 Z" fill={BEAK} stroke={BEAK} strokeWidth="0.6" strokeLinejoin="round" />
+    </>
+  ),
   egg: (
     <>
       <path d="M16 4 C 23 4 26 15 26 19 C 26 25 21.5 28 16 28 C 10.5 28 6 25 6 19 C 6 15 9 4 16 4 Z" fill={CREAM} {...stroke} />
