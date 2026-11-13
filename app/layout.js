@@ -1,5 +1,6 @@
 import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
+import SyncWatcher from "@/components/SyncWatcher";
 
 // Fredoka for headings and buttons (from the Lovable design), Nunito for body text.
 const fredoka = Fredoka({
@@ -21,7 +22,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* Copies progress to your account (when logged in) */}
+        <SyncWatcher />
+        {children}
+      </body>
     </html>
   );
 }

@@ -12,6 +12,7 @@ import { useNests } from "@/lib/nests";
 import { avatarLook } from "@/lib/avatar";
 import { chickName } from "@/lib/henhouse";
 import Link from "next/link";
+import { deleteAccountData, logOut, useAccount, useAccountsAvailable } from "@/lib/account";
 
 // Profile (edit name, avatar, learning style) and settings (reset data).
 export default function ProfilePage() {
@@ -27,6 +28,9 @@ export default function ProfilePage() {
   // Picking a starter chick here switches away from a Henhouse chick avatar (applied on Save).
   const [pickedStarter, setPickedStarter] = useState(false);
   const { confirm, dialog } = useConfirm();
+  const account = useAccount();
+  const accounts = useAccountsAvailable();
+  const [leaving, setLeaving] = useState(false);
 
   // What the avatar will look like after saving.
   const previewProfile = { ...draft, avatarChickId: pickedStarter ? null : profile?.avatarChickId };
@@ -63,12 +67,27 @@ export default function ProfilePage() {
   async function deleteEverything() {
     const ok = await confirm({
       title: "Delete everything?",
-      message: "Your profile, nests, chicks, chats, and timer history will all be deleted. This can't be undone.",
+      message: `Your profile, nests, chicks, chats, and timer history will all be deleted${account ? ", from this device AND your account (you'll be logged out)" : ""}. This can't be undone.`,
       confirmLabel: "Delete everything",
       danger: true,
     });
     if (!ok) return;
-    clearAll();
+    if (account) {
+      await deleteAccountData().catch(() => {});
+      await logOut();
+    } else clearAll();
+    router.push("/");
+  }
+
+  async function leave() {
+    const ok = await confirm({
+      title: "Log out?",
+      message: "Your progress is saved to your account. Log back in on any device to pick up where you left off. This device will be cleared.",
+      confirmLabel: "Log out",
+    });
+    if (!ok) return;
+    setLeaving(true);
+    await logOut();
     router.push("/");
   }
 
@@ -129,6 +148,37 @@ export default function ProfilePage() {
           </button>
         </div>
       </section>
+
+      {!profile?.demo && accounts && (
+        <section className="card mt-8 flex flex-col gap-3">
+          <h2 className="text-2xl">Account</h2>
+          {account && !account.expired ? (
+            <>
+              <p>
+                Logged in as <strong>{account.username}</strong> <span className="text-muted">({account.email})</span>
+              </p>
+              <p className="text-sm text-muted">Your progress saves to your account automatically, so you can log in on any device.</p>
+              <button type="button" onClick={leave} disabled={leaving} className="btn-secondary self-start">
+                {leaving ? "Logging out…" : "Log out"}
+              </button>
+            </>
+          ) : account?.expired ? (
+            <>
+              <p className="text-red-800">You&apos;ve been logged out of {account.username}. Log in again to keep saving.</p>
+              <Link href="/login" className="btn-primary self-start">
+                Log in again
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-muted">Your progress is only saved on this device. Make an account to keep it safe and use it anywhere.</p>
+              <Link href="/account" className="btn-primary self-start">
+                Make an account
+              </Link>
+            </>
+          )}
+        </section>
+      )}
 
       <section className="card mt-8 flex flex-col gap-4">
         <h2 className="text-2xl">Settings</h2>

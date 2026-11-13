@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
 import { save } from "@/lib/storage";
+import Link from "next/link";
+import { AccountFields, checkAccount, EMPTY_ACCOUNT } from "@/components/AccountFields";
+import { signUp, useAccountsAvailable } from "@/lib/account";
 
 const STEPS = [
   { bubble: "Hi! What should I call you?", title: "Let's hatch your profile" },
-  { bubble: "How do you learn best?", title: "Your learning style" },
+  { bubble: "How do you learn best?", title: "Your learning style and account" },
 ];
 
 export default function SetupPage() {
@@ -21,6 +24,10 @@ export default function SetupPage() {
     videoSources: "",
   });
   const [error, setError] = useState("");
+  const [account, setAccount] = useState(EMPTY_ACCOUNT);
+  const [busy, setBusy] = useState(false);
+  // Accounts need the database (docs/accounts-setup.md). Without it, setup works like before.
+  const accounts = useAccountsAvailable();
 
   // Updates one field, e.g. update("name", "Kacie").
   function update(field, value) {
@@ -33,10 +40,23 @@ export default function SetupPage() {
     setStep(1);
   }
 
-  function finish() {
+  async function finish() {
     if (!profile.learningStyle) return setError("Pick how you learn best.");
-    save("profile", { ...profile, name: profile.name.trim() });
-    router.push("/barn");
+    if (accounts) {
+      const problem = checkAccount(account);
+      if (problem) return setError(problem);
+    }
+    setBusy(true);
+    setError("");
+    try {
+      // The account is made first, so a taken username doesn't leave a half-made profile.
+      if (accounts) await signUp({ ...account, email: account.email.trim(), username: account.username.trim() });
+      save("profile", { ...profile, name: profile.name.trim() });
+      router.push("/barn");
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
   }
 
   return (
@@ -88,6 +108,21 @@ export default function SetupPage() {
                   onChange={(e) => update("videoSources", e.target.value)}
                 />
               </Field>
+              {accounts && (
+                <div className="flex flex-col gap-3 rounded-3xl border-[3px] border-dashed border-line/40 bg-chick/30 p-4">
+                  <div>
+                    <p className="font-display text-lg font-semibold">Make your account</p>
+                    <p className="text-sm text-muted">So your chicks, nests, and chats are saved, and you can log in on any device.</p>
+                  </div>
+                  <AccountFields
+                    value={account}
+                    onChange={(v) => {
+                      setAccount(v);
+                      setError("");
+                    }}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
@@ -103,12 +138,18 @@ export default function SetupPage() {
               Next
             </button>
           ) : (
-            <button type="button" onClick={finish} className="btn-primary">
-              Enter the Barn
+            <button type="button" onClick={finish} disabled={busy} className="btn-primary">
+              {busy ? "Making your account…" : "Enter the Barn"}
             </button>
           )}
         </div>
       </section>
+      <p className="mt-4 text-sm text-muted">
+        Already have an account?{" "}
+        <Link href="/login" className="font-semibold underline">
+          Log in
+        </Link>
+      </p>
     </main>
   );
 }
