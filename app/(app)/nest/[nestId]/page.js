@@ -8,6 +8,8 @@ import PageTour from "@/components/PageTour";
 import EditGradesButton from "@/components/EditGrades";
 import { useConfirm } from "@/components/Modal";
 import NestPath from "@/components/NestPath";
+import PlanEditor from "@/components/PlanEditor";
+import { useState } from "react";
 import { addCorn, chickCount, randomChestCorn, withDefaults } from "@/lib/flock";
 import { deleteNest, updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
@@ -24,6 +26,7 @@ export default function NestPage() {
   const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const flock = useStored("flock");
   const { confirm, dialog } = useConfirm();
+  const [editing, setEditing] = useState(false);
 
   if (nest === undefined) return null;
   if (!nest) return <MissingNest />;
@@ -76,7 +79,14 @@ export default function NestPage() {
           <span className="flex items-center gap-1"><Icon name="corn" size={18} /> {withDefaults(flock).corn} corn</span>
         </div>
       </div>
-      <p className="mt-4 text-sm text-muted">{plan.overview}</p>
+      <div className="mt-4 flex items-start gap-3">
+        <p className="flex-1 text-sm text-muted">{plan.overview}</p>
+        {!editing && (
+          <button type="button" onClick={() => setEditing(true)} className="btn-secondary shrink-0 px-3 py-1.5 text-sm">
+            <Icon name="pencil" size={16} /> Edit plan
+          </button>
+        )}
+      </div>
       {test.brief && (
         <details className="mt-3 rounded-2xl border-2 border-line/30 bg-white px-4 py-2 text-sm">
           <summary className="cursor-pointer font-semibold">
@@ -100,7 +110,11 @@ export default function NestPage() {
       )}
 
       <div className="mt-8">
-        <NestPath nestId={nestId} plan={plan} avatar={avatar} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />
+        {editing ? (
+          <PlanEditor nestId={nestId} nest={nest} goal={goalFraction(test)} onDone={() => setEditing(false)} />
+        ) : (
+          <NestPath nestId={nestId} plan={plan} avatar={avatar} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />
+        )}
       </div>
 
       <div className="mt-12 flex flex-col items-center gap-3 text-center">
