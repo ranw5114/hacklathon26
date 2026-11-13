@@ -36,7 +36,6 @@ export default function TodoPage() {
   const stored = useStored("todos");
   const now = useNow();
   const [showAdd, setShowAdd] = useState(false);
-  const [overdueSort, setOverdueSort] = useState("date"); // "date" or "subject"
   const [, setPermissionAsked] = useState(0); // re-render after the browser's permission prompt
 
   if (nests === undefined || stored === undefined) return null;
@@ -108,39 +107,16 @@ export default function TodoPage() {
           <h2 className="flex items-center gap-2 text-xl text-red-800">
             <Icon name="fried" size={26} /> Overdue
           </h2>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-red-800/80">Don&apos;t let these get fried! Catch up as soon as you can.</p>
-            <div className="flex overflow-hidden rounded-xl border-2 border-red-800/40 text-xs font-semibold" role="group" aria-label="Sort overdue items">
-              {[
-                ["date", "Due date"],
-                ["subject", "Subject"],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setOverdueSort(id)}
-                  aria-pressed={overdueSort === id}
-                  className={`px-2.5 py-1 ${overdueSort === id ? "bg-red-800 text-white" : "bg-white text-red-800"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          {overdueGroups(overdueHomework, missedLessons, overdueSort).map((group) => (
-            <div key={group.title ?? "all"} className="mt-3">
-              {group.title && <p className="label-small mb-1.5 text-red-800/80">{group.title}</p>}
-              <ul className="flex flex-col gap-2">
-                {group.items.map((entry) =>
-                  entry.homework ? (
-                    <HomeworkRow key={entry.homework.id} homework={entry.homework} now={now} showDate />
-                  ) : (
-                    <PlanRow key={entry.lesson.key} item={entry.lesson} note={`From ${formatDate(entry.lesson.date)}`} />
-                  )
-                )}
-              </ul>
-            </div>
-          ))}
+          <p className="text-sm text-red-800/80">Don&apos;t let these get fried! Catch up as soon as you can. Oldest first.</p>
+          <ul className="mt-3 flex flex-col gap-2">
+            {overdueByDate(overdueHomework, missedLessons).map((entry) =>
+              entry.homework ? (
+                <HomeworkRow key={entry.homework.id} homework={entry.homework} now={now} />
+              ) : (
+                <PlanRow key={entry.lesson.key} item={entry.lesson} overdueFrom={entry.lesson.date} />
+              )
+            )}
+          </ul>
         </section>
       )}
 
@@ -211,25 +187,21 @@ export default function TodoPage() {
   );
 }
 
-// Overdue homework and missed lessons in one list, oldest first. With "subject", they're grouped by
-// class (the class from Schoology or Classroom, or the one typed in), and each group is oldest first.
-function overdueGroups(homework, lessons, sortBy) {
-  const entries = [
+// Overdue homework and missed lessons in one list, sorted by due date (oldest first).
+function overdueByDate(homework, lessons) {
+  return [
     ...homework.map((h) => ({ homework: h, due: dueAt(h), subject: h.subject })),
     ...lessons.map((l) => ({ lesson: l, due: new Date(`${l.date}T23:59:00`).getTime(), subject: l.subject })),
   ].sort((a, b) => a.due - b.due || (a.subject || "").localeCompare(b.subject || ""));
-  if (sortBy !== "subject") return [{ title: null, items: entries }];
+}
 
-  const groups = new Map();
-  for (const entry of entries) {
-    const title = entry.subject?.trim() || "No class";
-    if (!groups.has(title)) groups.set(title, []);
-    groups.get(title).push(entry);
-  }
-  // Classes in A-Z order, with "No class" last.
-  return [...groups]
-    .sort(([a], [b]) => (a === "No class") - (b === "No class") || a.localeCompare(b))
-    .map(([title, items]) => ({ title, items }));
+// The red "Overdue" label that replaces the due date on late items (hover shows when it was due).
+function OverdueTag({ was }) {
+  return (
+    <span className="mr-1 rounded-full bg-red-700 px-2 py-0.5 font-semibold text-white" title={`Was due ${was}`}>
+      Overdue
+    </span>
+  );
 }
 
 // A round checkbox in the chicken style.
@@ -250,8 +222,8 @@ function CheckButton({ done, onClick, label, disabled }) {
   );
 }
 
-function PlanRow({ item, note }) {
-  const meta = [item.subject, item.minutes && `${item.minutes} min`, note].filter(Boolean).join(" · ");
+function PlanRow({ item, overdueFrom }) {
+  const meta = [item.subject, item.minutes && `${item.minutes} min`].filter(Boolean).join(" · ");
   return (
     <li className={`flex items-center gap-3 rounded-2xl bg-white px-3 py-2 ${item.done ? "opacity-60" : ""}`}>
       <CheckButton
@@ -265,6 +237,7 @@ function PlanRow({ item, note }) {
       <div className="min-w-0 flex-1">
         <p className={`font-semibold ${item.done ? "line-through" : ""}`}>{item.title}</p>
         <p className="text-xs text-muted">
+          {overdueFrom && <OverdueTag was={formatDate(overdueFrom)} />}
           {meta}
           {item.auto && " · passed"}
         </p>
@@ -278,9 +251,9 @@ function PlanRow({ item, note }) {
   );
 }
 
-function HomeworkRow({ homework: h, now, showDate }) {
+function HomeworkRow({ homework: h, now }) {
   const status = homeworkStatus(h, now);
-  const when = [showDate && formatDate(h.dueDate), h.dueTime && `due ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}`]
+  const when = [status === "overdue" && formatDate(h.dueDate), h.dueTime && `due ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}`]
     .filter(Boolean)
     .join(" ");
   return (
@@ -294,9 +267,9 @@ function HomeworkRow({ homework: h, now, showDate }) {
       <div className="min-w-0 flex-1">
         <p className={`font-semibold ${h.done ? "line-through" : ""}`}>{h.title}</p>
         <p className="text-xs text-muted">
-          {[h.subject, when, h.sourceId && "synced"].filter(Boolean).join(" · ")}
+          {status === "overdue" && <OverdueTag was={when} />}
+          {[h.subject, status !== "overdue" && when, h.sourceId && "synced"].filter(Boolean).join(" · ")}
           {status === "soon" && <span className="ml-1 font-semibold text-beak">· Due {dueRelative(h, now)}</span>}
-          {status === "overdue" && <span className="ml-1 font-semibold text-red-700">· Overdue</span>}
         </p>
       </div>
       {h.link && !h.done && (
