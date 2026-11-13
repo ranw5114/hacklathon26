@@ -4,7 +4,8 @@ import PageIcon from "@/components/PageIcon";
 import Icon from "@/components/Icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChickInNest } from "@/components/EggArt";
+import { BroodingChick, ChickInNest } from "@/components/EggArt";
+import { cancelNestJob, retryNestJob, useNestLive } from "@/lib/nestJobs";
 import { daysBetween, formatDate, todayString } from "@/lib/dates";
 import { sortNests, subjectOutfit, useNests } from "@/lib/nests";
 import { allSections, goalFraction, isPassed } from "@/lib/progress";
@@ -17,6 +18,9 @@ export default function NestsPage() {
   const profile = useStored("profile");
   const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const router = useRouter();
+
+  const jobs = useStored("nestJobs") ?? [];
+  const live = useNestLive();
 
   if (nests === undefined) return null;
   const today = todayString();
@@ -37,7 +41,7 @@ export default function NestsPage() {
         </Link>
       </div>
 
-      {sorted.length === 0 ? (
+      {sorted.length === 0 && jobs.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center gap-4 py-10 text-center">
           <ChickInNest avatar={avatar} size={170} />
           <span className="bubble">No nests yet. Got a test coming up?</span>
@@ -51,6 +55,10 @@ export default function NestsPage() {
         </div>
       ) : (
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Nests still being built (they keep going on other pages too) */}
+          {jobs.map((job) => (
+            <BuildingCard key={job.id} job={job} live={live} avatar={avatar} />
+          ))}
           {sorted.map((nest) => (
             <NestCard key={nest.id} nest={nest} avatar={avatar} today={today} />
           ))}
@@ -66,6 +74,51 @@ export default function NestsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+// A nest the AI is still building: the chick sits on its egg until the plan hatches.
+function BuildingCard({ job, live, avatar }) {
+  const failed = job.status === "error";
+  // How far along the PDFs are (each PDF counts the same).
+  const pdfs = job.guides.map((g) => (g.notes != null || g.failed ? 1 : live.guides[g.id]?.progress ?? 0));
+  const pdfProgress = pdfs.length ? pdfs.reduce((a, b) => a + b, 0) / pdfs.length : 1;
+  const readingPdfs = !failed && pdfProgress < 1;
+  return (
+    <div className={`card flex flex-col items-center gap-2 text-center ${failed ? "border-red-700 bg-red-50" : "bg-chick/40"}`}>
+      <BroodingChick avatar={avatar} animate={!failed} mood={failed ? "sad" : "happy"} size={130} />
+      <p className="label-small">{failed ? "Couldn't build" : "Building…"}</p>
+      <p className="font-display text-lg leading-tight font-semibold">
+        {job.test.subject}
+        {job.test.topic ? `: ${job.test.topic}` : ""}
+      </p>
+      {failed ? (
+        <>
+          <p className="text-sm text-red-700">{job.error}</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => retryNestJob(job.id)} className="btn-primary px-4 py-1.5 text-sm">
+              Try again
+            </button>
+            <button type="button" onClick={() => cancelNestJob(job.id)} className="btn-secondary px-4 py-1.5 text-sm">
+              Remove
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-muted">{job.label}</p>
+          {readingPdfs && (
+            <span className="block h-2 w-full overflow-hidden rounded-full bg-white">
+              <span className="block h-full bg-beak transition-all" style={{ width: `${Math.round(pdfProgress * 100)}%` }} />
+            </span>
+          )}
+          <p className="text-xs text-muted">You can leave this page. It keeps building, and you&apos;ll get a pop-up when it&apos;s ready.</p>
+          <button type="button" onClick={() => cancelNestJob(job.id)} className="text-xs font-semibold text-muted underline">
+            Cancel
+          </button>
+        </>
+      )}
+    </div>
   );
 }
 

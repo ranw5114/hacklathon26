@@ -4,15 +4,12 @@ import Icon from "@/components/Icon";
 import { useRef, useState } from "react";
 import { Field } from "@/components/ProfileFields";
 import { useRouter } from "next/navigation";
-import { addNest } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { checkGrades } from "@/lib/grades";
 import { findSubject, SUBJECT_GROUPS, SUBJECTS } from "@/lib/subjects";
-import { isPdf, mergeNotes, readStudyGuide } from "@/lib/studyGuide";
+import { isPdf } from "@/lib/studyGuide";
 import { formatBytes } from "@/lib/attachmentTypes";
-
-// More notes than this (from lots of PDFs) get combined into one shorter set before planning.
-const GUIDE_MERGE_CHARS = 40_000;
+import { attachGuide, discardDraftGuides, removeGuides, setDraftGuides, startNestJob, useNestLive } from "@/lib/nestJobs";
 
 // The menu value for "type your own subject".
 const OTHER = "other";
@@ -45,40 +42,40 @@ export default function NestForm({ learner }) {
   const [test, setTest] = useState(EMPTY_TEST);
   const [error, setError] = useState("");
   const [canSwap, setCanSwap] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState("");
-  // Study-guide PDFs: { id, name, size, progress, label, status: "waiting" | "working" | "ready" | "error", notes, pages, error }
-  const [guides, setGuides] = useState([]);
-  const queue = useRef(Promise.resolve()); // PDFs are read one at a time, so the free AI isn't overloaded
-  const fileInput = useRef(null);
-  const reading = guides.some((g) => g.status === "waiting" || g.status === "working");
-
-  function changeGuide(id, changes) {
-    setGuides((list) => list.map((g) => (g.id === id ? { ...g, ...changes } : g)));
+  // Attached study-guide PDFs: [{ id, name, size }]. They're read in the background (lib/nestJobs.js).
+  // A fresh form starts empty, so PDFs left on an earlier, unfinished form are dropped.
+  const [guides, setGuidesState] = useState(() => {
+    discardDraftGuides();
+    return [];
+  });
+  function setGuides(change) {
+    setGuidesState((list) => {
+      const next = typeof change === "function" ? change(list) : change;
+      setDraftGuides(next.map((g) => g.id));
+      return next;
+    });
   }
+  const [selected, setSelected] = useState([]); // ids ticked for deleting
+  const fileInput = useRef(null);
+  const live = useNestLive();
 
   function addGuides(files) {
     const pdfs = [...files].filter(isPdf);
     const skipped = files.length - pdfs.length;
     setError(skipped ? `Only PDFs can be attached here, so ${skipped === 1 ? "1 file was" : `${skipped} files were`} skipped.` : "");
     const about = { subject: test.subject, topic: test.topic };
-    for (const file of pdfs) {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      setGuides((list) => [...list, { id, name: file.name, size: file.size, progress: 0, label: "Waiting its turn…", status: "waiting" }]);
-      queue.current = queue.current.then(async () => {
-        changeGuide(id, { status: "working", label: "Opening the PDF…" });
-        try {
-          const { notes, pages } = await readStudyGuide(file, about, (progress, label) => changeGuide(id, { progress, label }));
-          changeGuide(id, { status: "ready", progress: 1, notes, pages, label: "Read" });
-        } catch (err) {
-          changeGuide(id, { status: "error", error: err.message || "Couldn't read this PDF." });
-        }
-      });
-    }
+    const added = pdfs.map((file) => ({ id: attachGuide(file, about), name: file.name, size: file.size }));
+    setGuides((list) => [...list, ...added]);
   }
 
-  function removeGuide(id) {
-    setGuides((list) => list.filter((g) => g.id !== id));
+  function deleteGuides(ids) {
+    removeGuides(ids);
+    setGuides((list) => list.filter((g) => !ids.includes(g.id)));
+    setSelected((list) => list.filter((id) => !ids.includes(id)));
+  }
+
+  function toggleSelected(id) {
+    setSelected((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
   }
 
   const picked = findSubject(test.subjectId);
@@ -97,59 +94,29 @@ export default function NestForm({ learner }) {
     setCanSwap(false);
   }
 
-  async function buildNest() {
+  // Starts building in the background, clears the form for the next nest, and shows all nests.
+  function buildNest() {
     const check = validate(test);
     if (check.error) {
       setError(check.error);
       setCanSwap(Boolean(check.canSwap));
       return;
     }
-
-    if (reading) {
-      setError("Hang on, the AI is still reading your PDFs. The button will work once they're done.");
-      return;
-    }
-
-    setLoading(true);
-    const ready = guides.filter((g) => g.status === "ready" && g.notes);
     const finalTest = {
       ...test,
       // Tests like the SAT can be studied as a whole, so "what's on it" can be left blank.
       topic: test.topic.trim() || findSubject(test.subjectId)?.defaultTopic || test.topic,
       currentGrade: Number(test.currentGrade),
       goalGrade: Number(test.goalGrade),
-      guideFiles: ready.map((g) => ({ name: g.name, pages: g.pages ?? null })),
     };
-
-    try {
-      // Notes from the PDFs are kept with the nest (the PDFs themselves aren't stored).
-      let guide = ready.map((g) => (ready.length > 1 ? `From "${g.name}":\n${g.notes}` : g.notes)).join("\n\n");
-      if (guide.length > GUIDE_MERGE_CHARS && ready.length > 1) {
-        setLoadingLabel("Combining the notes from your PDFs…");
-        guide = await mergeNotes(ready.map((g) => `From "${g.name}":\n${g.notes}`), { subject: finalTest.subject, topic: finalTest.topic });
-      }
-      finalTest.guide = guide;
-      setLoadingLabel("");
-
-      const res = await fetch("/api/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ learner, test: finalTest, today: todayString() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      // The research about the subject is kept with the test, so every lesson, exam, and tutor
-      // answer for this nest can use it. Saved as a new nest next to any others, then opened.
-      const { research, ...plan } = data;
-      const researchedTest = { ...finalTest, brief: research?.brief ?? "", sources: research?.sources ?? [], basis: research?.basis ?? [] };
-      const id = addNest(researchedTest, plan);
-      router.push(`/nest/${id}`);
-    } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
-      setLoading(false);
-      setLoadingLabel("");
-    }
+    startNestJob({ test: finalTest, learner, today: todayString(), guides: guides.filter((g) => live.guides[g.id]?.status !== "error") });
+    removeGuides(guides.filter((g) => live.guides[g.id]?.status === "error").map((g) => g.id));
+    setDraftGuides([]); // they belong to the new nest now
+    setTest(EMPTY_TEST);
+    setGuidesState([]);
+    setSelected([]);
+    setError("");
+    router.push("/nest");
   }
 
   return (
@@ -282,38 +249,74 @@ export default function NestForm({ learner }) {
           <span className="text-xs text-muted">As many as you like, any size. Big ones are read in parts.</span>
         </div>
         {guides.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-chick/40 px-3 py-2 text-sm">
+            <label className="flex cursor-pointer items-center gap-2 font-semibold">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[var(--chick-line)]"
+                checked={selected.length === guides.length}
+                onChange={(e) => setSelected(e.target.checked ? guides.map((g) => g.id) : [])}
+              />
+              Select all ({guides.length})
+            </label>
+            <button
+              type="button"
+              disabled={!selected.length}
+              onClick={() => deleteGuides(selected)}
+              className="flex items-center gap-1 rounded-xl border-2 border-red-700 bg-white px-3 py-1 font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Icon name="trash" size={16} /> Delete selected{selected.length ? ` (${selected.length})` : ""}
+            </button>
+          </div>
+        )}
+        {guides.length > 0 && (
           <ul className="flex flex-col gap-2">
-            {guides.map((g) => (
-              <li key={g.id} className="flex items-center gap-3 rounded-2xl border-2 border-line bg-white px-3 py-2 text-sm">
-                <Icon name={g.status === "error" ? "fried" : g.status === "ready" ? "done" : "book"} size={22} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{g.name}</p>
-                  {g.status === "error" ? (
-                    <p className="text-xs text-red-700">{g.error}</p>
-                  ) : g.status === "ready" ? (
-                    <p className="text-xs text-muted">
-                      {formatBytes(g.size)}
-                      {g.pages ? ` · ${g.pages} ${g.pages === 1 ? "page" : "pages"}` : ""} · {g.notes ? "Read and added to your plan" : "No study notes found in it"}
-                    </p>
-                  ) : (
-                    <>
+            {guides.map((guide) => {
+              const g = { ...guide, ...(live.guides[guide.id] ?? { status: "waiting", progress: 0, label: "Waiting its turn…" }) };
+              const isSelected = selected.includes(g.id);
+              return (
+                <li
+                  key={g.id}
+                  className={`flex items-center gap-3 rounded-2xl border-2 px-3 py-2 text-sm ${isSelected ? "border-red-700 bg-red-50" : "border-line bg-white"}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-[var(--chick-line)]"
+                    checked={isSelected}
+                    onChange={() => toggleSelected(g.id)}
+                    aria-label={`Select ${g.name}`}
+                  />
+                  <Icon name={g.status === "error" ? "fried" : g.status === "ready" ? "done" : "book"} size={22} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{g.name}</p>
+                    {g.status === "error" ? (
+                      <p className="text-xs text-red-700">{g.error}</p>
+                    ) : g.status === "ready" ? (
                       <p className="text-xs text-muted">
-                        {formatBytes(g.size)} · {g.label}
+                        {formatBytes(g.size)}
+                        {g.pages ? ` · ${g.pages} ${g.pages === 1 ? "page" : "pages"}` : ""} · {g.notes ? "Read and ready" : "No study notes found in it"}
                       </p>
-                      <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-chick/50">
-                        <span className="block h-full bg-beak transition-all" style={{ width: `${Math.round(g.progress * 100)}%` }} />
-                      </span>
-                    </>
-                  )}
-                </div>
-                {g.status !== "working" && (
-                  <button type="button" onClick={() => removeGuide(g.id)} className="shrink-0 rounded-xl p-1 hover:bg-red-50" aria-label={`Remove ${g.name}`}>
-                    <Icon name="close" size={18} />
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted">
+                          {formatBytes(g.size)} · {g.label}
+                        </p>
+                        <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-chick/50">
+                          <span className="block h-full bg-beak transition-all" style={{ width: `${Math.round(g.progress * 100)}%` }} />
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => deleteGuides([g.id])} className="shrink-0 rounded-xl p-1 hover:bg-red-50" aria-label={`Delete ${g.name}`}>
+                    <Icon name="trash" size={18} />
                   </button>
-                )}
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
+        )}
+        {guides.length > 0 && (
+          <p className="text-xs text-muted">You don&apos;t have to wait: build your nest now and your PDFs keep being read in the background.</p>
         )}
       </div>
 
@@ -328,8 +331,8 @@ export default function NestForm({ learner }) {
         </div>
       )}
 
-      <button type="button" onClick={buildNest} disabled={loading || reading} className="btn-primary self-end">
-        {reading ? "Reading your PDFs…" : loadingLabel ? loadingLabel : loading ? `Researching ${test.subject || "your subject"} and building your nest…` : "Build my nest"}
+      <button type="button" onClick={buildNest} className="btn-primary self-end">
+        Build my nest
       </button>
     </section>
   );
