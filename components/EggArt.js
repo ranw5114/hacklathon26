@@ -282,6 +282,26 @@ export function CoopRoof({ className = "" }) {
   );
 }
 
+// A barn doorway with its red door swung open; `children` (like a chick) stand in the doorway.
+// The door swings a little wider when a parent with the "group" class is hovered.
+export function BarnDoorway({ size = 64, children }) {
+  const red = "oklch(62% 0.16 30)";
+  return (
+    <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 64 64" width={size} height={size} className="absolute inset-0 overflow-visible" aria-hidden="true">
+        {/* The dark doorway, with a frame */}
+        <path d="M10 62 V24 Q32 2 54 24 V62 Z" fill="oklch(38% 0.05 45)" stroke={LINE} strokeWidth="3" strokeLinejoin="round" />
+        {/* The open door, hinged on the right */}
+        <g className="origin-[54px_40px] transition-transform duration-300 group-hover:[transform:skewY(-6deg)_scaleX(0.8)]">
+          <path d="M54 24 L63 20 L63 63 L54 62 Z" fill={red} stroke={LINE} strokeWidth="2.5" strokeLinejoin="round" />
+          <path d="M55 26 L62 61 M62 23 L55 60" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+        </g>
+      </svg>
+      <span className="absolute inset-x-0 bottom-0.5 flex justify-center">{children}</span>
+    </span>
+  );
+}
+
 // --- Eggs on the Nest path ---------------------------------------------------
 
 const PATH_EGG = "M50 6 C 76 6 90 44 90 66 C 90 92 72 106 50 106 C 28 106 10 92 10 66 C 10 44 24 6 50 6 Z";

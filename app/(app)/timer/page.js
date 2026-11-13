@@ -4,7 +4,7 @@ import PageIcon from "@/components/PageIcon";
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
-import { BroodingChick, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
+import { BarnDoorway, BroodingChick, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
 import { useConfirm } from "@/components/Modal";
 import PageTour from "@/components/PageTour";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
@@ -18,7 +18,13 @@ import { save, update, useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
 import { allPlanDays, focusNest, useNests } from "@/lib/nests";
 import {
+  alreadySaved,
   broodStage,
+  MAX_BREAK_MIN,
+  MAX_FOCUS_MIN,
+  MAX_SAVED_TIMERS,
+  removeSavedTimer,
+  saveCustomTimer,
   coldIn,
   DEFAULT_TIMER,
   formatTime,
@@ -52,6 +58,7 @@ export default function TimerPage() {
   const now = useNow();
   const { confirm, dialog } = useConfirm();
   const [linkLevel, setLinkLevel] = useState(true);
+  const [draft, setDraft] = useState(null); // { focusMin, breakMin } while making a new timer
   // Re-render after the notification prompt is answered.
   const [, setAlertsAsked] = useState(0);
 
@@ -109,6 +116,10 @@ export default function TimerPage() {
   const fried = idle && timer.mode === "focus" && timer.fried;
   const friedFresh = fried && now - timer.fried.at < FLIGHT_WINDOW_MS && landedAt !== timer.fried.at;
   const holding = !fried ? "egg" : friedFresh && !flight ? "fried" : "none";
+  // Nothing to say before starting: the Start button says it.
+  const status = timer.mode === "break" ? "A new chick hatched!" : fried ? "Your egg got fried…" : idle ? null : stage.name;
+  const savedTimers = timer.saved ?? [];
+  const draftTaken = draft !== null && alreadySaved(timer, draft.focusMin, draft.breakMin);
 
   const currentId = plan ? currentSectionId(plan, goalFraction(test)) : null;
   const currentLevel = currentId ? findSection(plan, currentId).title : null;
@@ -144,17 +155,19 @@ export default function TimerPage() {
   }
 
   function choosePreset(preset) {
-    if (preset === "custom") return save("timer", { ...timer, preset });
-    const { focusMin, breakMin } = PRESETS[preset];
+    const { focusMin, breakMin } = PRESETS[preset] ?? savedTimers.find((t) => t.id === preset);
     save("timer", setDurations(timer, preset, focusMin, breakMin));
   }
 
-  function setCustom(field, value) {
-    const shortest = field === "focusMin" ? MIN_FOCUS_MIN : 1;
-    const minutes = Math.min(field === "focusMin" ? 120 : 60, Math.max(shortest, Number(value) || shortest));
-    const focusMin = field === "focusMin" ? minutes : timer.focusMin;
-    const breakMin = field === "breakMin" ? minutes : timer.breakMin;
-    save("timer", setDurations(timer, "custom", focusMin, breakMin));
+  async function deleteSaved(saved) {
+    const ok = await confirm({
+      title: "Delete this timer?",
+      message: `Your ${saved.focusMin}-minute focus, ${saved.breakMin}-minute break timer will be removed.`,
+      confirmLabel: "Delete timer",
+      danger: true,
+      chick: avatar,
+    });
+    if (ok) save("timer", removeSavedTimer(timer, saved.id));
   }
 
   return (
@@ -208,17 +221,11 @@ export default function TimerPage() {
               <HatchedChick color={newestChick} size={112} />
             )}
             <span className="font-display text-4xl font-semibold tabular-nums">{formatTime(timeLeft(timer, now))}</span>
-            <span className="text-sm text-muted">
-              {timer.mode === "break"
-                ? "A new chick hatched!"
-                : fried
-                  ? "Your egg got fried…"
-                  : idle
-                    ? "Ready to keep it warm"
-                    : stage.name}
-            </span>
           </div>
         </div>
+
+        {/* How the egg is doing, under the ring (inside it, longer messages ran into the edge) */}
+        {status && <p className="-mt-1 rounded-full bg-chick/50 px-4 py-1 font-display text-sm font-semibold">{status}</p>}
 
         {coldLeft !== null && (
           <p className="rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
@@ -266,38 +273,104 @@ export default function TimerPage() {
               type="button"
               disabled={!idle}
               onClick={() => choosePreset(id)}
-              className={`rounded-2xl border-[3px] border-line px-4 py-2 font-display font-semibold disabled:opacity-50 ${
-                timer.preset === id ? "bg-chick shadow-[0_3px_0_var(--chick-line)]" : "bg-white"
-              }`}
+              className={`${PRESET_BUTTON} px-4 ${timer.preset === id ? PRESET_SELECTED : "bg-white"}`}
             >
               {preset.label}
-              {preset.focusMin && <span className="ml-1 text-sm text-muted">{preset.focusMin}/{preset.breakMin}</span>}
+              <span className="ml-1 text-sm text-muted">{preset.focusMin}/{preset.breakMin}</span>
             </button>
           ))}
+          {/* Older saves could have unsaved custom minutes; show them so it's clear what's set */}
+          {timer.preset === "custom" && (
+            <span className={`${PRESET_BUTTON} ${PRESET_SELECTED} px-4`}>
+              Custom <span className="ml-1 text-sm text-muted">{timer.focusMin}/{timer.breakMin}</span>
+            </span>
+          )}
         </div>
 
-        {timer.preset === "custom" && (
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-semibold">Focus (minutes, at least {MIN_FOCUS_MIN})</span>
-              <MinutesInput
-                min={MIN_FOCUS_MIN}
-                max={120}
-                disabled={!idle}
-                value={timer.focusMin}
-                onCommit={(value) => setCustom("focusMin", value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-semibold">Break (minutes)</span>
-              <MinutesInput
-                min={1}
-                max={60}
-                disabled={!idle}
-                value={timer.breakMin}
-                onCommit={(value) => setCustom("breakMin", value)}
-              />
-            </label>
+        {/* The student's own saved timers, plus the button to make a new one */}
+        <div className="flex flex-col gap-2">
+          <p className="label-small">My timers</p>
+          <div className="flex flex-wrap gap-2">
+            {savedTimers.map((t) => (
+              <span
+                key={t.id}
+                className={`${PRESET_BUTTON} flex items-center gap-1 pl-3 pr-1.5 ${timer.preset === t.id ? PRESET_SELECTED : "bg-white"} ${idle ? "" : "opacity-50"}`}
+              >
+                <button type="button" disabled={!idle} onClick={() => choosePreset(t.id)} className="flex items-center gap-1">
+                  <Icon name="star" size={16} /> {t.focusMin}/{t.breakMin}
+                </button>
+                <button
+                  type="button"
+                  disabled={!idle}
+                  onClick={() => deleteSaved(t)}
+                  className="ml-1 rounded-full p-1 transition hover:bg-red-100"
+                  aria-label={`Delete the ${t.focusMin}/${t.breakMin} timer`}
+                  title="Delete this timer"
+                >
+                  <Icon name="trash" size={16} />
+                </button>
+              </span>
+            ))}
+            {!draft && (
+              <button
+                type="button"
+                disabled={!idle || savedTimers.length >= MAX_SAVED_TIMERS}
+                onClick={() => setDraft({ focusMin: timer.focusMin, breakMin: timer.breakMin })}
+                className={`${PRESET_BUTTON} flex items-center gap-1 border-dashed bg-white px-4`}
+              >
+                <Icon name="plus" size={16} /> New timer
+              </button>
+            )}
+          </div>
+          {savedTimers.length === 0 && !draft && (
+            <p className="text-sm text-muted">Make your own focus and break times. They&apos;ll be saved for next time.</p>
+          )}
+          {savedTimers.length >= MAX_SAVED_TIMERS && (
+            <p className="text-sm text-muted">You can keep up to {MAX_SAVED_TIMERS} timers. Delete one to make another.</p>
+          )}
+        </div>
+
+        {/* Making a new timer: nothing changes until it's saved */}
+        {draft && (
+          <div className="flex flex-col gap-4 rounded-2xl border-[3px] border-dashed border-line/40 p-4">
+            <p className="font-display font-semibold">New timer</p>
+            <div className="grid grid-cols-2 gap-4">
+              <label className="flex flex-col gap-1">
+                <span className="text-sm font-semibold">Focus (minutes, at least {MIN_FOCUS_MIN})</span>
+                <MinutesInput
+                  min={MIN_FOCUS_MIN}
+                  max={MAX_FOCUS_MIN}
+                  value={draft.focusMin}
+                  onCommit={(value) => setDraft({ ...draft, focusMin: clamp(value, MIN_FOCUS_MIN, MAX_FOCUS_MIN) })}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-sm font-semibold">Break (minutes)</span>
+                <MinutesInput
+                  min={1}
+                  max={MAX_BREAK_MIN}
+                  value={draft.breakMin}
+                  onCommit={(value) => setDraft({ ...draft, breakMin: clamp(value, 1, MAX_BREAK_MIN) })}
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={draftTaken}
+                onClick={() => {
+                  save("timer", saveCustomTimer(timer, draft.focusMin, draft.breakMin));
+                  setDraft(null);
+                }}
+                className="btn-primary px-5 py-2 disabled:opacity-50"
+              >
+                Save timer
+              </button>
+              <button type="button" onClick={() => setDraft(null)} className="btn-secondary px-5 py-2">
+                Cancel
+              </button>
+              {draftTaken && <span className="text-sm text-muted">You already have a {draft.focusMin}/{draft.breakMin} timer.</span>}
+            </div>
           </div>
         )}
 
@@ -402,6 +475,18 @@ function MinutesInput({ value, min, max, disabled, onCommit }) {
   );
 }
 
+// A typed number of minutes, kept between min and max.
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, Math.round(Number(value)) || min));
+}
+
+// The look of the preset buttons (and saved timers), and of the one that's picked.
+const PRESET_BUTTON = "rounded-2xl border-[3px] border-line py-2 font-display font-semibold disabled:opacity-50";
+const PRESET_SELECTED = "bg-chick shadow-[0_3px_0_var(--chick-line)]";
+
+// What the chick on the Henhouse button wears, as a taste of dressing up.
+const HENHOUSE_OUTFIT = { head: "beret", neck: "bowtie" };
+
 // How many chicks to draw before showing "+N more", so a big flock doesn't fill the page.
 const MAX_DRAWN_CHICKS = 48;
 
@@ -411,6 +496,38 @@ const PLATE_MESSAGE = "Don't fry my children anymore!!";
 // How long the sad chick holds the fried egg before it flies, and how recent a fry must be to animate.
 const HOLD_FRIED_MS = 1600;
 const FLIGHT_WINDOW_MS = 6000;
+
+// The coop's colors: a wooden sign, a plank wall, and straw on the floor.
+const WOOD_SIGN = "oklch(80% 0.09 70)";
+const WOOD_WALL =
+  "repeating-linear-gradient(90deg, oklch(88% 0.06 70) 0 46px, oklch(82% 0.06 65) 46px 49px)";
+const STRAW =
+  "repeating-linear-gradient(115deg, oklch(88% 0.12 90) 0 5px, oklch(80% 0.13 85) 5px 7px, oklch(91% 0.1 95) 7px 12px)";
+const PERCH = "oklch(52% 0.08 55)";
+
+// One chick on its perch. Hovering (or tapping, on a phone) shows a name tag above it.
+function CoopChick({ chick, name, showTag, onTap }) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      className="group relative px-1.5 pb-0.5"
+      style={{ borderBottom: `6px solid ${PERCH}` }}
+      aria-label={name}
+    >
+      <span
+        className={`pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 rounded-md border-2 border-line bg-white px-2 py-0.5 text-xs font-semibold whitespace-nowrap shadow-[0_2px_0_var(--chick-line)] ${
+          showTag ? "block" : "hidden group-hover:block"
+        }`}
+      >
+        {name}
+      </span>
+      <span className="block transition group-hover:-translate-y-1">
+        <Chick {...chickLook(chick)} size={44} />
+      </span>
+    </button>
+  );
+}
 
 // Your flock: the coop with every chick you've hatched, the plate of fried eggs,
 // and the takeout bucket of drumsticks.
@@ -423,43 +540,98 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
   const shown = f.chicks.slice(-MAX_DRAWN_CHICKS);
   const friedCount = Math.max(0, f.friedEggs.length - (hideNewestFried ? 1 : 0));
   const drumsticks = f.drumsticks.length;
+  const unnamed = f.chicks.filter((chick) => !chick.name?.trim()).length;
+  const [tagged, setTagged] = useState(null); // the chick whose name tag was tapped open (phones can't hover)
 
   return (
     <section className="card mt-6 flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl">Your flock</h2>
-        <p className="font-display font-semibold">
-          <Icon name="chick" size={20} /> {count} chick{count === 1 ? "" : "s"}
-          {streak > 0 && <span className="ml-3"><Icon name="flame" size={20} /> {streak}-day streak</span>}
-        </p>
+        {streak > 0 && (
+          <p className="font-display font-semibold">
+            <Icon name="flame" size={20} /> {streak}-day streak
+          </p>
+        )}
       </div>
 
       {/* The coop, where every chick you've hatched lives */}
       <div>
-        <CoopRoof />
-        <div className="-mt-px rounded-b-2xl border-[3px] border-line bg-[oklch(90%_0.06_75)] p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="label-small text-foreground/70">The Coop</p>
-            <Link href="/henhouse" className="text-sm font-semibold underline">
-              Name &amp; dress them in the Henhouse →
-            </Link>
+        {/* A tall roof with the coop's sign hanging in it */}
+        <div className="relative">
+          <CoopRoof className="h-28" />
+          <div className="absolute inset-x-0 bottom-1 flex justify-center">
+            <div className="relative -rotate-2">
+              {/* The two strings it hangs from */}
+              <span className="absolute -top-5 left-5 h-5 w-[3px] bg-line" />
+              <span className="absolute -top-5 right-5 h-5 w-[3px] bg-line" />
+              <p
+                className="rounded-lg border-[3px] border-line px-4 py-1 font-display font-semibold whitespace-nowrap shadow-[0_3px_0_var(--chick-line)]"
+                style={{ background: WOOD_SIGN }}
+              >
+                The Coop · {count} chick{count === 1 ? "" : "s"}
+              </p>
+            </div>
           </div>
+        </div>
+
+        <div className="-mt-px overflow-visible rounded-b-2xl border-[3px] border-line" style={{ background: WOOD_WALL }}>
           {count > 0 ? (
-            <div className="flex flex-wrap items-end justify-center gap-1 rounded-xl bg-[oklch(94%_0.07_95)] p-3">
+            // Chicks sit in rows; each one's bit of perch joins up with its neighbours into a long wooden bar.
+            <div className="flex flex-wrap items-end justify-center gap-y-8 px-3 pt-10 pb-4">
               {shown.map((chick) => (
-                <span key={chick.id} title={chickName(chick, f.chicks.indexOf(chick))}>
-                  <Chick {...chickLook(chick)} size={36} />
-                </span>
+                <CoopChick
+                  key={chick.id}
+                  chick={chick}
+                  name={chickName(chick, f.chicks.indexOf(chick))}
+                  showTag={tagged === chick.id}
+                  onTap={() => setTagged(tagged === chick.id ? null : chick.id)}
+                />
               ))}
               {count > shown.length && (
-                <span className="ml-2 font-display font-semibold text-muted">+{count - shown.length} more</span>
+                <span className="ml-3 self-center font-display font-semibold">+{count - shown.length} more</span>
               )}
             </div>
           ) : (
-            <p className="rounded-xl bg-[oklch(94%_0.07_95)] p-4 text-center text-muted">
-              The coop is empty. Finish a focus session to hatch your first chick!
-            </p>
+            <div className="flex items-center justify-center gap-3 px-3 pt-6 pb-2">
+              <Icon name="nest" size={56} />
+              <p>
+                <span className="block font-display font-semibold">No chicks yet</span>
+                <span className="block text-sm text-foreground/70">
+                  Finish a focus session ({MIN_FOCUS_MIN}+ minutes) to hatch your first one.
+                </span>
+              </p>
+            </div>
           )}
+
+          {/* Straw on the floor */}
+          <div className="h-4 border-y-[3px] border-line" style={{ background: STRAW }} />
+
+          {/* Invitation to the Henhouse: a barn door, with the newest chick (or your own) dressed up in the doorway */}
+          <div className="p-3">
+            <Link
+              href="/henhouse"
+              className="group flex items-center gap-3 rounded-xl border-[3px] border-line bg-white p-2 pr-4 transition hover:-translate-y-0.5 hover:shadow-[0_3px_0_var(--chick-line)]"
+            >
+              <BarnDoorway size={60}>
+                {count > 0 ? (
+                  <Chick {...chickLook(f.chicks.at(-1))} wear={HENHOUSE_OUTFIT} size={36} />
+                ) : (
+                  <Chick variant={avatar} wear={HENHOUSE_OUTFIT} size={36} />
+                )}
+              </BarnDoorway>
+              <span className="min-w-0 flex-1">
+                <span className="block font-display font-semibold">Name &amp; dress them in the Henhouse</span>
+                <span className="block text-sm text-muted">
+                  {count === 0
+                    ? "Peek at the outfits you can buy with corn."
+                    : unnamed > 0
+                      ? `${unnamed} chick${unnamed === 1 ? " is" : "s are"} waiting for a name!`
+                      : "Spend your corn on hats, scarves, and more."}
+                </span>
+              </span>
+              <span className="shrink-0 font-display text-xl transition group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
         </div>
       </div>
 
