@@ -6,6 +6,7 @@ import AppNav from "@/components/AppNav";
 import Chick from "@/components/Chick";
 import TimerWatcher from "@/components/TimerWatcher";
 import TodoWatcher from "@/components/TodoWatcher";
+import NestJobsWatcher from "@/components/NestJobsWatcher";
 import { ExitDemoButton } from "@/components/DemoButtons";
 import { useMoveOldNest } from "@/lib/nests";
 import { useStored } from "@/lib/storage";
@@ -48,6 +49,8 @@ export default function AppLayout({ children }) {
       <TimerWatcher />
       {/* Homework and study reminders, on every page */}
       <TodoWatcher />
+      {/* Nests being built in the background keep going on every page */}
+      <NestJobsWatcher />
       {/* Bottom padding on phones so content isn't hidden behind the bottom bar */}
       <div className="flex flex-1 flex-col pb-24 sm:pb-0">{children}</div>
     </>

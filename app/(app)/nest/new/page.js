@@ -2,6 +2,7 @@
 
 import PageIcon from "@/components/PageIcon";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import NestForm from "@/components/NestForm";
 import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
@@ -9,6 +10,8 @@ import { useStored } from "@/lib/storage";
 // Nest Builder: the form for a new test. Every new nest starts here, and the others are kept.
 export default function NewNestPage() {
   const profile = useStored("profile");
+  // Every visit to the Nest Builder starts with a blank form (Next.js otherwise keeps the old answers).
+  const { bfcacheId } = useRouter();
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
@@ -25,7 +28,7 @@ export default function NewNestPage() {
           <PageTour page="nest" />
         </div>
       </div>
-      <NestForm learner={profile} />
+      <NestForm key={bfcacheId} learner={profile} />
     </main>
   );
 }
