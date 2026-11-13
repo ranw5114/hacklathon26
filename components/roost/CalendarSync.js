@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import Modal, { useConfirm } from "@/components/Modal";
 import { remove, save } from "@/lib/storage";
@@ -27,12 +28,13 @@ function timeAgo(timestamp) {
 
 // The toolbar button: shows the sync status and opens the sync pop-up.
 export default function CalendarSyncButton({ calendar, open, onOpenChange }) {
-  const label = !calendar ? "📅 Sync calendar" : calendar.source === "sample" ? "📅 Sample schedule" : "📅 Synced ✓";
+  const label = !calendar ? "Sync calendar" : calendar.source === "sample" ? "Sample schedule" : "Synced";
 
   return (
     <>
-      <button type="button" onClick={() => onOpenChange(true)} className="btn-secondary px-4 py-1.5 text-sm">
-        {label}
+      <button type="button" onClick={() => onOpenChange(true)} className="btn-secondary flex items-center gap-1.5 px-4 py-1.5 text-sm">
+        <Icon name="calendar" size={18} /> {label}
+        {calendar && calendar.source !== "sample" && <Icon name="check" size={14} />}
       </button>
       <Modal open={open} onClose={() => onOpenChange(false)} title="Calendar sync" chick="peach" wide>
         <SyncPanel calendar={calendar} onDone={() => onOpenChange(false)} />
@@ -97,7 +99,7 @@ function SyncPanel({ calendar, onDone }) {
       {calendar?.source === "link" && (
         <div className="flex flex-col gap-2 rounded-2xl bg-sky-50 px-4 py-3">
           <span className="font-semibold">
-            ✓ Synced · {calendar.events.length} events · updated {timeAgo(calendar.syncedAt)}
+            <Icon name="check" size={14} /> Synced · {calendar.events.length} events · updated {timeAgo(calendar.syncedAt)}
           </span>
           <div className="flex gap-3">
             <button
@@ -128,7 +130,7 @@ function SyncPanel({ calendar, onDone }) {
         <summary className="cursor-pointer font-semibold">Where do I find my calendar link?</summary>
         <ul className="mt-2 flex list-disc flex-col gap-2 pl-5">
           <li>
-            <strong>Google Calendar</strong> (on a computer): Settings ⚙️ → click your calendar on the left → scroll to
+            <strong>Google Calendar</strong> (on a computer): Settings <Icon name="gear" size={14} /> → click your calendar on the left → scroll to
             &quot;Integrate calendar&quot; → copy <strong>&quot;Secret address in iCal format&quot;</strong>.
           </li>
           <li>

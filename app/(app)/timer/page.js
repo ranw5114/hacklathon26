@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
 import { BroodingChick, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
@@ -171,9 +172,11 @@ export default function TimerPage() {
 
       {timer.notice && (
         <div className="mt-6 flex items-start justify-between gap-3 rounded-2xl border-[3px] border-line bg-white p-4">
-          <p className="font-semibold">{timer.notice}</p>
+          <p className="flex items-start gap-2 font-semibold">
+            <Icon name="chick" size={22} /> {timer.notice}
+          </p>
           <button type="button" onClick={() => save("timer", { ...timer, notice: null })} aria-label="Dismiss">
-            ✕
+            <Icon name="close" size={16} />
           </button>
         </div>
       )}
@@ -218,7 +221,7 @@ export default function TimerPage() {
 
         {coldLeft !== null && (
           <p className="rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
-            🥶 Your egg is getting cold! Resume within {formatTime(coldLeft)} or it gets fried.
+            <Icon name="cold" size={16} /> Your egg is getting cold! Resume within {formatTime(coldLeft)} or it gets fried.
           </p>
         )}
 
@@ -243,7 +246,7 @@ export default function TimerPage() {
         {popOutSupported() && (
           <div className="flex w-full flex-col items-center gap-2 border-t-2 border-dashed border-line/30 pt-5">
             <button type="button" onClick={requestPopOut} className="btn-secondary flex items-center gap-2 bg-chick/60">
-              <span className="text-xl">📌</span> Pop out timer
+              <Icon name="pin" size={20} /> Pop out timer
             </button>
             <p className="max-w-xs text-center text-sm text-muted">
               Keeps a mini timer floating on top of other tabs and apps while you study.
@@ -351,7 +354,7 @@ export default function TimerPage() {
         {/* Live progress for the egg being kept warm right now */}
         {hasEgg(timer) && (
           <p className="mt-3 rounded-2xl border-2 border-dashed border-line/40 px-4 py-2 font-semibold">
-            🥚 {focusedMinutes} of {timer.focusMin} minutes warm · it hatches when this session finishes
+            <Icon name="egg" size={16} /> {focusedMinutes} of {timer.focusMin} minutes warm · it hatches when this session finishes
           </p>
         )}
         {todaySessions.length > 0 && (
@@ -361,7 +364,7 @@ export default function TimerPage() {
               .map((s) => (
                 <li key={s.endedAt} className="flex justify-between gap-3 rounded-2xl bg-chick/40 px-4 py-2 text-sm">
                   <span className="font-semibold">
-                    🐣 {s.minutes} min{s.level ? ` · ${s.level}` : ""}
+                    <Icon name="chick" size={16} /> {s.minutes} min{s.level ? ` · ${s.level}` : ""}
                   </span>
                   <span className="text-muted">
                     {new Date(s.endedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
@@ -425,8 +428,8 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl">Your flock</h2>
         <p className="font-display font-semibold">
-          🐣 {count} chick{count === 1 ? "" : "s"}
-          {streak > 0 && <span className="ml-3">🔥 {streak}-day streak</span>}
+          <Icon name="chick" size={20} /> {count} chick{count === 1 ? "" : "s"}
+          {streak > 0 && <span className="ml-3"><Icon name="flame" size={20} /> {streak}-day streak</span>}
         </p>
       </div>
 

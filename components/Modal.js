@@ -1,10 +1,11 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
 
 // A pop-up card in the middle of the screen, in the chicken style.
-// Closes with the ✕ button, the Escape key, or a click on the dimmed background.
+// Closes with the close (X) button, the Escape key, or a click on the dimmed background.
 export default function Modal({ open, onClose, title, chick = "sunny", chickMood = "happy", children, wide = false }) {
   useEffect(() => {
     if (!open) return;
@@ -32,7 +33,7 @@ export default function Modal({ open, onClose, title, chick = "sunny", chickMood
           className="absolute top-3 right-4 text-xl text-muted hover:text-foreground"
           aria-label="Close"
         >
-          ✕
+          <Icon name="close" size={18} />
         </button>
         <div className="flex items-end gap-3 pr-6">
           <Chick variant={chick} mood={chickMood} size={56} className="shrink-0" />

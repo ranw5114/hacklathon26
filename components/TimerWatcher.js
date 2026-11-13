@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -86,8 +87,8 @@ export default function TimerWatcher() {
     const hatched = newSessions.filter((s) => s.minutes >= MIN_FOCUS_MIN).length;
     const tooShort = newSessions.length - hatched;
     const notice = [
-      hatched === 1 && "Your egg hatched! A new chick joined your flock. 🐣",
-      hatched > 1 && `${hatched} eggs hatched! New chicks joined your flock. 🐣`,
+      hatched === 1 && "Your egg hatched! A new chick joined your flock.",
+      hatched > 1 && `${hatched} eggs hatched! New chicks joined your flock.`,
       tooShort > 0 && `Focus done! Sessions need ${MIN_FOCUS_MIN}+ minutes to hatch an egg.`,
       breakEnded ? "Break's over, ready for another round?" : `Break time (${next.breakMin} min).`,
     ]
@@ -108,7 +109,7 @@ export default function TimerWatcher() {
     update("flock", (f) => fryEgg(f, "cold"));
     save("timer", {
       ...fryTimer(timer, "cold"),
-      notice: "Your egg was left alone for too long and went cold. It got fried! 🍳",
+      notice: "Your egg was left alone for too long and went cold. It got fried!",
     });
     playDing();
   }, [now, timer]);
@@ -126,8 +127,8 @@ export default function TimerWatcher() {
     const days = result.missed.map(formatDate).join(", ");
     const message =
       result.lost === 1
-        ? `You missed your study plan on ${days}. One chick got fried into a drumstick. 🍗`
-        : `You missed your study plan on ${days}. ${result.lost} chicks got fried into drumsticks. 🍗`;
+        ? `You missed your study plan on ${days}. One chick got fried into a drumstick.`
+        : `You missed your study plan on ${days}. ${result.lost} chicks got fried into drumsticks.`;
     update("timer", (t) => ({ ...(t ?? DEFAULT_TIMER), notice: message }));
   }, [nests, sessions, flock, today]);
 
@@ -139,7 +140,7 @@ export default function TimerWatcher() {
 
   useEffect(() => {
     if (running) document.title = `🥚 ${left} · ${label}`;
-    else if (paused) document.title = `⏸ ${left} · Paused`;
+    else if (paused) document.title = `🥚 ${left} · Paused`;
     else document.title = APP_TITLE;
   }, [running, paused, left, label]);
 
@@ -162,14 +163,16 @@ export default function TimerWatcher() {
       {popoutContent}
       {timer.notice && !onTimerPage && (
         <div className="flex max-w-sm items-start gap-3 rounded-2xl border-[3px] border-line bg-white px-4 py-3 shadow-[0_4px_0_var(--chick-line)]">
-          <p className="text-sm font-semibold">{timer.notice}</p>
+          <p className="flex items-start gap-2 text-sm font-semibold">
+            <Icon name="chick" size={20} /> {timer.notice}
+          </p>
           <button
             type="button"
             onClick={() => save("timer", { ...timer, notice: null })}
             className="text-muted hover:text-foreground"
             aria-label="Dismiss"
           >
-            ✕
+            <Icon name="close" size={16} />
           </button>
         </div>
       )}
@@ -187,7 +190,7 @@ export default function TimerWatcher() {
             className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-line bg-white text-sm"
             aria-label={running ? "Pause timer" : "Resume timer"}
           >
-            {running ? "⏸" : "▶"}
+            <Icon name={running ? "pause" : "play"} size={14} />
           </button>
           {popOutSupported() && (
             <button
@@ -197,7 +200,7 @@ export default function TimerWatcher() {
               aria-label="Pop out timer"
               title="Pop out: keep the timer on top of other tabs and apps"
             >
-              📌
+              <Icon name="pin" size={16} />
             </button>
           )}
         </div>

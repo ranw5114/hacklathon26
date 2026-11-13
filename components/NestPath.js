@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -137,7 +138,7 @@ function ChestNode({ offset, unlocked, corn, onOpen }) {
           opened ? "bg-white" : ready ? "animate-pulse bg-beak hover:-translate-y-0.5" : "bg-zinc-200 opacity-70"
         }`}
       >
-        {opened ? "🌽" : "🎁"}
+        {opened ? <Icon name="corn" size={36} /> : <Icon name="chest" size={36} />}
       </button>
       <p className="mt-2 text-xs font-semibold text-muted">
         {opened ? `+${corn} corn collected!` : ready ? "Tap to open!" : "Corn chest"}
@@ -156,7 +157,7 @@ function ExamNode({ nestId, plan, unlocked }) {
         unlocked ? "bg-beak hover:-translate-y-0.5" : "bg-zinc-200 opacity-70"
       }`}
     >
-      {unlocked ? "🏆" : "🔒"}
+      {unlocked ? <Icon name="trophy" size={60} /> : <Icon name="lock" size={50} />}
     </span>
   );
 

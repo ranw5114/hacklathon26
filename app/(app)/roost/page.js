@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
 import PageTour from "@/components/PageTour";
@@ -25,6 +26,7 @@ const REFRESH_AFTER_MS = 30 * 60_000;
 // The Roost: a calendar with the study plan, synced events, and suggested study times.
 export default function RoostPage() {
   const nests = useNests();
+  const todos = useStored("todos");
   const sessions = useStored("sessions");
   const calendar = useStored("calendar");
   const prefs = useStored("prefs");
@@ -47,7 +49,7 @@ export default function RoostPage() {
 
   if (calendar === undefined) return null;
 
-  const data = { nests, events: calendar?.events, sessions };
+  const data = { nests, events: calendar?.events, sessions, todos };
   // A suggested study slot for days with unfinished plan work.
   const suggestFor = (info) =>
     info.plans.length && !info.planDone ? suggestStudySlot(info.date, info.studyMinutes, data.events, now) : null;
@@ -87,7 +89,7 @@ export default function RoostPage() {
       {!calendar && !prefs?.roostHintDismissed && (
         <div className="mt-5 flex items-center gap-3 rounded-2xl border-2 border-dashed border-line/40 px-4 py-2 text-sm">
           <button type="button" onClick={() => setSyncOpen(true)} className="flex-1 text-left font-semibold">
-            📅 Sync your calendar to see your classes here, or try a sample schedule →
+            <Icon name="calendar" size={18} /> Sync your calendar to see your classes here, or try a sample schedule →
           </button>
           <button
             type="button"
@@ -95,7 +97,7 @@ export default function RoostPage() {
             className="text-muted hover:text-foreground"
             aria-label="Dismiss"
           >
-            ✕
+            <Icon name="close" size={16} />
           </button>
         </div>
       )}
@@ -149,12 +151,13 @@ export default function RoostPage() {
 
       {/* Color key */}
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs font-semibold text-muted">
-        <span>🟡 Study plan</span>
-        <span>💡 Suggested study time</span>
-        <span>🔵 Your calendar</span>
-        <span>🎯 Test</span>
-        <span>🏆 Mock exam</span>
-        <span>🐣 Hatched an egg with the Egg Timer</span>
+        <span className="flex items-center gap-1"><Icon name="egg" size={14} /> Study plan</span>
+        <span className="flex items-center gap-1"><Icon name="idea" size={14} /> Suggested study time</span>
+        <span className="flex items-center gap-1"><Icon dot="blue" size={12} /> Your calendar</span>
+        <span className="flex items-center gap-1"><Icon name="homework" size={14} /> Homework</span>
+        <span className="flex items-center gap-1"><Icon name="target" size={14} /> Test</span>
+        <span className="flex items-center gap-1"><Icon name="trophy" size={14} /> Mock exam</span>
+        <span className="flex items-center gap-1"><Icon name="chick" size={14} /> Hatched an egg with the Egg Timer</span>
       </div>
     </main>
   );

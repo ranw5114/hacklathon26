@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import Link from "next/link";
 import Chick from "@/components/Chick";
@@ -90,7 +91,7 @@ export default function ExamPage() {
       <p className="label-small mt-4">
         {test.subject} · {test.topic}
       </p>
-      <h1 className="text-4xl">Mock exam 🏆</h1>
+      <h1 className="flex items-center gap-2 text-4xl">Mock exam <Icon name="trophy" size={36} /></h1>
 
       <div className="mt-6">
         {stage === "intro" && (
@@ -135,11 +136,11 @@ function ExamResults({ nestId, plan, test, avatar, earned, onRetake }) {
         </p>
         {earned > 0 && (
           <p className="font-display font-semibold">
-            🐣 +{earned} chick{earned === 1 ? "" : "s"} hatched!
+            <Icon name="chick" size={18} /> +{earned} chick{earned === 1 ? "" : "s"} hatched!
           </p>
         )}
         <span className="bubble mt-4">
-          {gap <= 0 ? "You're on track to hit your goal! 🎉" : `${gap} points from your goal. You can do it!`}
+          {gap <= 0 ? <>You&apos;re on track to hit your goal! <Icon name="party" size={18} /></> : `${gap} points from your goal. You can do it!`}
         </span>
       </div>
 

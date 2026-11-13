@@ -1,3 +1,4 @@
+import Icon from "@/components/Icon";
 import Chick from "@/components/Chick";
 import Graph from "@/components/Graph";
 import { Diagram, Practice } from "@/components/RichParts";
@@ -72,7 +73,7 @@ export default function Lesson({ lesson, avatar, videoSources }) {
       </section>
 
       <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary self-start">
-        ▶ Find a video on this
+        <Icon name="play" size={16} /> Find a video on this
       </a>
     </div>
   );
