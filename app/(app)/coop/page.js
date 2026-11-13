@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
+import PlayfulChick from "@/components/PlayfulChick";
 import ChickCamera from "@/components/ChickCamera";
 import Graph from "@/components/Graph";
 import { Diagram, Practice } from "@/components/RichParts";
@@ -163,7 +164,7 @@ export default function CoopPage() {
       {dialog}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Chick variant="scholar" size={56} />
+          <PlayfulChick look="scholar" size={56} lines={["Ask me anything!", "Hoo... wait, I'm not an owl.", "My cap? Earned it. Mostly.", "Feed me questions, I'm hungry!"]} bubbleSide="right" label="Poke Scholar" />
           <div>
             <p className="label-small">AI study chat</p>
             <h1 className="text-2xl sm:text-3xl">The Chicken Coop</h1>

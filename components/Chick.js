@@ -205,7 +205,62 @@ function Accessory({ type }) {
 
 // Faces for different moods. "happy" is the normal face.
 const TEAR = "oklch(78% 0.1 230)";
-function Face({ mood }) {
+function Face({ mood, blinkDelay }) {
+  if (mood === "surprised") {
+    return (
+      <g>
+        {/* Big round eyes, raised eyebrows, and an "O" beak */}
+        <circle cx="40" cy="59" r="6" fill="white" stroke={INK} strokeWidth="2.5" />
+        <circle cx="80" cy="59" r="6" fill="white" stroke={INK} strokeWidth="2.5" />
+        <circle cx="40" cy="59" r="2.6" fill={INK} />
+        <circle cx="80" cy="59" r="2.6" fill={INK} />
+        <g fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round">
+          <path d="M33 47 Q40 43 47 47" />
+          <path d="M73 47 Q80 43 87 47" />
+        </g>
+        <ellipse cx="60" cy="66" rx="5" ry="6" fill="var(--chick-beak)" stroke={INK} strokeWidth="2" />
+      </g>
+    );
+  }
+  if (mood === "love") {
+    const heart = (x) => `M${x} 66 C ${x - 11} 58 ${x - 8} 49 ${x} 54 C ${x + 8} 49 ${x + 11} 58 ${x} 66 Z`;
+    return (
+      <g>
+        {/* Heart eyes and rosy cheeks */}
+        <path d={heart(40)} fill="oklch(0.66 0.21 15)" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+        <path d={heart(80)} fill="oklch(0.66 0.21 15)" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+        <ellipse cx="27" cy="70" rx="6" ry="3.5" fill="oklch(0.8 0.12 15)" opacity="0.7" />
+        <ellipse cx="93" cy="70" rx="6" ry="3.5" fill="oklch(0.8 0.12 15)" opacity="0.7" />
+        <path d="M52 64 q8 -5 16 0 q-2 6 -8 6 q-6 0 -8 -6 z" fill="var(--chick-beak)" />
+      </g>
+    );
+  }
+  if (mood === "squint") {
+    return (
+      <g>
+        {/* Happy closed eyes (^ ^), blushing, beak open in a laugh */}
+        <g fill="none" stroke={INK} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M33 62 L40 55 L47 62" />
+          <path d="M73 62 L80 55 L87 62" />
+        </g>
+        <ellipse cx="28" cy="69" rx="6" ry="3.5" fill="oklch(0.8 0.12 15)" opacity="0.7" />
+        <ellipse cx="92" cy="69" rx="6" ry="3.5" fill="oklch(0.8 0.12 15)" opacity="0.7" />
+        <path d="M51 61 q9 -4 18 0 l-3 9 q-6 3 -12 0 z" fill="var(--chick-beak)" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      </g>
+    );
+  }
+  if (mood === "dizzy") {
+    return (
+      <g>
+        {/* Spiral eyes and a wobbly beak */}
+        <g fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round">
+          <path d="M40 60 m-1 0 a1 1 0 1 1 2 0 a3 3 0 1 1 -5 -1 a5 5 0 1 1 9 2" />
+          <path d="M80 60 m-1 0 a1 1 0 1 1 2 0 a3 3 0 1 1 -5 -1 a5 5 0 1 1 9 2" />
+        </g>
+        <path d="M52 62 q4 -4 8 0 q4 4 8 0 q-2 6 -8 6 q-6 0 -8 -6 z" fill="var(--chick-beak)" />
+      </g>
+    );
+  }
   if (mood === "crying") {
     return (
       <g>
@@ -224,8 +279,11 @@ function Face({ mood }) {
   const sad = mood === "sad";
   return (
     <g>
-      <ellipse cx="40" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
-      <ellipse cx="80" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
+      {/* Eyes blink every few seconds (each chick on its own beat, see .chick-blink in globals.css) */}
+      <g className="chick-blink" style={{ animationDelay: blinkDelay }}>
+        <ellipse cx="40" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
+        <ellipse cx="80" cy="60" rx="3.5" ry="4.5" fill="var(--chick-line)" />
+      </g>
       {sad ? (
         <>
           {/* Worried eyebrows, a droopy beak, and one tear */}
@@ -469,6 +527,13 @@ function NeckWear({ type }) {
   return null;
 }
 
+// A different blink timing for each chick, so they don't all blink at once.
+function blinkDelay(id) {
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) % 997;
+  return `-${(hash % 50) / 10}s`;
+}
+
 // variant: an avatar from CHICKS. Optional `color` (a CHICK_COLORS id) repaints it, and
 // `wear` ({ head, face, neck, body, prop }) dresses it up; head "none" hides the avatar's own hat or bow.
 // `variant` can also be a whole look ({ variant, color, wear }), like the avatar from lib/avatar.js.
@@ -513,7 +578,7 @@ export default function Chick({ variant: look = "sunny", size = 96, className = 
       </g>
       <path d={BODY} fill="none" stroke="var(--chick-line)" strokeWidth="4" />
       <NeckWear type={wear?.neck} />
-      <Face mood={mood} />
+      <Face mood={mood} blinkDelay={blinkDelay(clipId)} />
       <FaceWear type={wear?.face} />
       <Accessory type={head} />
       <Prop type={wear?.prop} />

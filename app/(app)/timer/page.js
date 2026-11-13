@@ -3,6 +3,7 @@
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
+import PlayfulChick from "@/components/PlayfulChick";
 import { BroodingChick, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
 import { useConfirm } from "@/components/Modal";
 import PageTour from "@/components/PageTour";
@@ -160,7 +161,7 @@ export default function TimerPage() {
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
       {dialog}
       <div className="flex items-center gap-3">
-        <Chick variant="eggy" size={56} />
+        <PlayfulChick look="eggy" size={56} lines={["Still part shell, all hustle.", "Tick tock, let's rock!", "Focus mode: cluck-tivated.", "Don't make me hard-boil you!"]} bubbleSide="right" label="Poke Eggy" />
         <div>
           <p className="label-small">Study timer</p>
           <h1 className="text-3xl">Egg Timer</h1>

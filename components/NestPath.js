@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
+import PlayfulChick from "@/components/PlayfulChick";
 import { PathEgg } from "@/components/EggArt";
 import { formatDate } from "@/lib/dates";
 import { BABY_COLORS } from "@/lib/flock";
@@ -116,7 +117,13 @@ function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColo
       )}
       {/* The user's chick cheers next to the level they're on. */}
       {isCurrent && (
-        <Chick variant={avatar} size={64} className={`absolute top-10 ${offset > 0 ? "-left-24" : "-right-24"}`} />
+        <PlayfulChick
+          look={avatar}
+          size={64}
+          lines={["You've got this!", "One egg at a time!", "Crack it open!", "I believe in you!"]}
+          className={`absolute top-10 ${offset > 0 ? "-left-24" : "-right-24"}`}
+          label="Poke your chick for a pep talk"
+        />
       )}
     </div>
   );
