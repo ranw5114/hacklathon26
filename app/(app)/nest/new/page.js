@@ -1,7 +1,7 @@
 "use client";
 
+import PageIcon from "@/components/PageIcon";
 import Link from "next/link";
-import Chick from "@/components/Chick";
 import NestForm from "@/components/NestForm";
 import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
@@ -16,7 +16,7 @@ export default function NewNestPage() {
         ← All nests
       </Link>
       <div className="mt-3 mb-6 flex items-end gap-4">
-        <Chick variant="mint" size={90} />
+        <PageIcon icon="nest" move="bounce" size={64} label="Poke the nest" />
         <div>
           <span className="bubble text-sm">Let&apos;s build your nest, one twig at a time!</span>
           <h1 className="mt-3 text-4xl">Nest Builder</h1>
