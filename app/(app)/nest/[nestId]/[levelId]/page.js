@@ -1,7 +1,7 @@
 "use client";
 
 import Icon from "@/components/Icon";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Chick from "@/components/Chick";
@@ -21,7 +21,17 @@ import { DIFFICULTIES, recentFeedback, saveFeedback } from "@/lib/planEdit";
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
   // The URL is /nest/<nestId>/<levelId>, e.g. /nest/nabc123/d1-s2
-  const { nestId, levelId: id } = useParams();
+  const { nestId, levelId } = useParams();
+  const nest = useNest(nestId);
+  if (nest === undefined) return null;
+  if (!nest) return <MissingNest />;
+  // Rendered once the nest has loaded, so a paused lesson can pick up where it left off.
+  return <LevelPlay key={`${nestId}/${levelId}`} nestId={nestId} id={levelId} />;
+}
+
+// Where you were in a lesson, saved on the nest when you pause or leave:
+// nest.paused[levelId] = { stage: "lesson" | "quiz", quiz, quizRound, scrollY, at } (see lib/planEdit.js).
+function LevelPlay({ nestId, id }) {
   const nest = useNest(nestId);
   const profile = useStored("profile");
   const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
@@ -30,12 +40,16 @@ export default function LevelPage() {
   const levels = nest?.levels;
   const flock = useStored("flock");
 
-  const [stage, setStage] = useState("lesson"); // "lesson" → "quiz" → "results"
+  // A paused lesson resumes where it was (only if its lesson is still saved).
+  const [resumed] = useState(() => (nest?.paused?.[id] && nest?.levels?.[id] ? nest.paused[id] : null));
+  const [stage, setStage] = useState(resumed?.stage ?? "lesson"); // "lesson" → "quiz" → "results"
+  const [pausedView, setPausedView] = useState(false); // the "Lesson paused" screen
+  const [showResumed, setShowResumed] = useState(Boolean(resumed)); // the "Picked up where you left off" note
   const [result, setResult] = useState(null); // { correct, total, chicks, corn, egg, flagged }
   const [showFriedPopup, setShowFriedPopup] = useState(false);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0); // bumped by "Try again" to re-run the loading effect
-  const [quizRound, setQuizRound] = useState(0); // bumped to restart the quiz from question 1
+  const [quizRound, setQuizRound] = useState(resumed?.quizRound ?? 0); // bumped to restart the quiz from question 1
   const requested = useRef(false); // so we only ask the AI once
   const remakeAs = useRef(null); // "easier" or "harder" when the student asked to redo this lesson
   const [remaking, setRemaking] = useState(null); // the same, for the loading message
@@ -69,6 +83,102 @@ export default function LevelPage() {
       });
   }, [canPlay, level, profile, test, section, id, nestId, attempt, nest]);
 
+  // ---- Pausing: save where you are, and pick up there next time --------------------------
+  const progress = useRef({ stage, quiz: resumed?.stage === "quiz" ? resumed.quiz : null, quizRound });
+  useLayoutEffect(() => {
+    progress.current.stage = stage;
+    progress.current.quizRound = quizRound;
+  }, [stage, quizRound]);
+  const hasLesson = Boolean(level);
+
+  const saveProgress = useCallback(() => {
+    const { stage: now, quiz, quizRound: round } = progress.current;
+    if (!hasLesson || (now !== "lesson" && now !== "quiz")) return;
+    // Just opened and still at the top? Nothing to come back to.
+    const scrollY = progress.current.scrollY ?? 0;
+    if (now === "lesson" && scrollY < 150 && !progress.current.touched) return;
+    const entry = { stage: now, quiz: now === "quiz" ? quiz : null, quizRound: round, scrollY, at: Date.now() };
+    updateNest(nestId, (n) => ({ ...n, paused: { ...n.paused, [id]: entry } }));
+  }, [hasLesson, nestId, id]);
+
+  const clearProgress = useCallback(() => {
+    progress.current.quiz = null;
+    progress.current.touched = false;
+    updateNest(nestId, (n) => {
+      if (!n.paused?.[id]) return n;
+      const paused = { ...n.paused };
+      delete paused[id];
+      return { ...n, paused };
+    });
+  }, [nestId, id]);
+
+  // Every answer in the quiz is saved straight away, so closing the tab loses nothing.
+  const onQuizProgress = useCallback(
+    (quiz) => {
+      progress.current.quiz = quiz;
+      progress.current.touched = true;
+      saveProgress();
+    },
+    [saveProgress]
+  );
+
+  // Remember how far down you've read (read while you scroll; by the time the page is leaving,
+  // the browser may already be scrolling somewhere else).
+  useEffect(() => {
+    const onScroll = () => {
+      if (document.visibilityState === "visible") progress.current.scrollY = Math.round(window.scrollY);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Auto-pause: leaving the page, switching tabs, or closing the browser saves your place.
+  useLayoutEffect(() => {
+    const onHide = () => document.visibilityState === "hidden" && saveProgress();
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", saveProgress);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", saveProgress);
+      saveProgress(); // leaving this page (Next.js hides or unmounts it)
+    };
+  }, [saveProgress]);
+
+  // Back where you were on the page when resuming.
+  useEffect(() => {
+    if (!resumed?.scrollY || !hasLesson) return;
+    return scrollBackTo(resumed.scrollY);
+  }, [resumed, hasLesson]);
+
+  function pause() {
+    progress.current.touched = true;
+    saveProgress();
+    setPausedView(true);
+    window.scrollTo({ top: 0 });
+  }
+
+  function resume() {
+    setPausedView(false);
+    const y = nest.paused?.[id]?.scrollY;
+    if (y) scrollBackTo(y);
+  }
+
+  function startOver() {
+    clearProgress();
+    setShowResumed(false);
+    setPausedView(false);
+    setStage("lesson");
+    setQuizRound((r) => r + 1);
+    window.scrollTo({ top: 0 });
+  }
+
+  function startQuiz() {
+    progress.current.quiz = null;
+    progress.current.touched = true;
+    setStage("quiz");
+    window.scrollTo({ top: 0 });
+  }
+
   function sendFeedback(difficulty, note) {
     updateNest(nestId, (n) => saveFeedback(n, id, { difficulty, note }));
   }
@@ -77,6 +187,7 @@ export default function LevelPage() {
   function remakeLesson(kind) {
     remakeAs.current = kind;
     setRemaking(kind);
+    clearProgress();
     requested.current = false;
     setResult(null);
     setShowFriedPopup(false);
@@ -104,6 +215,8 @@ export default function LevelPage() {
     if (chicks) update("flock", (f) => hatchChicks(f, chicks, "quiz"));
     if (corn) update("flock", (f) => addCorn(f, corn));
     if (lostChick) update("flock", (f) => loseChickToQuiz(f, todayString()));
+    clearProgress();
+    setShowResumed(false);
     setResult({ correct, total, chicks, corn, egg, goal, concepts, lostChick, flagged: level.quiz.length - total });
     setStage("results");
     setShowFriedPopup(egg.id === "fried");
@@ -115,6 +228,7 @@ export default function LevelPage() {
   }
 
   function retryQuiz() {
+    progress.current.quiz = null;
     setShowFriedPopup(false);
     setQuizRound(quizRound + 1);
     setStage("quiz");
@@ -126,7 +240,6 @@ export default function LevelPage() {
     window.scrollTo({ top: 0 });
   }
 
-  if (nest === undefined) return null;
   if (!nest) return <MissingNest />;
 
   if (!canPlay) {
@@ -139,14 +252,59 @@ export default function LevelPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-      <Link href={`/nest/${nestId}`} className="text-sm font-semibold text-muted hover:underline">
-        ← Back to nest
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link href={`/nest/${nestId}`} className="text-sm font-semibold text-muted hover:underline">
+          ← Back to nest
+        </Link>
+        {level && !pausedView && (stage === "lesson" || stage === "quiz") && (
+          <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 text-sm">
+            <Icon name="pause" size={16} /> Pause
+          </button>
+        )}
+      </div>
       <p className="label-small mt-4">{test.subject}</p>
       <h1 className="text-3xl">{section.title}</h1>
       <p className="mt-1 text-muted">{section.goal}</p>
 
-      <div className="mt-6">
+      {showResumed && !pausedView && (stage === "lesson" || stage === "quiz") && (
+        <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-[3px] border-line bg-chick/60 px-4 py-2 text-sm anim-pop">
+          <span className="flex items-center gap-2 font-semibold">
+            <Icon name="play" size={18} /> Welcome back! You&apos;re right where you left off
+            {stage === "quiz" && resumed?.quiz ? ` (question ${resumed.quiz.index + 1} of ${level?.quiz.length ?? "?"})` : ""}.
+          </span>
+          <span className="flex gap-3">
+            <button type="button" onClick={startOver} className="font-semibold underline">
+              Start over
+            </button>
+            <button type="button" onClick={() => setShowResumed(false)} aria-label="Dismiss">
+              <Icon name="close" size={14} />
+            </button>
+          </span>
+        </div>
+      )}
+
+      {pausedView && (
+        <div className="card mt-6 flex flex-col items-center gap-3 py-10 text-center">
+          <Chick variant={avatar} mood="squint" size={110} />
+          <h2 className="text-3xl">Lesson paused</h2>
+          <p className="max-w-sm text-muted">
+            Take a break! Your place is saved{stage === "quiz" ? ", including your quiz answers" : ""}. Come back any time, even after closing the app.
+          </p>
+          <div className="mt-2 flex flex-wrap justify-center gap-3">
+            <button type="button" onClick={resume} className="btn-primary flex items-center gap-1.5">
+              <Icon name="play" size={18} /> Resume
+            </button>
+            <Link href={`/nest/${nestId}`} className="btn-secondary">
+              Back to nest
+            </Link>
+          </div>
+          <button type="button" onClick={startOver} className="text-xs font-semibold text-muted underline">
+            Start this lesson over
+          </button>
+        </div>
+      )}
+
+      <div className={`mt-6 ${pausedView ? "hidden" : ""}`}>
         {error && (
           <div className="card text-center">
             <p className="text-red-700">{error}</p>
@@ -166,8 +324,11 @@ export default function LevelPage() {
         {level && stage === "lesson" && (
           <>
             <Lesson lesson={level.lesson} avatar={avatar} videoSources={profile.videoSources} />
-            <div className="mt-8 flex justify-end">
-              <button type="button" onClick={() => setStage("quiz")} className="btn-primary">
+            <div className="mt-8 flex flex-wrap justify-end gap-3">
+              <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5">
+                <Icon name="pause" size={18} /> Pause for now
+              </button>
+              <button type="button" onClick={startQuiz} className="btn-primary">
                 Start the quiz →
               </button>
             </div>
@@ -175,7 +336,16 @@ export default function LevelPage() {
         )}
 
         {/* A new key makes React start a fresh Quiz (back to question 1) */}
-        {level && stage === "quiz" && <Quiz key={quizRound} questions={level.quiz} onFinish={finishQuiz} topic={section.title} />}
+        {level && stage === "quiz" && (
+          <Quiz
+            key={quizRound}
+            questions={level.quiz}
+            onFinish={finishQuiz}
+            topic={section.title}
+            initial={resumed?.stage === "quiz" && quizRound === (resumed.quizRound ?? 0) ? resumed.quiz : null}
+            onProgress={onQuizProgress}
+          />
+        )}
 
         {stage === "results" && result && (
           <Results
@@ -210,6 +380,19 @@ export default function LevelPage() {
       </div>
     </main>
   );
+}
+
+// Scrolls back to where the student was. Pictures and graphs can take a moment to make the page
+// tall enough, so it keeps trying for about a second. Returns a function that stops it.
+function scrollBackTo(y) {
+  let frame;
+  let tries = 0;
+  const step = () => {
+    window.scrollTo({ top: y });
+    if (Math.abs(window.scrollY - y) > 4 && tries++ < 60) frame = requestAnimationFrame(step);
+  };
+  frame = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(frame);
 }
 
 // What the chicken says when a quiz scores below the goal grade.
