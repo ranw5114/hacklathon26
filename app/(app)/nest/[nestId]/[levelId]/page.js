@@ -16,6 +16,7 @@ import { updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
 import { completeSection, conceptSummary, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
+import { DIFFICULTIES, recentFeedback, saveFeedback } from "@/lib/planEdit";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
@@ -36,6 +37,8 @@ export default function LevelPage() {
   const [attempt, setAttempt] = useState(0); // bumped by "Try again" to re-run the loading effect
   const [quizRound, setQuizRound] = useState(0); // bumped to restart the quiz from question 1
   const requested = useRef(false); // so we only ask the AI once
+  const remakeAs = useRef(null); // "easier" or "harder" when the student asked to redo this lesson
+  const [remaking, setRemaking] = useState(null); // the same, for the loading message
 
   const section = plan ? findSection(plan, id) : null;
   const level = levels?.[id]; // saved lesson + quiz, if we've generated it before
@@ -49,19 +52,42 @@ export default function LevelPage() {
     fetch("/api/level", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ learner: profile, test, section }),
+      // Their feedback on earlier lessons helps the AI pitch this one right.
+      body: JSON.stringify({ learner: profile, test, section, feedback: recentFeedback(nest), remake: remakeAs.current }),
     })
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         // Saving re-renders the page with the lesson.
+        remakeAs.current = null;
+        setRemaking(null);
         updateNest(nestId, (n) => ({ ...n, levels: { ...n.levels, [id]: data } }));
       })
       .catch((err) => {
         setError(err.message || "Couldn't load this level.");
         requested.current = false; // allow "Try again"
       });
-  }, [canPlay, level, profile, test, section, id, nestId, attempt]);
+  }, [canPlay, level, profile, test, section, id, nestId, attempt, nest]);
+
+  function sendFeedback(difficulty, note) {
+    updateNest(nestId, (n) => saveFeedback(n, id, { difficulty, note }));
+  }
+
+  // Makes this lesson again, easier or harder, with a new quiz.
+  function remakeLesson(kind) {
+    remakeAs.current = kind;
+    setRemaking(kind);
+    requested.current = false;
+    setResult(null);
+    setShowFriedPopup(false);
+    setStage("lesson");
+    updateNest(nestId, (n) => {
+      const levels = { ...n.levels };
+      delete levels[id];
+      return { ...n, levels };
+    });
+    window.scrollTo({ top: 0 });
+  }
 
   // `total` leaves out any questions the student flagged as wrong. answers[i] = { correct, flagged }.
   function finishQuiz(correct, total, answers) {
@@ -133,7 +159,7 @@ export default function LevelPage() {
         {!error && !level && (
           <div className="flex flex-col items-center gap-4 py-12">
             <Chick variant={avatar} size={100} className="animate-bounce" />
-            <span className="bubble">Hatching your lesson…</span>
+            <span className="bubble">{remaking ? `Making it ${remaking} for you…` : "Hatching your lesson…"}</span>
           </div>
         )}
 
@@ -151,7 +177,17 @@ export default function LevelPage() {
         {/* A new key makes React start a fresh Quiz (back to question 1) */}
         {level && stage === "quiz" && <Quiz key={quizRound} questions={level.quiz} onFinish={finishQuiz} topic={section.title} />}
 
-        {stage === "results" && result && <Results result={result} nestId={nestId} onRetry={retryQuiz} onReview={reviewLesson} />}
+        {stage === "results" && result && (
+          <Results
+            result={result}
+            nestId={nestId}
+            onRetry={retryQuiz}
+            onReview={reviewLesson}
+            feedback={nest.feedback?.[id]}
+            onFeedback={sendFeedback}
+            onRemake={remakeLesson}
+          />
+        )}
 
         {/* A failed quiz: a heartbroken chicken pops up */}
         <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={avatar} chickMood="sad">
@@ -183,7 +219,7 @@ const PASSED_LINE = "You ate that lesson, here's some corn for your chicks to ea
 const FAILED_LINE = "You gotta lock in before you run out of chicks to fry.";
 const COOKED_LINE = "You are cooked for this test if you don't work on these concepts:";
 
-function Results({ result, nestId, onRetry, onReview }) {
+function Results({ result, nestId, onRetry, onReview, feedback, onFeedback, onRemake }) {
   const { egg } = result;
   const percent = Math.round((result.correct / result.total) * 100);
 
@@ -219,6 +255,7 @@ function Results({ result, nestId, onRetry, onReview }) {
       )}
 
       <LessonSummary result={result} />
+      <FeedbackBox saved={feedback} onSend={onFeedback} onRemake={onRemake} />
       <div className="mt-4 flex flex-wrap justify-center gap-3">
         {egg.id === "fried" && (
           <button type="button" onClick={onReview} className="btn-secondary">
@@ -283,6 +320,75 @@ function LessonSummary({ result }) {
           {COOKED_LINE} {concepts.missed.join(", ")}.
         </p>
       )}
+    </section>
+  );
+}
+
+// After every lesson: was it too easy or too hard, and what could be better? Saved with the nest
+// and sent to the AI with the next lessons. Too easy / too hard also offers to remake this one.
+function FeedbackBox({ saved, onSend, onRemake }) {
+  const [difficulty, setDifficulty] = useState(saved?.difficulty ?? "");
+  const [note, setNote] = useState(saved?.note ?? "");
+  const [sent, setSent] = useState(false);
+
+  function send() {
+    onSend(difficulty, note);
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <section className="mt-4 flex w-full max-w-md flex-col items-center gap-2 rounded-3xl border-[3px] border-line bg-white p-4 text-center">
+        <Chick variant="sunny" mood="love" size={60} />
+        <p className="font-display text-lg font-semibold">Thanks! I&apos;ll use this to make your next lessons better.</p>
+        {difficulty !== "right" && (
+          <button type="button" onClick={() => onRemake(difficulty === "hard" ? "easier" : "harder")} className="btn-primary px-4 py-2 text-sm">
+            Remake this lesson {difficulty === "hard" ? "easier" : "harder"}
+          </button>
+        )}
+        <button type="button" onClick={() => setSent(false)} className="text-xs font-semibold text-muted underline">
+          Change my feedback
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mt-4 w-full max-w-md rounded-3xl border-[3px] border-line bg-white p-4 text-left">
+      <p className="label-small">Your feedback</p>
+      <p className="mt-1 font-display text-lg font-semibold">How was this lesson?</p>
+      <div className="mt-2 grid grid-cols-3 gap-2" role="radiogroup" aria-label="How hard was this lesson?">
+        {Object.entries(DIFFICULTIES).map(([key, d]) => (
+          <button
+            key={key}
+            type="button"
+            role="radio"
+            aria-checked={difficulty === key}
+            onClick={() => setDifficulty(key)}
+            className={`group flex flex-col items-center gap-1 rounded-2xl border-[3px] px-2 py-2 text-sm font-semibold transition ${
+              difficulty === key ? "border-line bg-chick shadow-[0_3px_0_var(--chick-line)]" : "border-line/30 bg-white hover:border-line"
+            }`}
+          >
+            <span className="inline-flex group-hover:anim-hop">
+              <Chick variant="sunny" mood={d.mood} size={44} />
+            </span>
+            {d.label}
+          </button>
+        ))}
+      </div>
+      <label className="mt-3 flex flex-col gap-1">
+        <span className="text-sm font-semibold">What can we do better? (optional)</span>
+        <textarea
+          className="input min-h-20 text-sm"
+          maxLength={400}
+          placeholder="e.g. More examples, shorter explanations, harder questions, explain the formulas…"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </label>
+      <button type="button" onClick={send} disabled={!difficulty} className="btn-primary mt-3 w-full disabled:opacity-50">
+        {difficulty ? "Send feedback" : "Pick one above to send"}
+      </button>
     </section>
   );
 }

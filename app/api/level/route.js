@@ -114,8 +114,25 @@ const levelSchema = {
   required: ["lesson", "quiz"],
 };
 
+// The student's ratings of earlier lessons (see lib/planEdit.js), so new lessons fit them better.
+// `remake` is "easier" or "harder" when they asked to redo this lesson.
+function feedbackText(feedback, remake) {
+  const items = (Array.isArray(feedback) ? feedback : [])
+    .slice(0, 6)
+    .filter((f) => typeof f?.lesson === "string" && typeof f?.difficulty === "string")
+    .map((f) => `- "${f.lesson.slice(0, 120)}": ${f.difficulty.slice(0, 20)}${f.note ? `. They said: "${String(f.note).slice(0, 400)}"` : ""}`);
+  const redo =
+    remake === "easier"
+      ? "\nThe student found this lesson too hard and asked for it again, EASIER: explain more slowly with simpler words, break every step down, add an extra worked example, and make the quiz questions more straightforward (still on the same goal)."
+      : remake === "harder"
+        ? "\nThe student found this lesson too easy and asked for it again, HARDER: move faster, go deeper, and make the quiz questions more challenging (like the hardest real test questions on this goal)."
+        : "";
+  if (!items.length && !redo) return "";
+  return `${items.length ? `\nWhat the student said about earlier lessons (adjust the difficulty and teaching to fit, and follow their suggestions when they make sense):\n${items.join("\n")}\n` : ""}${redo}\n`;
+}
+
 export async function POST(request) {
-  const { learner, test, section } = await request.json();
+  const { learner, test, section, feedback, remake } = await request.json();
 
   if (!section?.title || !test?.subject || !LEARNING_STYLES[learner?.learningStyle]) {
     return Response.json({ error: "Some level details are missing." }, { status: 400 });
@@ -125,7 +142,7 @@ export async function POST(request) {
 
 Student: studying ${test.subject} (test on: ${test.topic}). They are ${LEARNING_STYLES[learner.learningStyle].prompt}.
 Lesson: "${section.title}". Goal: ${section.goal}
-${subjectBriefText(test)}
+${subjectBriefText(test)}${feedbackText(feedback, remake)}
 Rules:
 - ${STYLE_INSTRUCTIONS[learner.learningStyle]}
 - Keep the lesson short enough to work through in about 5-10 minutes. Use a warm, encouraging tone.
