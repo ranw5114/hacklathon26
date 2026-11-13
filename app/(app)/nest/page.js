@@ -1,5 +1,6 @@
 "use client";
 
+import PageIcon from "@/components/PageIcon";
 import Icon from "@/components/Icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,9 +25,12 @@ export default function NestsPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="label-small">One nest per test</p>
-          <h1 className="text-4xl">Your Nests</h1>
+        <div className="flex items-center gap-3">
+          <PageIcon icon="nest" move="bounce" size={52} lines={["One twig at a time!", "Cozy nests make smart chicks.", "Eggs in, A's out!", "Build it and they will hatch."]} label="Poke the nest" />
+          <div>
+            <p className="label-small">One nest per test</p>
+            <h1 className="text-4xl">Your Nests</h1>
+          </div>
         </div>
         <Link href="/nest/new" className="btn-primary">
           + Build a new nest

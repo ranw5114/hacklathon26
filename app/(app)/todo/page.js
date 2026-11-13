@@ -1,5 +1,6 @@
 "use client";
 
+import PageIcon from "@/components/PageIcon";
 import { useState } from "react";
 import Link from "next/link";
 import Chick from "@/components/Chick";
@@ -58,7 +59,7 @@ export default function TodoPage() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
       <div className="flex items-center gap-3">
-        <Icon name="todo" size={52} />
+        <PageIcon icon="todo" move="pop" size={52} lines={["Peck, peck, done!", "One task at a time!", "Check me off, I dare you.", "Future you says thanks!"]} label="Poke the list" />
         <div>
           <p className="label-small">Day by day</p>
           <h1 className="text-3xl">To-Do List</h1>

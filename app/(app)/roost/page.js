@@ -1,9 +1,9 @@
 "use client";
 
+import PageIcon from "@/components/PageIcon";
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
-import PlayfulChick from "@/components/PlayfulChick";
 import PageTour from "@/components/PageTour";
 import CalendarSyncButton, { syncCalendar } from "@/components/roost/CalendarSync";
 import DayView from "@/components/roost/DayView";
@@ -76,7 +76,7 @@ export default function RoostPage() {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
       <div className="flex items-center gap-3">
-        <PlayfulChick look="peach" size={56} lines={["Early bird gets the A!", "I've got your whole week planned. Mostly naps.", "Roosting and boosting!", "Is today a free-range day?"]} bubbleSide="right" label="Poke Peach" />
+        <PageIcon icon="calendar" move="flip" size={52} lines={["Early bird gets the A!", "I've got your whole week planned. Mostly naps.", "Roosting and boosting!", "Is today a free-range day?"]} label="Poke the calendar" />
         <div>
           <p className="label-small">Calendar</p>
           <h1 className="text-3xl">The Roost</h1>

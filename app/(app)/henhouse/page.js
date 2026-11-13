@@ -1,5 +1,6 @@
 "use client";
 
+import PageIcon from "@/components/PageIcon";
 import Icon from "@/components/Icon";
 import { useState } from "react";
 import Link from "next/link";
@@ -42,9 +43,12 @@ export default function HenhousePage() {
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="label-small">Your chicks</p>
-          <h1 className="text-4xl">The Henhouse</h1>
+        <div className="flex items-center gap-3">
+          <PageIcon icon="henhouse" move="peek" size={52} lines={["Peekaboo!", "Home sweet coop.", "Dress-up time!", "Who wants a new hat?"]} label="Poke the henhouse" />
+          <div>
+            <p className="label-small">Your chicks</p>
+            <h1 className="text-4xl">The Henhouse</h1>
+          </div>
         </div>
         <div className="flex gap-2 font-display font-semibold">
           <span className="rounded-full border-2 border-line bg-white px-3 py-1"><Icon name="chick" size={18} /> {chickCount(flock)}</span>
