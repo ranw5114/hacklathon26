@@ -1,3 +1,4 @@
+import Icon from "@/components/Icon";
 import { dayInfo, monthWeeks, studyEgg } from "@/lib/calendar";
 import { Chip, dayChips } from "@/components/roost/DayChips";
 
@@ -46,7 +47,7 @@ export default function MonthView({ focusDate, today, data, suggestFor, onOpenDa
                   </span>
                   {egg && (
                     <span className="text-lg leading-none sm:text-xl" title={egg.label} aria-label={egg.label}>
-                      {egg.emoji}
+                      <Icon name={egg.icon} size={22} />
                     </span>
                   )}
                 </span>

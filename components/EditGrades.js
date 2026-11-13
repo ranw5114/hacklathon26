@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import { Field } from "@/components/ProfileFields";
@@ -7,7 +8,7 @@ import { formatDate } from "@/lib/dates";
 import { checkGrades } from "@/lib/grades";
 import { updateNest } from "@/lib/nests";
 
-// "✏️ Edit" on the Nest banner: change the current and goal grade without rebuilding the plan.
+// "Edit" on the Nest banner: change the current and goal grade without rebuilding the plan.
 export default function EditGradesButton({ test, nestId }) {
   const [open, setOpen] = useState(false);
 
@@ -19,7 +20,7 @@ export default function EditGradesButton({ test, nestId }) {
         className="rounded-xl border-2 border-line bg-white px-2 py-0.5 text-sm font-semibold hover:bg-chick/40"
         aria-label="Edit grades"
       >
-        ✏️ Edit
+        <Icon name="pencil" size={16} /> Edit
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Update your grades" chick="mint">
         {/* A key resets the form to the saved grades each time it opens */}
@@ -95,7 +96,7 @@ function EditGradesForm({ test, nestId, onDone }) {
       )}
 
       <p className="rounded-2xl bg-chick/40 px-4 py-2 text-sm">
-        📅 Test date: <strong>{formatDate(test.testDate)}</strong>. To change it, build a new nest (the plan needs
+        <Icon name="calendar" size={18} /> Test date: <strong>{formatDate(test.testDate)}</strong>. To change it, build a new nest (the plan needs
         a different number of days).
       </p>
 

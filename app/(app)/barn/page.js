@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import Link from "next/link";
 import Chick from "@/components/Chick";
@@ -7,6 +8,9 @@ import PageTour from "@/components/PageTour";
 import { useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
 import { chickCount, withDefaults } from "@/lib/flock";
+import { useNests } from "@/lib/nests";
+import { planItemsFor, withTodoDefaults } from "@/lib/todos";
+import { todayString } from "@/lib/dates";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { formatTime, timeLeft } from "@/lib/timer";
 import { useNow } from "@/lib/useNow";
@@ -40,6 +44,20 @@ const AREAS = [
     tagline: "Build your plan one twig at a time.",
     chick: "mint",
   },
+  {
+    href: "/todo",
+    kicker: "Homework and study",
+    title: "To-Do List",
+    tagline: "Peck away at it, one task at a time.",
+    chick: "sunny",
+  },
+  {
+    href: "/henhouse",
+    kicker: "Your chicks",
+    title: "The Henhouse",
+    tagline: "Name, dress, and spoil your flock.",
+    chick: "berry",
+  },
 ];
 
 const JOKES = [
@@ -55,17 +73,27 @@ export default function BarnPage() {
   const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
   const timer = useStored("timer");
   const flock = useStored("flock");
+  const todos = useStored("todos");
+  const nests = useNests();
   const now = useNow();
   // Pick one joke when the page opens (useState keeps it from changing on every re-render).
   const [joke] = useState(() => JOKES[Math.floor(Math.random() * JOKES.length)]);
   const style = LEARNING_STYLES[profile.learningStyle];
 
-  // While the Egg Timer is going, its card shows the live countdown instead of the tagline.
+  // The To-Do card shows what's left today; the Egg Timer card shows a running countdown.
   function tagline(area) {
+    if (area.href === "/todo") {
+      const today = todayString();
+      const t = withTodoDefaults(todos);
+      const left =
+        planItemsFor(nests ?? [], today, t).filter((i) => !i.done).length +
+        t.homework.filter((h) => !h.done && h.dueDate <= today).length;
+      return left ? `${left} thing${left === 1 ? "" : "s"} left to do today` : area.tagline;
+    }
     if (area.href !== "/timer" || !timer || timer.status === "idle") return area.tagline;
     const left = formatTime(timeLeft(timer, now));
-    if (timer.status === "paused") return `⏸ Paused with ${left} left`;
-    return `⏳ ${timer.mode === "break" ? "On a break" : "Focusing"}… ${left} left`;
+    if (timer.status === "paused") return <><Icon name="pause" size={14} /> Paused with {left} left</>;
+    return <><Icon name="hourglass" size={14} /> {timer.mode === "break" ? "On a break" : "Focusing"}… {left} left</>;
   }
 
   return (
@@ -76,8 +104,8 @@ export default function BarnPage() {
           <span className="bubble text-sm sm:text-base">Welcome to the barn, {profile.name}!</span>
           <h1 className="mt-4 text-4xl sm:text-5xl">The Barn</h1>
           <p className="mt-1 font-display font-semibold text-muted">
-            {style && <>You&apos;re a {style.label.toLowerCase()} learner 🐣 · </>}<Link href="/henhouse" className="underline decoration-2 underline-offset-2 hover:text-foreground">
-              {chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"} · 🌽 {withDefaults(flock).corn} corn
+            {style && <>You&apos;re a {style.label.toLowerCase()} learner <Icon name="chick" size={18} /> · </>}<Link href="/henhouse" className="underline decoration-2 underline-offset-2 hover:text-foreground">
+              {chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"} · <Icon name="corn" size={18} /> {withDefaults(flock).corn} corn
             </Link>
           </p>
         </div>

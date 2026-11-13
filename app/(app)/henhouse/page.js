@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import Link from "next/link";
 import Chick, { CHICK_COLORS } from "@/components/Chick";
@@ -46,8 +47,8 @@ export default function HenhousePage() {
           <h1 className="text-4xl">The Henhouse</h1>
         </div>
         <div className="flex gap-2 font-display font-semibold">
-          <span className="rounded-full border-2 border-line bg-white px-3 py-1">🐣 {chickCount(flock)}</span>
-          <span className="rounded-full border-2 border-line bg-white px-3 py-1">🌽 {flock.corn} corn</span>
+          <span className="rounded-full border-2 border-line bg-white px-3 py-1"><Icon name="chick" size={18} /> {chickCount(flock)}</span>
+          <span className="rounded-full border-2 border-line bg-white px-3 py-1"><Icon name="corn" size={18} /> {flock.corn} corn</span>
         </div>
       </div>
 
@@ -70,7 +71,7 @@ export default function HenhousePage() {
                     <Chick {...chickLook(chick)} size={52} />
                     {chick.id === profile?.avatarChickId && (
                       <span className="absolute -top-2 -right-2 text-base" title="Your avatar">
-                        ⭐
+                        <Icon name="star" size={18} />
                       </span>
                     )}
                   </span>
@@ -100,7 +101,7 @@ export default function HenhousePage() {
               {HOW_FROM[selected.from] && <> from {HOW_FROM[selected.from]}</>}
             </p>
             {selected.id === profile?.avatarChickId ? (
-              <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold">⭐ Your avatar</span>
+              <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold"><Icon name="star" size={14} /> Your avatar</span>
             ) : (
               <button
                 type="button"
@@ -193,14 +194,14 @@ export default function HenhousePage() {
                     <Chick {...preview} size={50} />
                     <p className="text-sm font-semibold">{item.name}</p>
                     {owned ? (
-                      <span className="text-sm font-semibold text-muted">✓ Owned</span>
+                      <span className="text-sm font-semibold text-muted"><Icon name="check" size={12} /> Owned</span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => buy(item)}
                         className={`btn-primary px-3 py-1 text-sm ${flock.corn < item.price ? "opacity-60" : ""}`}
                       >
-                        🌽 {item.price}
+                        <Icon name="corn" size={16} /> {item.price}
                       </button>
                     )}
                   </div>

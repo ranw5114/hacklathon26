@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import MissingNest from "@/components/MissingNest";
@@ -67,19 +68,19 @@ export default function NestPage() {
         </div>
         <h1 className="mt-1 text-2xl sm:text-3xl">{plan.title}</h1>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-display font-semibold">
-          <span>📅 {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : daysLeft === 0 ? "Test day!" : "Test done"}</span>
+          <span className="flex items-center gap-1"><Icon name="calendar" size={18} /> {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : daysLeft === 0 ? "Test day!" : "Test done"}</span>
           <span className="flex items-center gap-2">
-            🎯 {test.currentGrade}% → {test.goalGrade}% <EditGradesButton test={test} nestId={nestId} />
+            <Icon name="target" size={18} /> {test.currentGrade}% → {test.goalGrade}% <EditGradesButton test={test} nestId={nestId} />
           </span>
-          <span>🐣 {chickCount(flock)} chicks</span>
-          <span>🌽 {withDefaults(flock).corn} corn</span>
+          <span className="flex items-center gap-1"><Icon name="chick" size={18} /> {chickCount(flock)} chicks</span>
+          <span className="flex items-center gap-1"><Icon name="corn" size={18} /> {withDefaults(flock).corn} corn</span>
         </div>
       </div>
       <p className="mt-4 text-sm text-muted">{plan.overview}</p>
       {test.brief && (
         <details className="mt-3 rounded-2xl border-2 border-line/30 bg-white px-4 py-2 text-sm">
           <summary className="cursor-pointer font-semibold">
-            📚 What we found about {test.subject}
+            <Icon name="book" size={16} /> What we found about {test.subject}
             {test.basis?.length > 0 && <span className="font-normal text-muted"> · {test.basis.join(" + ")}</span>}
           </summary>
           <p className="mt-2 whitespace-pre-line text-muted">{test.brief}</p>

@@ -1,5 +1,7 @@
 "use client";
 
+import Icon from "@/components/Icon";
+import ChickCamera from "@/components/ChickCamera";
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import { save, useStored } from "@/lib/storage";
@@ -40,9 +42,9 @@ export default function PageTour({ page }) {
 
       <Modal open={open} onClose={close} title={card.title} chick={card.chick}>
         <div className="flex flex-col items-center gap-4 text-center">
-          {/* Picture area: emoji for now, custom graphics later */}
-          <div className="flex h-28 w-28 items-center justify-center rounded-full border-[3px] border-line bg-chick text-6xl">
-            {card.picture}
+          {/* Picture: one of the app's drawn icons (the camera is the Coop's chicken camera) */}
+          <div className="flex h-28 w-28 items-center justify-center rounded-full border-[3px] border-line bg-chick">
+            {card.picture === "camera" ? <ChickCamera size={64} /> : <Icon name={card.picture} size={64} />}
           </div>
           <p className="text-lg leading-relaxed">{card.text}</p>
 

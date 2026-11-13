@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChickInNest } from "@/components/EggArt";
@@ -79,7 +80,7 @@ function NestCard({ nest, avatar, today }) {
       <p className="label-small mt-1">{test.subject}</p>
       <h2 className="line-clamp-2 text-lg leading-snug">{test.topic}</h2>
       <p className={`text-sm font-semibold ${daysLeft >= 0 && daysLeft <= 1 ? "text-red-700" : "text-muted"}`}>
-        📅 {when} · {formatDate(test.testDate)}
+        <Icon name="calendar" size={16} /> {when} · {formatDate(test.testDate)}
       </p>
       {/* Progress through the eggs */}
       <div className="mt-1 w-full">

@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import { save, useStored } from "@/lib/storage";
 
@@ -92,16 +93,16 @@ export default function Quiz({ questions, onFinish, topic }) {
 
       {checked && (
         <div className={`rounded-2xl border-[3px] p-4 ${isCorrect ? "border-green-700 bg-green-50" : "border-red-700 bg-red-50"}`}>
-          <p className="font-display text-lg font-semibold">{isCorrect ? "Egg-cellent! 🐣" : "Not quite!"}</p>
+          <p className="font-display text-lg font-semibold">{isCorrect ? <>Egg-cellent! <Icon name="chick" size={22} /></> : "Not quite!"}</p>
           <p className="mt-1">{question.explanation}</p>
           {isFlagged ? (
-            <p className="mt-3 text-sm font-semibold">🚩 Flagged. Thanks! This question won&apos;t count against you.</p>
+            <p className="mt-3 text-sm font-semibold"><Icon name="flag" size={16} /> Flagged. Thanks! This question won&apos;t count against you.</p>
           ) : flagged.length < MAX_FLAGS ? (
             <button type="button" onClick={flag} className="mt-3 text-sm font-semibold text-muted underline">
-              🚩 This answer looks wrong
+              <Icon name="flag" size={16} /> This answer looks wrong
             </button>
           ) : (
-            <p className="mt-3 text-sm text-muted">🚩 You&apos;ve used both flags for this quiz.</p>
+            <p className="mt-3 text-sm text-muted"><Icon name="flag" size={16} /> You&apos;ve used both flags for this quiz.</p>
           )}
         </div>
       )}

@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -201,12 +202,12 @@ function Results({ result, nestId, onRetry, onReview }) {
       </p>
       {result.flagged > 0 && (
         <p className="text-sm text-muted">
-          🚩 {result.flagged} flagged question{result.flagged === 1 ? "" : "s"} didn&apos;t count
+          <Icon name="flag" size={14} /> {result.flagged} flagged question{result.flagged === 1 ? "" : "s"} didn&apos;t count
         </p>
       )}
       {result.chicks > 0 && (
         <p className="font-display font-semibold">
-          🐣 A new chick joined your coop!{" "}
+          <Icon name="chick" size={18} /> A new chick joined your coop!{" "}
           <Link href="/henhouse" className="underline">
             Visit the Henhouse
           </Link>
@@ -246,11 +247,11 @@ function LessonSummary({ result }) {
 
       {concepts.understood.length > 0 && (
         <>
-          <p className="mt-3 text-sm font-semibold">Concepts you got 🌽</p>
+          <p className="mt-3 text-sm font-semibold">Concepts you got <Icon name="corn" size={16} /></p>
           <ul className="mt-1 flex flex-col gap-1">
             {concepts.understood.map((c) => (
               <li key={c} className="flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 text-sm">
-                <span aria-hidden="true">🌽</span> {c}
+                <Icon name="corn" size={18} /> {c}
               </li>
             ))}
           </ul>
@@ -270,11 +271,11 @@ function LessonSummary({ result }) {
       )}
 
       <div className="mt-3 flex flex-col gap-1 font-semibold">
-        {corn > 0 && <p>🌽 +{corn} corn for your chicks (spend it in the Henhouse)</p>}
+        {corn > 0 && <p><Icon name="corn" size={18} /> +{corn} corn for your chicks (spend it in the Henhouse)</p>}
         {corn === 0 && concepts.understood.length > 0 && (
           <p className="text-sm text-muted">You already earned corn for these concepts on this lesson.</p>
         )}
-        {lostChick && <p className="text-red-700">🍗 One of your chicks got fried into a drumstick.</p>}
+        {lostChick && <p className="text-red-700"><Icon name="drumstick" size={18} /> One of your chicks got fried into a drumstick.</p>}
       </div>
 
       {concepts.missed.length > 0 && (

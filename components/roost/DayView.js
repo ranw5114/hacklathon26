@@ -1,3 +1,4 @@
+import Icon from "@/components/Icon";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { DAY_END_HOUR, DAY_START_HOUR, formatClock, studyEgg } from "@/lib/calendar";
@@ -86,7 +87,7 @@ export default function DayView({ info, suggestion, now, isToday }) {
                     height: Math.max(28, toY(minutesOf(suggestion.end)) - toY(minutesOf(suggestion.start))),
                   }}
                 >
-                  💡 Study time: {formatClock(suggestion.start)} – {formatClock(suggestion.end)}
+                  <Icon name="idea" size={16} /> Study time: {formatClock(suggestion.start)} – {formatClock(suggestion.end)}
                   <span className="text-xs font-normal text-muted">Tap to open the Egg Timer</span>
                 </Link>
               )}
@@ -128,14 +129,28 @@ export default function DayView({ info, suggestion, now, isToday }) {
       <aside className="flex flex-col gap-4">
         {info.tests.map((nest) => (
           <div key={nest.id} className="card bg-red-50 font-display text-lg font-semibold">
-            🎯 {nest.test.subject} test day! You&apos;ve got this.
+            <Icon name="target" size={22} /> {nest.test.subject} test day! You&apos;ve got this.
           </div>
         ))}
         {info.mocks.map((nest) => (
           <Link key={nest.id} href={`/nest/${nest.id}/exam`} className="card-link bg-beak/40 font-display text-lg font-semibold">
-            🏆 {nest.test.subject} mock exam
+            <Icon name="trophy" size={22} /> {nest.test.subject} mock exam
           </Link>
         ))}
+
+        {info.homework.length > 0 && (
+          <Link href="/todo" className="card-link">
+            <p className="label-small">Homework due</p>
+            <ul className="mt-2 flex flex-col gap-1">
+              {info.homework.map((h) => (
+                <li key={h.id} className={`flex items-center gap-2 text-sm font-semibold ${h.done ? "line-through opacity-60" : ""}`}>
+                  <Icon name={h.done ? "done" : "homework"} size={18} />
+                  {h.subject ? `${h.subject}: ${h.title}` : h.title}
+                </li>
+              ))}
+            </ul>
+          </Link>
+        )}
 
         {info.plans.map((plan) => {
           const goal = goalFraction(plan.nest.test);
@@ -152,7 +167,7 @@ export default function DayView({ info, suggestion, now, isToday }) {
                   const cook = section.completed ? eggResult(section.score, goal) : null;
                   const label = (
                     <>
-                      <span>{cook ? cook.emoji : unlocked ? "🥚" : "🔒"}</span>
+                      <Icon name={cook ? cook.icon : unlocked ? "egg" : "lock"} size={18} />
                       <span className="flex-1">{section.title}</span>
                       <span className="text-xs text-muted">{section.minutes}m</span>
                     </>
@@ -175,7 +190,7 @@ export default function DayView({ info, suggestion, now, isToday }) {
                   );
                 })}
               </ul>
-              {plan.done && <p className="mt-3 font-semibold">✅ All done for this test today!</p>}
+              {plan.done && <p className="mt-3 font-semibold"><Icon name="done" size={18} /> All done for this test today!</p>}
             </div>
           );
         })}
@@ -184,7 +199,7 @@ export default function DayView({ info, suggestion, now, isToday }) {
           <>
             {suggestion && (
               <p className="rounded-xl border-2 border-dashed border-line px-3 py-2 text-sm">
-                💡 {suggestion.fits ? "Free" : "Longest free gap"} for {info.studyMinutes} min of study:{" "}
+                <Icon name="idea" size={16} /> {suggestion.fits ? "Free" : "Longest free gap"} for {info.studyMinutes} min of study:{" "}
                 <strong>
                   {formatClock(suggestion.start)} – {formatClock(suggestion.end)}
                 </strong>
@@ -193,7 +208,7 @@ export default function DayView({ info, suggestion, now, isToday }) {
             )}
             {!suggestion && isToday && (
               <p className="rounded-xl bg-chick/40 px-3 py-2 text-sm">
-                🌙 It&apos;s getting late. Do what you can, or catch up tomorrow.
+                <Icon name="moon" size={16} /> It&apos;s getting late. Do what you can, or catch up tomorrow.
               </p>
             )}
           </>
@@ -202,7 +217,7 @@ export default function DayView({ info, suggestion, now, isToday }) {
 
         {egg && (
           <div className="card">
-            <span className="text-2xl">{egg.emoji}</span> {egg.label}
+            <Icon name={egg.icon} size={28} /> {egg.label}
           </div>
         )}
       </aside>

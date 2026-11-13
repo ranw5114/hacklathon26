@@ -1,19 +1,21 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Chick from "@/components/Chick";
 import { chickCount, withDefaults } from "@/lib/flock";
 import { useStored } from "@/lib/storage";
 
-// Placeholder icons (emoji) until the custom graphics are ready.
+// Menu icons (drawn in components/Icon.js).
 export const NAV_ITEMS = [
-  { href: "/barn", label: "Barn", icon: "🏠" },
-  { href: "/nest", label: "Nest", icon: "🪺" },
-  { href: "/coop", label: "Coop", icon: "🐔" },
-  { href: "/timer", label: "Timer", icon: "🥚" },
-  { href: "/roost", label: "Roost", icon: "📅" },
-  { href: "/profile", label: "Me", icon: "🐣" },
+  { href: "/barn", label: "Barn", icon: "barn" },
+  { href: "/nest", label: "Nest", icon: "nest" },
+  { href: "/coop", label: "Coop", icon: "hen" },
+  { href: "/timer", label: "Timer", icon: "egg" },
+  { href: "/roost", label: "Roost", icon: "calendar" },
+  { href: "/todo", label: "To-Do", icon: "todo" },
+  { href: "/profile", label: "Me", icon: "chick" },
 ];
 
 // Top bar on computers, bottom bar on phones (like Duolingo).
@@ -39,7 +41,7 @@ export default function AppNav({ avatar }) {
             title="Visit the Henhouse: your chicks and corn"
           >
             <Chick variant="sunny" size={26} /> {chickCount(flock)}
-            <span className="ml-1.5">🌽 {withDefaults(flock).corn}</span>
+            <span className="ml-1.5 flex items-center gap-1"><Icon name="corn" size={20} /> {withDefaults(flock).corn}</span>
           </Link>
         </nav>
       </header>
@@ -59,10 +61,11 @@ function NavLink({ item, active, stacked }) {
     <Link
       href={item.href}
       className={`flex items-center rounded-2xl border-2 px-3 py-1.5 font-display font-semibold transition ${
-        stacked ? "flex-col gap-0 px-2 text-xs" : "gap-1.5 text-sm"
+        // Phones fit 7 tabs: narrower padding and labels that never wrap.
+        stacked ? "min-w-0 flex-1 flex-col gap-0 px-0.5 text-[11px] whitespace-nowrap" : "gap-1.5 text-sm"
       } ${active ? "border-line bg-chick" : "border-transparent hover:bg-chick/40"}`}
     >
-      <span className={stacked ? "text-xl" : ""}>{item.icon}</span>
+      <Icon name={item.icon} size={stacked ? 24 : 20} />
       {item.label}
     </Link>
   );

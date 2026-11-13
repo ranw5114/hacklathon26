@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
@@ -90,7 +91,7 @@ export default function ProfilePage() {
         <Field label="Avatar">
           {henhouseChick && (
             <p className="mb-2 rounded-2xl bg-chick/50 px-4 py-2 text-sm">
-              ⭐ Your avatar is <strong>{chickName(henhouseChick, flock.chicks.indexOf(henhouseChick))}</strong> from
+              <Icon name="star" size={16} /> Your avatar is <strong>{chickName(henhouseChick, flock.chicks.indexOf(henhouseChick))}</strong> from
               the <Link href="/henhouse" className="underline">Henhouse</Link>. Pick a starter chick below to switch back.
             </p>
           )}

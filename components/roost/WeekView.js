@@ -1,3 +1,4 @@
+import Icon from "@/components/Icon";
 import { dayInfo, studyEgg, weekDays } from "@/lib/calendar";
 import { Chip, dayChips } from "@/components/roost/DayChips";
 
@@ -27,7 +28,7 @@ export default function WeekView({ focusDate, today, data, suggestFor, onOpenDay
               </span>
               {egg && (
                 <span className="text-2xl leading-none" title={egg.label} aria-label={egg.label}>
-                  {egg.emoji}
+                  <Icon name={egg.icon} size={28} />
                 </span>
               )}
             </span>

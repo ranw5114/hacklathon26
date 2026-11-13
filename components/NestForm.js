@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import { Field } from "@/components/ProfileFields";
 import { useRouter } from "next/navigation";
@@ -141,7 +142,7 @@ export default function NestForm({ learner }) {
       )}
       {picked?.kind === "test" && (
         <p className="-mt-2 rounded-2xl bg-chick/50 px-4 py-2 text-sm">
-          📚 Your plan will follow the real {picked.label}: its format, timing, scoring, and question style.
+          <Icon name="book" size={18} /> Your plan will follow the real {picked.label}: its format, timing, scoring, and question style.
         </p>
       )}
       <Field label={picked?.defaultTopic ? "What's on it? (optional)" : "What's on the test?"}>
