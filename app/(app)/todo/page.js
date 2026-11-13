@@ -5,6 +5,7 @@ import Link from "next/link";
 import Chick from "@/components/Chick";
 import Icon from "@/components/Icon";
 import PageTour from "@/components/PageTour";
+import { SyncButton, SyncedSources } from "@/components/AssignmentSync";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
 import { addDays, formatDate, todayString } from "@/lib/dates";
 import { useNests } from "@/lib/nests";
@@ -60,7 +61,8 @@ export default function TodoPage() {
           <p className="label-small">Day by day</p>
           <h1 className="text-3xl">To-Do List</h1>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <SyncButton />
           <button type="button" onClick={() => setShowAdd(!showAdd)} className="btn-primary flex items-center gap-1.5 px-4 py-2">
             <Icon name="plus" size={16} /> Homework
           </button>
@@ -94,6 +96,8 @@ export default function TodoPage() {
       )}
 
       {showAdd && <AddHomework subjects={subjects} today={today} onDone={() => setShowAdd(false)} />}
+
+      <SyncedSources todos={todos} />
 
       {/* Overdue */}
       {(overdueHomework.length > 0 || missedLessons.length > 0) && (
@@ -242,11 +246,16 @@ function HomeworkRow({ homework: h, now, showDate }) {
       <div className="min-w-0 flex-1">
         <p className={`font-semibold ${h.done ? "line-through" : ""}`}>{h.title}</p>
         <p className="text-xs text-muted">
-          {[h.subject, when].filter(Boolean).join(" · ")}
+          {[h.subject, when, h.sourceId && "synced"].filter(Boolean).join(" · ")}
           {status === "soon" && <span className="ml-1 font-semibold text-beak">· Due {dueRelative(h, now)}</span>}
           {status === "overdue" && <span className="ml-1 font-semibold text-red-700">· Overdue</span>}
         </p>
       </div>
+      {h.link && !h.done && (
+        <a href={h.link} target="_blank" rel="noopener noreferrer" className="btn-secondary shrink-0 px-3 py-1 text-sm">
+          Open
+        </a>
+      )}
       <button
         type="button"
         onClick={() => update("todos", (t) => deleteHomework(t, h.id))}
