@@ -21,42 +21,42 @@ const AREAS = [
     kicker: "AI study chat",
     title: "The Chicken Coop",
     tagline: "Ask anything. No question is too fowl.",
-    chick: "scholar",
+    icon: "hen", // same drawing as its menu tab
   },
   {
     href: "/timer",
     kicker: "Study timer",
     title: "Egg Timer",
     tagline: "Focus until you're hard-boiled.",
-    chick: "eggy",
+    icon: "egg", // same drawing as its menu tab
   },
   {
     href: "/roost",
     kicker: "Calendar",
     title: "The Roost",
     tagline: "Know when to rise and grind.",
-    chick: "peach",
+    icon: "calendar", // same drawing as its menu tab
   },
   {
     href: "/nest",
     kicker: "Lesson plan creation",
     title: "Nest Builder",
     tagline: "Build your plan one twig at a time.",
-    chick: "mint",
+    icon: "nest", // same drawing as its menu tab
   },
   {
     href: "/todo",
     kicker: "Homework and study",
     title: "To-Do List",
     tagline: "Peck away at it, one task at a time.",
-    chick: "sunny",
+    icon: "todo", // same drawing as its menu tab
   },
   {
     href: "/henhouse",
     kicker: "Your chicks",
     title: "The Henhouse",
     tagline: "Name, dress, and spoil your flock.",
-    chick: "berry",
+    icon: "henhouse", // the Henhouse has no menu tab, so it has its own drawing
   },
 ];
 
@@ -118,7 +118,7 @@ export default function BarnPage() {
         {AREAS.map((area) => (
           <Link key={area.href} href={area.href} className="card-link flex items-center gap-5">
             <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-[3px] border-line bg-chick/60">
-              <Chick variant={area.chick} size={68} />
+              <Icon name={area.icon} size={64} />
             </span>
             <span>
               <span className="label-small">{area.kicker}</span>
