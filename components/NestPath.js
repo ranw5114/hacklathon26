@@ -19,7 +19,7 @@ const WIGGLE = [0, 50, 80, 50, 0, -50, -80, -50];
 
 // The Duolingo-style path: day banners, an egg for each level, corn chests, then the mock exam.
 // `goal` is the goal grade as a fraction (0.9 = 90%), which decides golden vs fried eggs.
-export default function NestPath({ nestId, plan, avatar, today, goal, onOpenChest }) {
+export default function NestPath({ nestId, plan, avatar, today, goal, onOpenChest, paused = {} }) {
   const currentId = currentSectionId(plan, goal);
   const allDone = currentId === null;
   const totalLevels = allSections(plan).length;
@@ -53,6 +53,7 @@ export default function NestPath({ nestId, plan, avatar, today, goal, onOpenChes
                   avatar={avatar}
                   goal={goal}
                   chickColor={BABY_COLORS[levelNumber % BABY_COLORS.length]}
+                  paused={Boolean(paused[section.id])}
                 />
                 {chestOffset !== null && (
                   <ChestNode
@@ -74,7 +75,7 @@ export default function NestPath({ nestId, plan, avatar, today, goal, onOpenChes
   );
 }
 
-function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColor }) {
+function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColor, paused }) {
   const router = useRouter();
   const [cracking, setCracking] = useState(false);
   const locked = !section.completed && !isCurrent;
@@ -82,9 +83,9 @@ function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColo
   const state = locked ? "locked" : result ? result.id : "ready";
   const href = `/nest/${nestId}/${section.id}`;
 
-  // Unopened eggs crack open first, then the lesson appears. Finished ones open right away.
+  // Unopened eggs crack open first, then the lesson appears. Finished or paused ones open right away.
   function open() {
-    if (state !== "ready" && state !== "golden") return router.push(href);
+    if (paused || (state !== "ready" && state !== "golden")) return router.push(href);
     setCracking(true);
     setTimeout(() => router.push(href), CRACK_MS);
   }
@@ -97,7 +98,9 @@ function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColo
 
   return (
     <div className="relative flex flex-col items-center" style={{ transform: `translateX(${offset}px)` }}>
-      {isCurrent && !cracking && <span className="bubble mb-3 text-sm">{result ? "Try again!" : "Tap to crack!"}</span>}
+      {(isCurrent || paused) && !cracking && (
+        <span className="bubble mb-3 text-sm">{paused ? "Paused · tap to resume!" : result ? "Try again!" : "Tap to crack!"}</span>
+      )}
       <button
         type="button"
         onClick={open}

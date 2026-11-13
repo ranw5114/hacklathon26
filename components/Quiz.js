@@ -1,7 +1,7 @@
 "use client";
 
 import Icon from "@/components/Icon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { save, useStored } from "@/lib/storage";
 
 // AI-written answers are usually right, but not always. Students can flag a question that looks
@@ -11,13 +11,20 @@ const MAX_FLAGS = 2;
 // Multiple-choice quiz, one question at a time. Used by levels and the mock exam.
 // When the last question is answered, it calls onFinish(numberCorrect, numberCounted, answers),
 // where numberCounted leaves out flagged questions and answers[i] = { correct, flagged } per question.
-export default function Quiz({ questions, onFinish, topic }) {
-  const [index, setIndex] = useState(0);
-  const [selected, setSelected] = useState(null); // index of the chosen answer
-  const [checked, setChecked] = useState(false); // has "Check" been pressed?
-  const [results, setResults] = useState([]); // results[i] = true if question i was answered correctly
-  const [flagged, setFlagged] = useState([]); // indexes of flagged questions
+// `initial` resumes a paused quiz (a progress object from `onProgress`), and `onProgress` is called
+// with { index, selected, checked, results, flagged } after every change, so it can be saved.
+export default function Quiz({ questions, onFinish, topic, initial, onProgress }) {
+  const start = initial && initial.index < questions.length ? initial : null;
+  const [index, setIndex] = useState(start?.index ?? 0);
+  const [selected, setSelected] = useState(start?.selected ?? null); // index of the chosen answer
+  const [checked, setChecked] = useState(start?.checked ?? false); // has "Check" been pressed?
+  const [results, setResults] = useState(start?.results ?? []); // results[i] = true if question i was answered correctly
+  const [flagged, setFlagged] = useState(start?.flagged ?? []); // indexes of flagged questions
   const savedFlags = useStored("flags");
+
+  useEffect(() => {
+    onProgress?.({ index, selected, checked, results, flagged });
+  }, [index, selected, checked, results, flagged, onProgress]);
 
   const question = questions[index];
   const isCorrect = selected === question.answerIndex;

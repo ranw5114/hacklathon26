@@ -113,7 +113,7 @@ export default function NestPage() {
         {editing ? (
           <PlanEditor nestId={nestId} nest={nest} goal={goalFraction(test)} onDone={() => setEditing(false)} />
         ) : (
-          <NestPath nestId={nestId} plan={plan} avatar={avatar} today={today} goal={goalFraction(test)} onOpenChest={collectChest} />
+          <NestPath nestId={nestId} plan={plan} avatar={avatar} today={today} goal={goalFraction(test)} onOpenChest={collectChest} paused={nest.paused} />
         )}
       </div>
 
