@@ -11,12 +11,14 @@ import { ExitDemoButton } from "@/components/DemoButtons";
 import { useMoveOldNest } from "@/lib/nests";
 import { useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
+import { useAccount } from "@/lib/account";
 
 // Shared layout for every page in the (app) folder: Barn, Nest, Coop, Timer, Roost, To-Do, Henhouse, Profile.
 // The (app) folder name is in parentheses, so it doesn't appear in the URL (/barn, not /app/barn).
 export default function AppLayout({ children }) {
   const profile = useStored("profile");
   const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
+  const account = useAccount();
   // Plans saved before multiple nests existed move into the new nests list (once).
   useMoveOldNest();
 
@@ -43,6 +45,14 @@ export default function AppLayout({ children }) {
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b-2 border-line/20 bg-beak/30 px-4 py-1.5 text-center text-sm font-semibold">
           <span className="flex items-center gap-1.5"><Icon name="clapper" size={18} /> Demo mode: a sample student, so explore freely!</span>
           <ExitDemoButton />
+        </div>
+      )}
+      {account?.expired && (
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b-2 border-red-700/30 bg-red-50 px-4 py-1.5 text-center text-sm font-semibold text-red-800">
+          You&apos;ve been logged out, so new progress isn&apos;t being saved to your account.
+          <Link href="/login" className="underline">
+            Log in again
+          </Link>
         </div>
       )}
       {/* Always mounted, so the Egg Timer keeps going on every page */}

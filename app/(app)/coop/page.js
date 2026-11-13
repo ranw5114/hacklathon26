@@ -12,13 +12,13 @@ import Icon from "@/components/Icon";
 import { attachmentIcon, formatBytes } from "@/lib/attachmentTypes";
 import { fileStillAvailable, prepareAttachment } from "@/lib/upload";
 import { findSection, currentSectionId, goalFraction } from "@/lib/progress";
-import { remove, save, useStored } from "@/lib/storage";
+import { useStored } from "@/lib/storage";
+import { useRouter } from "next/navigation";
+import ChatSidebar from "@/components/ChatSidebar";
+import { addMessage, createChat, deleteChat, useChats } from "@/lib/chats";
 import { focusNest, useNests } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { parseReply } from "@/lib/tutorReply";
-
-// Keep the saved conversation from growing forever.
-const MAX_SAVED_MESSAGES = 40;
 
 // A unique id for each message (only called when sending, never while drawing the page).
 let lastId = 0;
@@ -32,26 +32,37 @@ const PICKER_ACCEPT =
   "image/*,application/pdf,audio/*,video/*,text/*,.docx,.pptx,.xlsx,.csv,.md,.json,.py,.js,.java,.c,.cpp,.html,.css,.ts,.rtf,.heic";
 
 // The Chicken Coop: chat with the AI tutor, including homework photos and files of any size.
+// Every visit opens a fresh chat; older chats are saved in the sidebar, sorted into folders.
 export default function CoopPage() {
+  // A new key on each visit starts a new chat (Next.js would otherwise keep the last one open).
+  const { bfcacheId } = useRouter();
+  return <CoopRoom key={bfcacheId} />;
+}
+
+function CoopRoom() {
   const profile = useStored("profile");
   // Suggestions and the tutor focus on the nest whose test is soonest.
   const focus = focusNest(useNests(), todayString());
   const test = focus?.test ?? null;
   const plan = focus?.plan ?? null;
-  const savedChat = useStored("chat");
+  const chatData = useChats();
+  const [activeId, setActiveId] = useState(null); // null = a new chat (made when the first message is sent)
+  const [thinkingFor, setThinkingFor] = useState(null); // the chat waiting for a reply
+  const [showChats, setShowChats] = useState(false); // the chat list on phones
 
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState(null); // { mimeType, data, preview } waiting to be sent
   // Files being attached: { id, name, size, progress, label, status: "working" | "ready" | "error", result, error }
   const [attachments, setAttachments] = useState([]);
   const [previews, setPreviews] = useState({}); // message id → photo preview (this visit only)
-  const [thinking, setThinking] = useState(false);
   const [error, setError] = useState("");
   const { confirm, dialog } = useConfirm();
   const bottomRef = useRef(null);
   const fileRef = useRef(null);
 
-  const messages = savedChat ?? [];
+  const activeChat = chatData?.chats.find((c) => c.id === activeId) ?? null;
+  const messages = activeChat?.messages ?? [];
+  const thinking = thinkingFor !== null && thinkingFor === activeId;
   const currentId = plan ? currentSectionId(plan, goalFraction(test)) : null;
   const currentLevel = currentId ? findSection(plan, currentId).title : null;
 
@@ -102,7 +113,13 @@ export default function CoopPage() {
       ...(readyFiles.length ? { files: readyFiles.map(({ type, ...file }) => file) } : {}),
     };
     const conversation = [...messages, userMessage];
-    save("chat", conversation.slice(-MAX_SAVED_MESSAGES)); // shows the message right away
+    // Saving shows the message right away. The first message starts a new saved chat.
+    let chatId = activeId;
+    if (chatId) addMessage(chatId, userMessage);
+    else {
+      chatId = createChat(userMessage);
+      setActiveId(chatId);
+    }
     if (photo) setPreviews({ ...previews, [userMessage.id]: photo.preview });
 
     // The photo is only sent with the message it was attached to. Files are sent while Google still has them.
@@ -122,7 +139,7 @@ export default function CoopPage() {
     setPhoto(null);
     setAttachments((list) => list.filter((a) => a.status === "working"));
     setError("");
-    setThinking(true);
+    setThinkingFor(chatId);
     try {
       const res = await fetch("/api/tutor", {
         method: "POST",
@@ -131,26 +148,45 @@ export default function CoopPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      const reply = { id: newMessageId(), role: "model", text: data.reply };
-      save("chat", [...conversation, reply].slice(-MAX_SAVED_MESSAGES));
+      // Saved to the chat it was asked in, even if you've switched to another chat meanwhile.
+      addMessage(chatId, { id: newMessageId(), role: "model", text: data.reply });
     } catch (err) {
       setError(err.message || "Scholar couldn't answer. Please try again.");
     }
-    setThinking(false);
+    setThinkingFor(null);
   }
 
-  async function clearChat() {
+  function openChat(id) {
+    setActiveId(id);
+    setError("");
+    setShowChats(false);
+  }
+
+  function newChat() {
+    setActiveId(null);
+    setText("");
+    setPhoto(null);
+    setAttachments([]);
+    setError("");
+    setShowChats(false);
+  }
+
+  async function removeChat(chat) {
     const ok = await confirm({
-      title: "Clear this chat?",
-      message: "Your conversation with Scholar will be deleted.",
-      confirmLabel: "Clear chat",
+      title: "Delete this chat?",
+      message: `"${chat.title}" will be deleted. Your other chats stay.`,
+      confirmLabel: "Delete chat",
       danger: true,
       chick: "scholar",
     });
     if (!ok) return;
-    remove("chat");
-    setPreviews({});
+    deleteChat(chat.id);
+    if (chat.id === activeId) newChat();
   }
+
+  const sidebar = chatData && (
+    <ChatSidebar data={chatData} activeId={activeId} onOpen={openChat} onNewChat={newChat} onDeleteChat={removeChat} />
+  );
 
   // Quick-start ideas, personalized to what they're studying.
   const suggestions = [
@@ -160,8 +196,19 @@ export default function CoopPage() {
   ].filter(Boolean);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
+    <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 lg:grid-cols-[270px_minmax(0,1fr)]">
       {dialog}
+      {/* Saved chats: a column on wide screens, a drawer on phones */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-1 pb-4">{sidebar}</div>
+      </aside>
+      {showChats && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-label="Your chats">
+          <button type="button" className="absolute inset-0 bg-black/30" aria-label="Close chats" onClick={() => setShowChats(false)} />
+          <div className="absolute inset-y-0 left-0 w-[85%] max-w-xs overflow-y-auto border-r-[3px] border-line bg-background p-4">{sidebar}</div>
+        </div>
+      )}
+      <div className="flex min-w-0 flex-col">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <PageIcon icon="hen" move="peck" size={52} lines={["Ask me anything!", "Hoo... wait, I'm not an owl.", "My cap? Earned it. Mostly.", "Feed me questions, I'm hungry!"]} label="Poke the hen" />
@@ -171,21 +218,21 @@ export default function CoopPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {messages.length > 0 && (
-            <button
-              type="button"
-              onClick={clearChat}
-              className="btn-secondary shrink-0 px-4 py-1.5 text-sm whitespace-nowrap"
-            >
-              Clear chat
+          <button type="button" onClick={() => setShowChats(true)} className="btn-secondary shrink-0 px-3 py-1.5 text-sm lg:hidden">
+            <Icon name="chat" size={16} /> Chats
+          </button>
+          {activeChat && (
+            <button type="button" onClick={newChat} className="btn-secondary shrink-0 px-3 py-1.5 text-sm whitespace-nowrap">
+              <Icon name="plus" size={16} /> New chat
             </button>
           )}
           <PageTour page="coop" />
         </div>
       </div>
+      <p className="mt-2 truncate text-sm font-semibold text-muted">{activeChat ? activeChat.title : "New chat"}</p>
 
       {/* Conversation */}
-      <div className="mt-6 flex flex-1 flex-col gap-4">
+      <div className="mt-4 flex flex-1 flex-col gap-4">
         {messages.length === 0 && (
           <div className="card flex flex-col items-center gap-3 py-8 text-center">
             <span className="bubble">Ask anything. No question is too fowl!</span>
@@ -304,6 +351,7 @@ export default function CoopPage() {
             Send
           </button>
         </form>
+      </div>
       </div>
     </main>
   );
