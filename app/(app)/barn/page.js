@@ -58,10 +58,10 @@ const AREAS = [
   },
   {
     href: "/henhouse",
-    kicker: "Your chicks",
-    title: "The Henhouse",
-    tagline: "Name, dress, and spoil your flock.",
-    icon: "henhouse", // the Henhouse has no menu tab, so it has its own drawing
+    kicker: "Henhouse & Shop",
+    title: "Your Farm",
+    tagline: "Dress up your flock, and spend your corn.",
+    icon: "henhouse", // the farm has no menu tab, so it has its own drawing
     hover: "group-hover:anim-peek",
   },
 ];

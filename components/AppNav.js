@@ -9,10 +9,10 @@ import { useStored } from "@/lib/storage";
 
 // Menu icons (drawn in components/Icon.js). `alsoFor` lists other pages that count as being in that tab.
 export const NAV_ITEMS = [
-  { href: "/barn", label: "Barn", icon: "barn" },
+  { href: "/barn", label: "Barn", icon: "barn", alsoFor: ["/henhouse"] }, // the farm (Henhouse and Shop) is part of the Barn
   { href: "/nest", label: "Nest", icon: "nest" },
   { href: "/coop", label: "Coop", icon: "hen" },
-  { href: "/timer", label: "Timer", icon: "egg", alsoFor: ["/henhouse"] }, // the Henhouse opens from the timer's coop
+  { href: "/timer", label: "Timer", icon: "egg" },
   { href: "/roost", label: "Roost", icon: "calendar" },
   { href: "/todo", label: "To-Do", icon: "todo" },
   { href: "/profile", label: "Me", icon: "chick" },

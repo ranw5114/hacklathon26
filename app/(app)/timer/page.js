@@ -4,13 +4,13 @@ import PageIcon from "@/components/PageIcon";
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import Chick from "@/components/Chick";
-import { BarnDoorway, BroodingChick, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
+import { BarnDoorway, BroodingChick, Chicken, CoopRoof, FriedEgg, FriedEggPlate, HatchedChick, TakeoutBucket } from "@/components/EggArt";
 import { useConfirm } from "@/components/Modal";
 import PageTour from "@/components/PageTour";
 import { askForNotifications, notificationsSupported } from "@/lib/alerts";
 import { popOutSupported, requestPopOut } from "@/lib/popout";
 import { addDays, todayString } from "@/lib/dates";
-import { chickCount, fryEgg, hatchStreak, withDefaults } from "@/lib/flock";
+import { CHICKS_PER_HEN, chickCount, fryEgg, hatchStreak, HENS_PER_ROOSTER, perchChicks, withDefaults, yardGroups } from "@/lib/flock";
 import { chickLook, chickName } from "@/lib/henhouse";
 import Link from "next/link";
 import { currentSectionId, findSection, goalFraction } from "@/lib/progress";
@@ -487,9 +487,6 @@ const PRESET_SELECTED = "bg-chick shadow-[0_3px_0_var(--chick-line)]";
 // What the chick on the Henhouse button wears, as a taste of dressing up.
 const HENHOUSE_OUTFIT = { head: "beret", neck: "bowtie" };
 
-// How many chicks to draw before showing "+N more", so a big flock doesn't fill the page.
-const MAX_DRAWN_CHICKS = 48;
-
 // What the sad chick says after its egg gets fried, and what the crying chick by the plate says.
 const FRIED_MESSAGE = "Study more or u will be cooked on the exam like my egg!";
 const PLATE_MESSAGE = "Don't fry my children anymore!!";
@@ -504,6 +501,21 @@ const WOOD_WALL =
 const STRAW =
   "repeating-linear-gradient(115deg, oklch(88% 0.12 90) 0 5px, oklch(80% 0.13 85) 5px 7px, oklch(91% 0.1 95) 7px 12px)";
 const PERCH = "oklch(52% 0.08 55)";
+const GRASS = "repeating-linear-gradient(100deg, oklch(86% 0.1 140) 0 9px, oklch(82% 0.11 140) 9px 12px)";
+
+// One kind of grown-up in the yard (roosters, hens, or chicks). Up to 4 are drawn; more show one with a count.
+function YardGroup({ count, label, each, children }) {
+  if (!count) return null;
+  const drawn = count > 4 ? 1 : count;
+  return (
+    <span className="flex items-end gap-0.5" title={`${count} ${label}${count === 1 ? "" : "s"} (each is ${each})`}>
+      {Array.from({ length: drawn }, (_, i) => (
+        <span key={i}>{children}</span>
+      ))}
+      {count > drawn && <span className="mb-1 ml-1 font-display font-semibold">×{count}</span>}
+    </span>
+  );
+}
 
 // One chick on its perch. Hovering (or tapping, on a phone) shows a name tag above it.
 function CoopChick({ chick, name, showTag, onTap }) {
@@ -568,7 +580,10 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
   const streak = hatchStreak(sessions, today, addDays);
   const hatchedToday = (sessions ?? []).some((s) => s.date === today && s.minutes >= MIN_FOCUS_MIN);
   const planDayToday = plan?.days?.some((d) => d.date === today);
-  const shown = f.chicks.slice(-MAX_DRAWN_CHICKS);
+  // Favorites (or the newest few) sit on the perch; everyone else is out in the yard, grown up.
+  const perch = perchChicks(f);
+  const yardCount = count - perch.length;
+  const yard = yardGroups(yardCount);
   const friedCount = Math.max(0, f.friedEggs.length - (hideNewestFried ? 1 : 0));
   const drumsticks = f.drumsticks.length;
   const unnamed = f.chicks.filter((chick) => !chick.name?.trim()).length;
@@ -612,7 +627,7 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
           {count > 0 ? (
             // Chicks sit in rows; each one's bit of perch joins up with its neighbours into a long wooden bar.
             <div className="flex flex-wrap items-end justify-center gap-y-8 px-3 pt-10 pb-4">
-              {shown.map((chick) => (
+              {perch.map((chick) => (
                 <CoopChick
                   key={chick.id}
                   chick={chick}
@@ -621,9 +636,6 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
                   onTap={() => setTagged(tagged === chick.id ? null : chick.id)}
                 />
               ))}
-              {count > shown.length && (
-                <span className="ml-3 self-center font-display font-semibold">+{count - shown.length} more</span>
-              )}
             </div>
           ) : (
             <div className="flex items-center justify-center gap-3 px-3 pt-6 pb-2">
@@ -639,6 +651,30 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
 
           {/* Straw on the floor */}
           <div className="h-4 border-y-[3px] border-line" style={{ background: STRAW }} />
+
+          {/* The yard: every chick not on the perch, grown up so a big flock stays tidy */}
+          {yardCount > 0 && (
+            <div className="border-b-[3px] border-line px-3 pt-3 pb-3" style={{ background: GRASS }}>
+              <p className="label-small text-foreground/80">
+                Out in the yard · {yardCount} chick{yardCount === 1 ? "" : "s"}
+              </p>
+              <div className="mt-2 flex flex-wrap items-end justify-center gap-x-4 gap-y-2">
+                <YardGroup count={yard.roosters} label="golden rooster" each={`${CHICKS_PER_HEN * HENS_PER_ROOSTER} chicks`}>
+                  <Chicken kind="rooster" size={72} />
+                </YardGroup>
+                <YardGroup count={yard.hens} label="hen" each={`${CHICKS_PER_HEN} chicks`}>
+                  <Chicken kind="hen" size={60} />
+                </YardGroup>
+                <YardGroup count={yard.chicks} label="chick" each="1 chick">
+                  <Chick variant="sunny" size={36} />
+                </YardGroup>
+              </div>
+              <p className="mt-2 text-center text-xs text-foreground/80">
+                Every {CHICKS_PER_HEN} chicks grow into a hen, and every {HENS_PER_ROOSTER} hens into a golden rooster. Pick
+                favorites in the Henhouse to keep them on the perch.
+              </p>
+            </div>
+          )}
 
           {/* Invitation to the Henhouse: a barn door, with the newest chick (or your own) dressed up in the doorway */}
           <div className="p-3">

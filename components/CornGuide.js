@@ -71,8 +71,8 @@ export default function CornGuide({ flock }) {
           <p className="rounded-xl bg-chick/50 px-3 py-2 text-xs">
             Chicks and corn are separate: you can&apos;t trade one for the other.
           </p>
-          <Link href="/henhouse" onClick={() => setOpen(false)} className="btn-primary py-2 text-center text-sm">
-            Open the Henhouse →
+          <Link href="/henhouse/shop" onClick={() => setOpen(false)} className="btn-primary py-2 text-center text-sm">
+            Open the Shop →
           </Link>
         </div>
       )}

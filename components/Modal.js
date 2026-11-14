@@ -49,6 +49,7 @@ export default function Modal({ open, onClose, title, chick = "sunny", chickMood
 // Usage:
 //   const { confirm, dialog } = useConfirm();
 //   if (!(await confirm({ title: "Delete?", message: "...", confirmLabel: "Delete", danger: true }))) return;
+//   (an optional `picture` is shown above the message, e.g. a chick trying on a shop item)
 //   ...and put {dialog} somewhere in the page.
 export function useConfirm() {
   const [request, setRequest] = useState(null); // { options, resolve } while open
@@ -69,6 +70,7 @@ export function useConfirm() {
 
   const dialog = (
     <Modal open={Boolean(request)} onClose={() => answer(false)} title={request?.title} chick={request?.chick ?? "peach"}>
+      {request?.picture && <div className="mb-3 flex justify-center">{request.picture}</div>}
       {request?.message && <p className="text-muted">{request.message}</p>}
       <div className="mt-6 flex justify-end gap-3">
         <button type="button" onClick={() => answer(false)} className="btn-secondary">

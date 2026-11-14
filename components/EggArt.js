@@ -302,6 +302,94 @@ export function BarnDoorway({ size = 64, children }) {
   );
 }
 
+// A grown-up chicken for the yard: "hen" (10 chicks grown up) or "rooster" (a golden rooster, 5 hens).
+export function Chicken({ kind = "hen", size = 48, className = "" }) {
+  const rooster = kind === "rooster";
+  const body = rooster ? "oklch(84% 0.14 85)" : "oklch(97% 0.02 85)";
+  const wing = rooster ? "oklch(74% 0.15 70)" : "oklch(90% 0.03 80)";
+  const red = "oklch(60% 0.2 28)";
+  const s = { stroke: LINE, strokeWidth: 3, strokeLinejoin: "round", strokeLinecap: "round" };
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} className={`overflow-visible ${className}`} aria-hidden="true">
+      {/* Tail feathers (a rooster's are long and colorful) */}
+      {rooster ? (
+        <>
+          <path d="M70 52 Q96 14 94 46" fill="none" {...s} stroke="oklch(55% 0.13 155)" strokeWidth="7" />
+          <path d="M70 56 Q100 30 92 62" fill="none" {...s} stroke={red} strokeWidth="7" />
+          <path d="M70 52 Q96 14 94 46 M70 56 Q100 30 92 62" fill="none" {...s} strokeWidth="2" />
+        </>
+      ) : (
+        <path d="M68 44 Q90 26 88 52 Q84 64 70 62 Z" fill={body} {...s} />
+      )}
+      {/* Legs */}
+      <path d="M48 80 L46 92 M42 93 L50 93 M60 80 L62 92 M58 93 L66 93" fill="none" {...s} stroke="oklch(70% 0.16 60)" />
+      {/* Body, wing, head */}
+      <ellipse cx="55" cy="60" rx="27" ry="23" fill={body} {...s} />
+      <path d="M50 56 Q63 50 73 61 Q62 71 50 64 Z" fill={wing} {...s} strokeWidth="2.5" />
+      <circle cx="35" cy="34" r="14" fill={body} {...s} />
+      {/* Comb (taller on a rooster), beak, wattle, eye */}
+      <path
+        d={rooster ? "M24 24 q0 -14 7 -5 q2 -14 8 -4 q5 -11 8 3 q-10 4 -23 6 z" : "M26 23 q2 -8 6 -2 q3 -8 7 -1 q4 -6 6 3 q-9 2 -19 0 z"}
+        fill={red}
+        {...s}
+        strokeWidth="2.5"
+      />
+      <path d="M22 33 L12 36 L22 39 Z" fill="oklch(80% 0.15 70)" {...s} strokeWidth="2.5" />
+      <path d="M24 40 q-3 8 3 8 q3 -2 1 -8 z" fill={red} {...s} strokeWidth="2" />
+      <circle cx="31" cy="31" r="2.2" fill={LINE} />
+      {rooster && <path d="M80 18 l2 -6 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 z" fill="oklch(92% 0.12 95)" {...s} strokeWidth="1.5" />}
+    </svg>
+  );
+}
+
+// The two buildings at the top of the Henhouse and Shop pages: "henhouse" (a red barn with a
+// chick peeking out) or "shop" (a market stall with a striped awning and corn on the counter).
+export function FarmBuilding({ kind, size = 120 }) {
+  const s = { stroke: LINE, strokeWidth: 3, strokeLinejoin: "round" };
+  const red = "oklch(62% 0.16 30)";
+  const wood = "oklch(78% 0.09 65)";
+  return (
+    <svg viewBox="0 0 120 90" width={size} height={size * 0.75} className="overflow-visible" aria-hidden="true">
+      {kind === "henhouse" ? (
+        <>
+          <rect x="16" y="38" width="88" height="48" fill={red} {...s} />
+          <path d="M8 42 L60 8 L112 42 Z" fill="oklch(50% 0.12 30)" {...s} />
+          <circle cx="60" cy="29" r="8" fill="oklch(38% 0.05 45)" {...s} strokeWidth="2.5" />
+          <circle cx="60" cy="31" r="5" fill="var(--chick-body)" stroke={LINE} strokeWidth="1.5" />
+          <rect x="46" y="56" width="28" height="30" fill="oklch(55% 0.15 30)" {...s} />
+          <path d="M48 58 L72 84 M72 58 L48 84" stroke="white" strokeWidth="2.5" />
+        </>
+      ) : (
+        <>
+          <rect x="16" y="44" width="5" height="12" fill={wood} {...s} strokeWidth="2" />
+          <rect x="99" y="44" width="5" height="12" fill={wood} {...s} strokeWidth="2" />
+          <rect x="12" y="54" width="96" height="32" fill={wood} {...s} />
+          {/* Striped awning with a scalloped edge */}
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <rect key={i} x={8 + i * 13} y="26" width="13" height="16" fill={i % 2 ? "white" : red} />
+          ))}
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <circle key={i} cx={14.5 + i * 13} cy="42" r="6.5" fill={i % 2 ? "white" : red} {...s} strokeWidth="2" />
+          ))}
+          <rect x="8" y="26" width="104" height="16" fill="none" {...s} />
+          {/* Sign */}
+          <rect x="36" y="6" width="48" height="16" rx="3" fill="oklch(88% 0.08 80)" {...s} strokeWidth="2.5" />
+          <text x="60" y="18" textAnchor="middle" fontSize="11" fontWeight="700" fill={LINE} fontFamily="var(--font-display, sans-serif)">
+            SHOP
+          </text>
+          {/* Corn on the counter */}
+          {[34, 52, 70].map((x) => (
+            <g key={x}>
+              <ellipse cx={x + 6} cy="62" rx="5" ry="8" fill="oklch(85% 0.15 90)" {...s} strokeWidth="2" />
+              <path d={`M${x + 1} 66 q5 6 10 0`} fill="oklch(65% 0.14 140)" {...s} strokeWidth="2" />
+            </g>
+          ))}
+        </>
+      )}
+    </svg>
+  );
+}
+
 // --- Eggs on the Nest path ---------------------------------------------------
 
 const PATH_EGG = "M50 6 C 76 6 90 44 90 66 C 90 92 72 106 50 106 C 28 106 10 92 10 66 C 10 44 24 6 50 6 Z";
