@@ -336,3 +336,66 @@ h3 {
     animation: none !important;
   }
 }
+
+/* AI tutor replies (components/RichText.js): paragraphs, lists, headings, and math */
+@layer components {
+  .rich-text > * + * {
+    margin-top: 0.7em;
+  }
+  .rich-text h1,
+  .rich-text h2,
+  .rich-text h3 {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .rich-text * + h1,
+  .rich-text * + h2,
+  .rich-text * + h3 {
+    margin-top: 1.1em;
+  }
+  .rich-text strong {
+    font-weight: 700;
+  }
+  .rich-text ol,
+  .rich-text ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45em;
+    padding-left: 1.6em;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text ul {
+    list-style: disc;
+  }
+  .rich-text li::marker {
+    color: var(--chick-beak);
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+  .rich-text li > * + * {
+    margin-top: 0.4em;
+  }
+  .rich-text code {
+    border-radius: 0.4em;
+    background: color-mix(in oklch, var(--chick-body) 50%, white);
+    padding: 0.05em 0.35em;
+    font-size: 0.9em;
+  }
+  /* Math a little bigger than the text, so exponents and fractions are easy to read */
+  .rich-text .katex {
+    font-size: 1.1em;
+  }
+  /* Big equations on their own line, centered in a soft box; long ones scroll instead of overflowing */
+  .rich-text .katex-display {
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 1rem;
+    background: color-mix(in oklch, var(--chick-body) 35%, white);
+    padding: 0.6em 0.8em;
+  }
+}

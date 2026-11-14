@@ -64,7 +64,9 @@ export default function ShopPage() {
             {CORN_WAYS.map((way) => (
               <li key={way.text} className="flex items-start gap-2">
                 <Icon name={way.icon} size={18} className="mt-0.5" />
-                <span className="flex-1">{way.text}</span>
+                <span className="flex-1">
+                  {way.text} <span className="text-muted">({way.detail.toLowerCase()})</span>
+                </span>
                 <span className="font-semibold whitespace-nowrap">
                   {way.amount} <Icon name="corn" size={14} />
                 </span>

@@ -42,35 +42,40 @@ export default function CornGuide({ flock }) {
       </button>
 
       {open && (
-        <div className="anim-pop absolute top-full right-0 z-30 mt-2 flex w-80 flex-col gap-3 rounded-2xl border-[3px] border-line bg-white p-4 shadow-[0_4px_0_var(--chick-line)]">
-          <div className="flex items-start gap-3">
-            <Chick variant="sunny" size={36} className="shrink-0" />
-            <p className="text-sm">
-              <strong className="font-display">Chicks ({chicks})</strong> are your flock. You hatch one for every
-              focus session and every perfect quiz. They&apos;re never spent.
-            </p>
-          </div>
-          <div className="flex items-start gap-3">
-            <Icon name="corn" size={36} className="shrink-0" />
-            <div className="text-sm">
-              <p>
-                <strong className="font-display">Corn ({corn})</strong> is what you spend in the Henhouse on hats,
-                colors, and outfits for your chicks. Earn it by:
+        <div className="anim-pop absolute top-full right-0 z-30 mt-2 flex w-80 max-w-[calc(100vw-1.5rem)] flex-col gap-3 rounded-2xl border-[3px] border-line bg-white p-4 shadow-[0_4px_0_var(--chick-line)]">
+          {/* What you have: chicks to keep, corn to spend */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col items-center rounded-2xl bg-chick/40 px-2 py-2.5 text-center">
+              <Chick variant="sunny" size={34} />
+              <p className="mt-1 font-display text-lg leading-none font-semibold">
+                {chicks} chick{chicks === 1 ? "" : "s"}
               </p>
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {CORN_WAYS.map((way) => (
-                  <li key={way.text} className="flex items-start gap-2">
-                    <Icon name={way.icon} size={18} className="mt-0.5" />
-                    <span className="flex-1">{way.text}</span>
-                    <span className="font-semibold whitespace-nowrap">{way.amount}</span>
-                  </li>
-                ))}
-              </ul>
+              <p className="mt-1 text-xs text-muted">Your flock. Never spent.</p>
+            </div>
+            <div className="flex flex-col items-center rounded-2xl bg-chick/40 px-2 py-2.5 text-center">
+              <Icon name="corn" size={34} />
+              <p className="mt-1 font-display text-lg leading-none font-semibold">{corn} corn</p>
+              <p className="mt-1 text-xs text-muted">Spend it on outfits.</p>
             </div>
           </div>
-          <p className="rounded-xl bg-chick/50 px-3 py-2 text-xs">
-            Chicks and corn are separate: you can&apos;t trade one for the other.
-          </p>
+
+          {/* How to earn more corn */}
+          <div>
+            <p className="label-small">Earn corn</p>
+            <ul className="mt-1.5 flex flex-col gap-1.5">
+              {CORN_WAYS.map((way) => (
+                <li key={way.text} className="flex items-center gap-2.5 rounded-xl border-2 border-line/15 px-2.5 py-1.5">
+                  <Icon name={way.icon} size={22} className="shrink-0" />
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block text-sm font-semibold">{way.text}</span>
+                    <span className="block text-xs text-muted">{way.detail}</span>
+                  </span>
+                  <span className="shrink-0 rounded-full bg-chick px-2 py-0.5 font-display text-sm font-semibold whitespace-nowrap">{way.amount}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <Link href="/henhouse/shop" onClick={() => setOpen(false)} className="btn-primary py-2 text-center text-sm">
             Open the Shop →
           </Link>

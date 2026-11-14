@@ -1,5 +1,6 @@
 // Pieces shared by the Coop chat and Nest lessons: AI-drawn diagrams and practice problems.
 
+import RichText from "@/components/RichText";
 import { svgToImageSrc } from "@/lib/tutorReply";
 
 // A diagram the AI drew (for visual learners). Pass `src` (already converted) or raw `svg`.
@@ -20,13 +21,13 @@ export function Practice({ number, problem, solution }) {
   return (
     <div className="rounded-2xl border-[3px] border-line bg-chick/40 p-3">
       <p className="label-small">Practice {number}</p>
-      <p className="mt-1 whitespace-pre-line">{problem}</p>
+      <RichText text={problem} className="mt-1" />
       <details className="group mt-2">
         <summary className="btn-secondary inline-block list-none px-3 py-1 text-sm [&::-webkit-details-marker]:hidden">
           <span className="group-open:hidden">Show solution</span>
           <span className="hidden group-open:inline">Hide solution</span>
         </summary>
-        <p className="mt-2 rounded-xl bg-white p-3 whitespace-pre-line">{solution}</p>
+        <RichText text={solution} className="mt-2 rounded-xl bg-white p-3" />
       </details>
     </div>
   );

@@ -14,8 +14,9 @@ import { fileStillAvailable, prepareAttachment } from "@/lib/upload";
 import { findSection, currentSectionId, goalFraction } from "@/lib/progress";
 import { useStored } from "@/lib/storage";
 import { useRouter } from "next/navigation";
-import ChatSidebar from "@/components/ChatSidebar";
-import { addMessage, createChat, deleteChat, useChats } from "@/lib/chats";
+import ChatSidebar, { FolderIcon } from "@/components/ChatSidebar";
+import RichText from "@/components/RichText";
+import { addMessage, autoNameChat, createChat, deleteChat, deleteFolder, folderColor, useChats } from "@/lib/chats";
 import { focusNest, useNests } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { parseReply } from "@/lib/tutorReply";
@@ -47,6 +48,7 @@ function CoopRoom() {
   const plan = focus?.plan ?? null;
   const chatData = useChats();
   const [activeId, setActiveId] = useState(null); // null = a new chat (made when the first message is sent)
+  const [newChatFolder, setNewChatFolder] = useState(null); // the folder a new chat will be saved in
   const [thinkingFor, setThinkingFor] = useState(null); // the chat waiting for a reply
   const [showChats, setShowChats] = useState(false); // the chat list on phones
 
@@ -115,9 +117,10 @@ function CoopRoom() {
     const conversation = [...messages, userMessage];
     // Saving shows the message right away. The first message starts a new saved chat.
     let chatId = activeId;
+    const isNewChat = !chatId;
     if (chatId) addMessage(chatId, userMessage);
     else {
-      chatId = createChat(userMessage);
+      chatId = createChat(userMessage, startFolder?.id ?? null);
       setActiveId(chatId);
     }
     if (photo) setPreviews({ ...previews, [userMessage.id]: photo.preview });
@@ -150,10 +153,29 @@ function CoopRoom() {
       if (!res.ok) throw new Error(data.error);
       // Saved to the chat it was asked in, even if you've switched to another chat meanwhile.
       addMessage(chatId, { id: newMessageId(), role: "model", text: data.reply });
+      // A brand-new chat gets a short name from the AI, like other chat apps (the student can rename it).
+      if (isNewChat) nameChat(chatId, userMessage, data.reply);
     } catch (err) {
       setError(err.message || "Scholar couldn't answer. Please try again.");
     }
     setThinkingFor(null);
+  }
+
+  // Runs in the background after the first answer. If it fails, the chat keeps its first-question name.
+  async function nameChat(chatId, userMessage, reply) {
+    const files = (userMessage.files ?? []).map((f) => f.name).join(", ");
+    const question = [userMessage.text, userMessage.hasPhoto && "(with a photo)", files && `(attached: ${files})`].filter(Boolean).join(" ");
+    try {
+      const res = await fetch("/api/chat-title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, reply }),
+      });
+      const data = await res.json();
+      if (res.ok && data.title) autoNameChat(chatId, data.title);
+    } catch {
+      // keep the first-question name
+    }
   }
 
   function openChat(id) {
@@ -162,8 +184,10 @@ function CoopRoom() {
     setShowChats(false);
   }
 
-  function newChat() {
+  // A new chat, saved in `folderId` if one was picked (from a folder's ⋯ menu).
+  function newChat(folderId = null) {
     setActiveId(null);
+    setNewChatFolder(folderId);
     setText("");
     setPhoto(null);
     setAttachments([]);
@@ -184,8 +208,37 @@ function CoopRoom() {
     if (chat.id === activeId) newChat();
   }
 
+  // Deleting a folder keeps its chats; they move to "Not in a folder".
+  async function removeFolder(folder) {
+    const count = chatData.chats.filter((c) => c.folderId === folder.id).length;
+    const ok = await confirm({
+      title: `Delete the ${folder.name} folder?`,
+      message: count
+        ? `Its ${count} chat${count === 1 ? "" : "s"} won't be deleted. ${count === 1 ? "It moves" : "They move"} to "Not in a folder".`
+        : "It's empty, so nothing else changes.",
+      confirmLabel: "Delete folder",
+      danger: true,
+      chick: "scholar",
+    });
+    if (!ok) return;
+    deleteFolder(folder.id);
+    if (newChatFolder === folder.id) setNewChatFolder(null);
+  }
+
+  // The folder this new chat will be saved in (if it still exists).
+  const startFolder = !activeChat && newChatFolder ? chatData?.folders.find((f) => f.id === newChatFolder) : null;
+
   const sidebar = chatData && (
-    <ChatSidebar data={chatData} activeId={activeId} onOpen={openChat} onNewChat={newChat} onDeleteChat={removeChat} />
+    <ChatSidebar
+      data={chatData}
+      activeId={activeId}
+      draftFolderId={startFolder?.id ?? null}
+      onOpen={openChat}
+      onNewChat={newChat}
+      onCancelDraft={() => setNewChatFolder(null)}
+      onDeleteChat={removeChat}
+      onDeleteFolder={removeFolder}
+    />
   );
 
   // Quick-start ideas, personalized to what they're studying.
@@ -222,14 +275,21 @@ function CoopRoom() {
             <Icon name="chat" size={16} /> Chats
           </button>
           {activeChat && (
-            <button type="button" onClick={newChat} className="btn-secondary shrink-0 px-3 py-1.5 text-sm whitespace-nowrap">
+            <button type="button" onClick={() => newChat(null)} className="btn-secondary shrink-0 px-3 py-1.5 text-sm whitespace-nowrap">
               <Icon name="plus" size={16} /> New chat
             </button>
           )}
           <PageTour page="coop" />
         </div>
       </div>
-      <p className="mt-2 truncate text-sm font-semibold text-muted">{activeChat ? activeChat.title : "New chat"}</p>
+      {!activeChat && startFolder ? (
+        <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-muted">
+          <FolderIcon color={folderColor(startFolder).swatch} size={18} />
+          <span className="truncate">New chat in {startFolder.name}</span>
+        </p>
+      ) : (
+        <p className="mt-2 truncate text-sm font-semibold text-muted">{activeChat ? activeChat.title : "New chat"}</p>
+      )}
 
       {/* Conversation */}
       <div className="mt-4 flex flex-1 flex-col gap-4">
@@ -401,33 +461,9 @@ function Message({ message, preview }) {
           if (piece.type === "practice") {
             return <Practice key={i} number={piece.number} problem={piece.problem} solution={piece.solution} />;
           }
-          return <ReplyText key={i} text={piece.text} />;
+          return <RichText key={i} text={piece.text} />;
         })}
       </div>
     </div>
-  );
-}
-
-// Plain text, where a line starting with "# " is a section heading (used for lecture learners).
-function ReplyText({ text }) {
-  const blocks = [];
-  for (const line of text.split("\n")) {
-    const heading = line.match(/^\s*#+\s+(.*)/);
-    if (heading) blocks.push({ heading: heading[1] });
-    else if (blocks.length && !blocks.at(-1).heading) blocks.at(-1).text += "\n" + line;
-    else blocks.push({ text: line });
-  }
-  return blocks.map((block, i) =>
-    block.heading ? (
-      <h3 key={i} className="text-lg leading-snug [&:not(:first-child)]:mt-2">
-        {block.heading}
-      </h3>
-    ) : (
-      block.text.trim() && (
-        <p key={i} className="whitespace-pre-line">
-          {block.text.trim()}
-        </p>
-      )
-    )
   );
 }

@@ -485,6 +485,8 @@ const WOOD_WALL =
 const STRAW =
   "repeating-linear-gradient(115deg, oklch(88% 0.12 90) 0 5px, oklch(80% 0.13 85) 5px 7px, oklch(91% 0.1 95) 7px 12px)";
 const PERCH = "oklch(52% 0.08 55)";
+// The little white pills under the yard that explain it.
+const YARD_KEY = "flex items-center gap-1 rounded-full border-2 border-line/40 bg-white/70 py-0.5 pr-2.5 pl-1.5";
 const GRASS = "repeating-linear-gradient(100deg, oklch(86% 0.1 140) 0 9px, oklch(82% 0.11 140) 9px 12px)";
 
 // One kind of grown-up in the yard (roosters, hens, or chicks). Up to 4 are drawn; more show one with a count.
@@ -632,9 +634,12 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
           {/* The yard: every chick not on the perch, grown up so a big flock stays tidy */}
           {yardCount > 0 && (
             <div className="border-b-[3px] border-line px-3 pt-3 pb-3" style={{ background: GRASS }}>
-              <p className="label-small text-foreground/80">
-                Out in the yard · {yardCount} chick{yardCount === 1 ? "" : "s"}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="label-small text-foreground/80">The yard</p>
+                <span className="rounded-full border-2 border-line bg-white/80 px-2.5 text-sm font-display font-semibold">
+                  {yardCount} chick{yardCount === 1 ? "" : "s"}
+                </span>
+              </div>
               <div className="mt-2 flex flex-wrap items-end justify-center gap-x-4 gap-y-2">
                 <YardGroup count={yard.roosters} label="golden rooster" each={`${CHICKS_PER_HEN * HENS_PER_ROOSTER} chicks`}>
                   <Chicken kind="rooster" size={72} />
@@ -646,10 +651,18 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
                   <Chick variant="sunny" size={36} />
                 </YardGroup>
               </div>
-              <p className="mt-2 text-center text-xs text-foreground/80">
-                Every {CHICKS_PER_HEN} chicks grow into a hen, and every {HENS_PER_ROOSTER} hens into a golden rooster. Pick
-                favorites in the Henhouse to keep them on the perch.
-              </p>
+              {/* A little key: how chicks grow up out here, and how to keep one on the perch */}
+              <div className="mt-3 flex flex-wrap justify-center gap-1.5 text-xs font-semibold">
+                <span className={YARD_KEY}>
+                  <Chicken kind="hen" size={20} /> 1 hen = {CHICKS_PER_HEN} chicks
+                </span>
+                <span className={YARD_KEY}>
+                  <Chicken kind="rooster" size={20} /> 1 rooster = {HENS_PER_ROOSTER} hens
+                </span>
+                <Link href="/henhouse" className={`${YARD_KEY} hover:bg-white`}>
+                  <Icon name="heart" size={14} /> Favorites stay on the perch
+                </Link>
+              </div>
             </div>
           )}
 

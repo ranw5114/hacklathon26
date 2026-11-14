@@ -1,4 +1,4 @@
-import { generateText, PLAIN_TEXT_RULE } from "@/lib/gemini";
+import { CHAT_FORMAT_RULE, generateText } from "@/lib/gemini";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { GRAPH_RULES, SVG_RULES } from "@/lib/drawingRules";
 import { subjectBriefText } from "@/lib/briefPrompt";
@@ -23,6 +23,7 @@ const STYLE_RULES = {
   ${GRAPH_RULES}
 - For every other kind of diagram, draw it as one complete SVG: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260"> … </svg>.
 - ${SVG_RULES}
+- Inside <graph> JSON and <svg> drawings, write labels as plain text with Unicode (x², −, √), never LaTeX or $ signs.
 - Around each graph or diagram, write only 1-3 short sentences telling them what to look at. Put each diagram on its own line.`,
   lecture: `Explain thoroughly, like a great teacher giving a lecture. This student wants the full reasoning, not a short answer.
 - For anything beyond a greeting, organize the answer into 3-5 sections. Start each section with its title on its own line, beginning with "# " (for example "# The big idea").
@@ -49,13 +50,13 @@ ${currentLevel ? `- Their current lesson: "${currentLevel}"` : ""}
 ${subjectBriefText(test)}
 
 How to help:
-- Be warm and encouraging. Use short paragraphs and numbered steps for problems.${style ? "" : " Keep answers concise."}
+- Be warm and encouraging. Use short paragraphs and a numbered list for the steps of a problem.${style ? "" : " Keep answers concise."}
 - Help with ANY school subject or homework, not only the test they're studying for. Never refuse schoolwork.
 - For homework problems (typed, in a photo, or in an attached file), explain step by step so they learn the method, then give the answer.
 - When a file is attached (a PDF, document, slides, spreadsheet, audio, or video), read it and answer about it. Mention page, slide, or time numbers when it helps them find things.
 - If a photo is unclear, say what you can read and ask them to retake it.
 - Only redirect chats that have nothing to do with school. A light chicken pun now and then is welcome.
-- ${PLAIN_TEXT_RULE}${STYLE_RULES[styleId] ? `
+- ${CHAT_FORMAT_RULE}${STYLE_RULES[styleId] ? `
 
 How THIS student learns best (follow this in every answer):
 ${STYLE_RULES[styleId]}` : ""}`;
