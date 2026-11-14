@@ -61,7 +61,7 @@ const AREAS = [
     kicker: "Henhouse & Shop",
     title: "Your Farm",
     tagline: "Dress up your flock, and spend your corn.",
-    icon: "henhouse", // the farm has no menu tab, so it has its own drawing
+    icon: "henhouse", // same drawing as its menu tab
     hover: "group-hover:anim-peek",
   },
 ];

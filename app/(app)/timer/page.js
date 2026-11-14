@@ -30,7 +30,6 @@ import {
   formatTime,
   hasEgg,
   MIN_FOCUS_MIN,
-  PAUSE_LIMIT_MS,
   pauseTimer,
   PRESETS,
   progress,
@@ -127,7 +126,6 @@ export default function TimerPage() {
   const today = todayString();
   const todaySessions = (sessions ?? []).filter((s) => s.date === today);
   const todayMinutes = todaySessions.reduce((sum, s) => sum + s.minutes, 0);
-  const focusedMinutes = Math.floor((timer.focusMin * 60_000 - timeLeft(timer, now)) / 60_000);
 
   function start() {
     askForNotifications();
@@ -195,8 +193,9 @@ export default function TimerPage() {
         </div>
       )}
 
-      {/* The big timer: a ring that fills up as time passes, with the chick keeping its egg warm inside */}
-      <section className="card mt-6 flex flex-col items-center gap-5 py-8">
+      {/* The big timer: a ring that fills up as time passes, with the chick keeping its egg warm inside.
+          The settings and today's tally live in the same card, so the page stays short. */}
+      <section className="card mt-6 flex flex-col items-center gap-4 py-6">
         <p className="label-small">{timer.mode === "focus" ? "Focus time" : "Break time"}</p>
         {fried && <span className="bubble max-w-xs text-center text-sm">{FRIED_MESSAGE}</span>}
         <div
@@ -250,156 +249,171 @@ export default function TimerPage() {
               {timer.mode === "break" ? "Skip break" : "Stop"}
             </button>
           )}
-        </div>
-        {popOutSupported() && (
-          <div className="flex w-full flex-col items-center gap-2 border-t-2 border-dashed border-line/30 pt-5">
-            <button type="button" onClick={requestPopOut} className="btn-secondary flex items-center gap-2 bg-chick/60">
-              <Icon name="pin" size={20} /> Pop out timer
-            </button>
-            <p className="max-w-xs text-center text-sm text-muted">
-              Keeps a mini timer floating on top of other tabs and apps while you study.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Settings: only changeable when the timer isn't running */}
-      <section className="card mt-6 flex flex-col gap-4">
-        <h2 className="text-xl">Timer settings</h2>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(PRESETS).map(([id, preset]) => (
+          {popOutSupported() && (
             <button
-              key={id}
               type="button"
-              disabled={!idle}
-              onClick={() => choosePreset(id)}
-              className={`${PRESET_BUTTON} px-4 ${timer.preset === id ? PRESET_SELECTED : "bg-white"}`}
+              onClick={requestPopOut}
+              className="btn-secondary flex items-center gap-2 bg-chick/60"
+              title="Keeps a mini timer floating on top of other tabs and apps while you study"
             >
-              {preset.label}
-              <span className="ml-1 text-sm text-muted">{preset.focusMin}/{preset.breakMin}</span>
+              <Icon name="pin" size={20} /> Pop out
             </button>
-          ))}
-          {/* Older saves could have unsaved custom minutes; show them so it's clear what's set */}
-          {timer.preset === "custom" && (
-            <span className={`${PRESET_BUTTON} ${PRESET_SELECTED} px-4`}>
-              Custom <span className="ml-1 text-sm text-muted">{timer.focusMin}/{timer.breakMin}</span>
-            </span>
           )}
         </div>
 
-        {/* The student's own saved timers, plus the button to make a new one */}
-        <div className="flex flex-col gap-2">
-          <p className="label-small">My timers</p>
-          <div className="flex flex-wrap gap-2">
-            {savedTimers.map((t) => (
-              <span
-                key={t.id}
-                className={`${PRESET_BUTTON} flex items-center gap-1 pl-3 pr-1.5 ${timer.preset === t.id ? PRESET_SELECTED : "bg-white"} ${idle ? "" : "opacity-50"}`}
-              >
-                <button type="button" disabled={!idle} onClick={() => choosePreset(t.id)} className="flex items-center gap-1">
-                  <Icon name="star" size={16} /> {t.focusMin}/{t.breakMin}
+        {/* Settings: only shown before starting (they can't change while an egg is being kept warm) */}
+        {idle && (
+          <div className="flex w-full flex-col items-center gap-3 border-t-2 border-dashed border-line/30 pt-4">
+            {/* The presets and the student's own saved timers, all in one row */}
+            <div className="flex flex-wrap justify-center gap-2">
+              {Object.entries(PRESETS).map(([id, preset]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => choosePreset(id)}
+                  className={`${PRESET_BUTTON} px-3 ${timer.preset === id ? PRESET_SELECTED : "bg-white"}`}
+                >
+                  {preset.label}
+                  <span className="ml-1 text-sm text-muted">{preset.focusMin}/{preset.breakMin}</span>
                 </button>
+              ))}
+              {/* Older saves could have unsaved custom minutes; show them so it's clear what's set */}
+              {timer.preset === "custom" && (
+                <span className={`${PRESET_BUTTON} ${PRESET_SELECTED} px-3`}>
+                  Custom <span className="ml-1 text-sm text-muted">{timer.focusMin}/{timer.breakMin}</span>
+                </span>
+              )}
+              {savedTimers.map((t) => (
+                <span
+                  key={t.id}
+                  className={`${PRESET_BUTTON} flex items-center gap-1 pr-1.5 pl-3 ${timer.preset === t.id ? PRESET_SELECTED : "bg-white"}`}
+                >
+                  <button type="button" onClick={() => choosePreset(t.id)} className="flex items-center gap-1" title="One of your timers">
+                    <Icon name="star" size={16} /> {t.focusMin}/{t.breakMin}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteSaved(t)}
+                    className="ml-1 rounded-full p-1 transition hover:bg-red-100"
+                    aria-label={`Delete the ${t.focusMin}/${t.breakMin} timer`}
+                    title="Delete this timer"
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
+                </span>
+              ))}
+              {!draft && (
                 <button
                   type="button"
-                  disabled={!idle}
-                  onClick={() => deleteSaved(t)}
-                  className="ml-1 rounded-full p-1 transition hover:bg-red-100"
-                  aria-label={`Delete the ${t.focusMin}/${t.breakMin} timer`}
-                  title="Delete this timer"
+                  disabled={savedTimers.length >= MAX_SAVED_TIMERS}
+                  onClick={() => setDraft({ focusMin: timer.focusMin, breakMin: timer.breakMin })}
+                  className={`${PRESET_BUTTON} flex items-center gap-1 border-dashed bg-white px-3`}
+                  title={
+                    savedTimers.length >= MAX_SAVED_TIMERS
+                      ? `You can keep up to ${MAX_SAVED_TIMERS} timers. Delete one to make another.`
+                      : "Make your own focus and break times, saved for next time"
+                  }
                 >
-                  <Icon name="trash" size={16} />
+                  <Icon name="plus" size={16} /> New
                 </button>
-              </span>
-            ))}
-            {!draft && (
-              <button
-                type="button"
-                disabled={!idle || savedTimers.length >= MAX_SAVED_TIMERS}
-                onClick={() => setDraft({ focusMin: timer.focusMin, breakMin: timer.breakMin })}
-                className={`${PRESET_BUTTON} flex items-center gap-1 border-dashed bg-white px-4`}
-              >
-                <Icon name="plus" size={16} /> New timer
-              </button>
+              )}
+            </div>
+
+            {/* Making a new timer: nothing changes until it's saved */}
+            {draft && (
+              <div className="flex w-full max-w-md flex-col gap-3 rounded-2xl border-[3px] border-dashed border-line/40 p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold">Focus minutes ({MIN_FOCUS_MIN}+)</span>
+                    <MinutesInput
+                      min={MIN_FOCUS_MIN}
+                      max={MAX_FOCUS_MIN}
+                      value={draft.focusMin}
+                      onCommit={(value) => setDraft({ ...draft, focusMin: clamp(value, MIN_FOCUS_MIN, MAX_FOCUS_MIN) })}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold">Break minutes</span>
+                    <MinutesInput
+                      min={1}
+                      max={MAX_BREAK_MIN}
+                      value={draft.breakMin}
+                      onCommit={(value) => setDraft({ ...draft, breakMin: clamp(value, 1, MAX_BREAK_MIN) })}
+                    />
+                  </label>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={draftTaken}
+                    onClick={() => {
+                      save("timer", saveCustomTimer(timer, draft.focusMin, draft.breakMin));
+                      setDraft(null);
+                    }}
+                    className="btn-primary px-5 py-2 disabled:opacity-50"
+                  >
+                    Save timer
+                  </button>
+                  <button type="button" onClick={() => setDraft(null)} className="btn-secondary px-5 py-2">
+                    Cancel
+                  </button>
+                  {draftTaken && <span className="text-sm text-muted">You already have a {draft.focusMin}/{draft.breakMin} timer.</span>}
+                </div>
+              </div>
+            )}
+
+            {currentLevel && timer.mode === "focus" && (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={linkLevel}
+                  onChange={(e) => setLinkLevel(e.target.checked)}
+                  className="h-5 w-5 accent-[var(--chick-beak)]"
+                />
+                <span>
+                  Focus on my current level: <strong>{currentLevel}</strong>
+                </span>
+              </label>
             )}
           </div>
-          {savedTimers.length === 0 && !draft && (
-            <p className="text-sm text-muted">Make your own focus and break times. They&apos;ll be saved for next time.</p>
-          )}
-          {savedTimers.length >= MAX_SAVED_TIMERS && (
-            <p className="text-sm text-muted">You can keep up to {MAX_SAVED_TIMERS} timers. Delete one to make another.</p>
-          )}
-        </div>
-
-        {/* Making a new timer: nothing changes until it's saved */}
-        {draft && (
-          <div className="flex flex-col gap-4 rounded-2xl border-[3px] border-dashed border-line/40 p-4">
-            <p className="font-display font-semibold">New timer</p>
-            <div className="grid grid-cols-2 gap-4">
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-semibold">Focus (minutes, at least {MIN_FOCUS_MIN})</span>
-                <MinutesInput
-                  min={MIN_FOCUS_MIN}
-                  max={MAX_FOCUS_MIN}
-                  value={draft.focusMin}
-                  onCommit={(value) => setDraft({ ...draft, focusMin: clamp(value, MIN_FOCUS_MIN, MAX_FOCUS_MIN) })}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm font-semibold">Break (minutes)</span>
-                <MinutesInput
-                  min={1}
-                  max={MAX_BREAK_MIN}
-                  value={draft.breakMin}
-                  onCommit={(value) => setDraft({ ...draft, breakMin: clamp(value, 1, MAX_BREAK_MIN) })}
-                />
-              </label>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                disabled={draftTaken}
-                onClick={() => {
-                  save("timer", saveCustomTimer(timer, draft.focusMin, draft.breakMin));
-                  setDraft(null);
-                }}
-                className="btn-primary px-5 py-2 disabled:opacity-50"
-              >
-                Save timer
-              </button>
-              <button type="button" onClick={() => setDraft(null)} className="btn-secondary px-5 py-2">
-                Cancel
-              </button>
-              {draftTaken && <span className="text-sm text-muted">You already have a {draft.focusMin}/{draft.breakMin} timer.</span>}
-            </div>
-          </div>
         )}
 
-        {currentLevel && (
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={linkLevel}
-              disabled={!idle}
-              onChange={(e) => setLinkLevel(e.target.checked)}
-              className="h-5 w-5 accent-[var(--chick-beak)]"
-            />
-            <span>
-              Focus on my current level: <strong>{currentLevel}</strong>
-            </span>
-          </label>
-        )}
-
-        <p className="text-sm text-muted">
-          Finish a focus session ({MIN_FOCUS_MIN} minutes or longer) and your egg hatches into a chick. Stop early
-          and it gets fried. You can pause for up
-          to {PAUSE_LIMIT_MS / 60_000} minutes before your egg goes cold. The timer keeps going on other pages and tabs.
-        </p>
         {notificationsSupported() && Notification.permission === "denied" && (
-          <p className="text-sm text-muted">
+          <p className="max-w-sm text-center text-xs text-muted">
             Notifications are blocked for this site, so you&apos;ll only hear a ding. You can allow them in your
             browser&apos;s site settings.
           </p>
         )}
+
+        {/* Today's tally in one line; tap it to see each session */}
+        <div className="w-full border-t-2 border-dashed border-line/30 pt-3 text-center text-sm">
+          {todaySessions.length === 0 ? (
+            <p className="text-muted">
+              <Icon name="egg" size={16} /> Today: no eggs hatched yet
+            </p>
+          ) : (
+            <details>
+              <summary className="cursor-pointer font-semibold">
+                <Icon name="chick" size={16} /> Today: {todaySessions.length} egg{todaySessions.length === 1 ? "" : "s"} hatched ·{" "}
+                {todayMinutes} focus minutes
+              </summary>
+              <ul className="mx-auto mt-2 flex max-w-sm flex-col gap-1.5">
+                {todaySessions
+                  .toSorted((a, b) => b.endedAt - a.endedAt) // newest first
+                  .map((s) => (
+                    <li key={s.endedAt} className="flex justify-between gap-3 rounded-xl bg-chick/40 px-3 py-1.5">
+                      <span className="font-semibold">
+                        {s.minutes} min{s.level ? ` · ${s.level}` : ""}
+                      </span>
+                      <span className="text-muted">
+                        {new Date(s.endedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </details>
+          )}
+        </div>
       </section>
 
       <FlockSection
@@ -418,36 +432,6 @@ export default function TimerPage() {
           <FriedEgg size={76} />
         </div>
       )}
-
-      {/* Today's log */}
-      <section className="card mt-6">
-        <h2 className="text-xl">Today</h2>
-        <p className="mt-1 text-muted">
-          {todaySessions.length} egg{todaySessions.length === 1 ? "" : "s"} hatched · {todayMinutes} focus minutes
-        </p>
-        {/* Live progress for the egg being kept warm right now */}
-        {hasEgg(timer) && (
-          <p className="mt-3 rounded-2xl border-2 border-dashed border-line/40 px-4 py-2 font-semibold">
-            <Icon name="egg" size={16} /> {focusedMinutes} of {timer.focusMin} minutes warm · it hatches when this session finishes
-          </p>
-        )}
-        {todaySessions.length > 0 && (
-          <ul className="mt-3 flex flex-col gap-2">
-            {todaySessions
-              .toSorted((a, b) => b.endedAt - a.endedAt) // newest first
-              .map((s) => (
-                <li key={s.endedAt} className="flex justify-between gap-3 rounded-2xl bg-chick/40 px-4 py-2 text-sm">
-                  <span className="font-semibold">
-                    <Icon name="chick" size={16} /> {s.minutes} min{s.level ? ` · ${s.level}` : ""}
-                  </span>
-                  <span className="text-muted">
-                    {new Date(s.endedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                  </span>
-                </li>
-              ))}
-          </ul>
-        )}
-      </section>
     </main>
   );
 }
@@ -541,33 +525,26 @@ function CoopChick({ chick, name, showTag, onTap }) {
   );
 }
 
-// The fried-egg plate and the drumstick bucket: a title with a count badge, the picture, and a note
-// at the bottom saying how they happen (or a happy note when there are none).
+// The fried-egg plate and the drumstick bucket, as small side-by-side tiles: the picture on the left,
+// then the title with its count and one line on how they happen (or a happy note when there are none).
 function LossCard({ title, count, icon, cause, allClear, children }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
-      <div className="flex w-full items-center justify-between">
-        <p className="label-small">{title}</p>
-        <span
-          className={`rounded-full border-2 border-line px-2.5 font-display font-semibold ${count > 0 ? "bg-white" : "bg-white/50 text-muted"}`}
-        >
-          × {count}
-        </span>
+    <div className="flex items-center gap-3 rounded-2xl bg-chick/40 p-3">
+      <div className="flex shrink-0 items-end">{children}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="label-small">{title}</p>
+          <span
+            className={`rounded-full border-2 border-line px-2 text-sm font-display font-semibold ${count > 0 ? "bg-white" : "bg-white/50 text-muted"}`}
+          >
+            × {count}
+          </span>
+        </div>
+        <p className="mt-1 flex items-start gap-1.5 text-sm">
+          <Icon name={count > 0 ? icon : "heart"} size={16} className="mt-0.5 shrink-0" />
+          <span>{count > 0 ? cause : allClear}</span>
+        </p>
       </div>
-      {children}
-      <p className="mt-auto flex w-full items-center gap-2 rounded-xl bg-white/80 px-3 py-2 text-left text-sm">
-        <Icon name={count > 0 ? icon : "heart"} size={20} className="shrink-0" />
-        <span>
-          {count > 0 ? (
-            <>
-              <span className="font-semibold">How it happens: </span>
-              {cause}
-            </>
-          ) : (
-            allClear
-          )}
-        </span>
-      </p>
     </div>
   );
 }
@@ -711,7 +688,7 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
         </p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         {/* Fried eggs, stacked on a plate, with a heartbroken chick */}
         <LossCard
           title="Fried eggs"
@@ -720,12 +697,11 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
           cause="Stopping a focus session early, or pausing too long"
           allClear="No fried eggs. Keep it that way!"
         >
-          {friedCount > 0 && <span className="bubble text-sm">{PLATE_MESSAGE}</span>}
-          <div className="mt-1 flex items-end gap-1">
-            <Chick variant={avatar} mood={friedCount > 0 ? "crying" : "happy"} size={64} className="mb-3 shrink-0" />
-            <div ref={plateRef}>
-              <FriedEggPlate count={friedCount} size={150} />
-            </div>
+          <span title={friedCount > 0 ? PLATE_MESSAGE : undefined}>
+            <Chick variant={avatar} mood={friedCount > 0 ? "crying" : "happy"} size={36} className="mb-1" />
+          </span>
+          <div ref={plateRef}>
+            <FriedEggPlate count={friedCount} size={84} />
           </div>
         </LossCard>
 
@@ -737,13 +713,7 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
           cause="Missing a study-plan day, or failing a Nest quiz"
           allClear="No drumsticks. Your chicks are safe!"
         >
-          {drumsticks > 0 ? (
-            <TakeoutBucket count={drumsticks} size={150} />
-          ) : (
-            <div className="flex h-[140px] items-center">
-              <TakeoutBucket count={0} size={120} className="opacity-40" />
-            </div>
-          )}
+          <TakeoutBucket count={drumsticks} size={84} className={drumsticks > 0 ? "" : "opacity-40"} />
         </LossCard>
       </div>
     </section>
