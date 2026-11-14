@@ -66,6 +66,11 @@ const AREAS = [
   },
 ];
 
+// The chips under "The Barn", and the picture for each learning style.
+const BARN_CHIP =
+  "flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-3 py-1 font-display text-sm font-semibold shadow-[0_2px_0_var(--chick-line)] transition hover:-translate-y-0.5 hover:bg-chick/40";
+const STYLE_ICONS = { visual: "idea", lecture: "book", examples: "pencil" };
+
 // What your chick says when you poke it on the Barn.
 const AVATAR_LINES = [
   "Bawk! That tickles!",
@@ -141,18 +146,27 @@ export default function BarnPage() {
             {chickLine ?? `Welcome to the barn, ${profile.name}!`}
           </span>
           <h1 className="mt-4 text-4xl sm:text-5xl">The Barn</h1>
-          <p className="mt-1 font-display font-semibold text-muted">
-            {style && <>You&apos;re a {style.label.toLowerCase()} learner <Icon name="chick" size={18} /> · </>}<Link href="/henhouse" className="underline decoration-2 underline-offset-2 hover:text-foreground">
-              {chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"} · <Icon name="corn" size={18} /> {withDefaults(flock).corn} corn
-            </Link>
-          </p>
         </div>
         <div className="ml-auto self-start">
           <PageTour page="barn" />
         </div>
       </div>
+      {/* Little chips: how you learn, your flock, and your corn. Each one goes where you can change it. */}
+      <div className="mt-3 flex flex-wrap gap-2 sm:mt-2 sm:pl-[140px]">
+        {style && (
+          <Link href="/profile" className={BARN_CHIP} title="Change how you learn on your Me page">
+            <Icon name={STYLE_ICONS[profile.learningStyle] ?? "idea"} size={18} /> {style.label} learner
+          </Link>
+        )}
+        <Link href="/henhouse" className={BARN_CHIP} title="Visit your chicks in the Henhouse">
+          <Icon name="chick" size={18} /> {chickCount(flock)} chick{chickCount(flock) === 1 ? "" : "s"}
+        </Link>
+        <Link href="/henhouse/shop" className={BARN_CHIP} title="Spend your corn in the Shop">
+          <Icon name="corn" size={18} /> {withDefaults(flock).corn} corn
+        </Link>
+      </div>
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
+      <div className="mt-8 grid gap-5 md:grid-cols-2">
         {AREAS.map((area) => (
           <Link key={area.href} href={area.href} className="group card-link flex items-center gap-5 active:scale-[0.98]">
             <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-[3px] border-line bg-chick/60 transition group-hover:bg-chick">
