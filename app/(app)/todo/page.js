@@ -133,15 +133,12 @@ export default function TodoPage() {
                     {late === 0 ? "Overdue" : late === 1 ? "1 day late" : `${late} days late`}
                   </span>
                 </div>
-                <ul className="mt-3 flex flex-col gap-2">
-                  {entries.map((entry) =>
-                    entry.homework ? (
-                      <HomeworkRow key={entry.homework.id} homework={entry.homework} now={now} />
-                    ) : (
-                      <PlanRow key={entry.lesson.key} item={entry.lesson} />
-                    )
-                  )}
-                </ul>
+                <DayGroups
+                  homework={entries.filter((e) => e.homework).map((e) => e.homework)}
+                  plan={entries.filter((e) => e.lesson).map((e) => e.lesson)}
+                  now={now}
+                  overdue
+                />
               </section>
             );
           })}
@@ -181,14 +178,7 @@ export default function TodoPage() {
                   <p>Nothing due. Free-range day!</p>
                 </div>
               ) : (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {plan.map((item) => (
-                    <PlanRow key={item.key} item={item} />
-                  ))}
-                  {homework.map((h) => (
-                    <HomeworkRow key={h.id} homework={h} now={now} />
-                  ))}
-                </ul>
+                <DayGroups homework={homework} plan={plan} now={now} />
               )}
             </section>
           );
@@ -232,14 +222,7 @@ export default function TodoPage() {
                     <p className="label-small">
                       {formatDate(date)} · in {daysBetween(today, date)} days
                     </p>
-                    <ul className="mt-2 flex flex-col gap-2">
-                      {plan.map((item) => (
-                        <PlanRow key={item.key} item={item} />
-                      ))}
-                      {homework.map((h) => (
-                        <HomeworkRow key={h.id} homework={h} now={now} />
-                      ))}
-                    </ul>
+                    <DayGroups homework={homework} plan={plan} now={now} compact />
                   </div>
                 );
               })}
@@ -278,6 +261,50 @@ function overdueByDay(homework, lessons) {
     days.get(entry.date).push(entry);
   }
   return [...days].map(([date, items]) => ({ date, entries: items }));
+}
+
+// One day's to-dos in two sections: homework (Schoology, Google Classroom, or added by hand) first,
+// then the study plan from your nests. A section with nothing in it is left out.
+function DayGroups({ homework, plan, now, overdue = false, compact = false }) {
+  const synced = homework.some((h) => h.sourceId);
+  const groups = [
+    homework.length > 0 && {
+      id: "homework",
+      icon: "homework",
+      title: synced ? "Homework & Schoology" : "Homework",
+      done: homework.filter((h) => h.done).length,
+      total: homework.length,
+      rows: homework.map((h) => <HomeworkRow key={h.id} homework={h} now={now} />),
+    },
+    plan.length > 0 && {
+      id: "plan",
+      icon: "nest",
+      title: "Study plan",
+      done: plan.filter((i) => i.done).length,
+      total: plan.length,
+      rows: plan.map((item) => <PlanRow key={item.key} item={item} />),
+    },
+  ].filter(Boolean);
+
+  return (
+    <div className={`${compact ? "mt-2" : "mt-3"} flex flex-col gap-3`}>
+      {groups.map((g) => (
+        <div key={g.id} className={`rounded-2xl border-2 p-2 ${overdue ? "border-red-700/30 bg-white/50" : "border-line/20 bg-white/40"}`}>
+          <div className={`mb-2 flex items-center justify-between gap-2 px-1 ${overdue ? "text-red-800" : ""}`}>
+            <p className="flex items-center gap-1.5 font-display text-sm font-semibold">
+              <Icon name={g.icon} size={18} /> {g.title}
+            </p>
+            {groups.length > 1 && (
+              <span className={`text-xs font-semibold ${overdue ? "text-red-800/70" : "text-muted"}`}>
+                {g.done} of {g.total} done
+              </span>
+            )}
+          </div>
+          <ul className="flex flex-col gap-2">{g.rows}</ul>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // A round checkbox in the chicken style.
