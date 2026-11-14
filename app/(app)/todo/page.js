@@ -23,6 +23,7 @@ import {
   planItemsFor,
   toggleChecked,
   toggleHomework,
+  setGoalDate,
   withTodoDefaults,
 } from "@/lib/todos";
 import { useNow } from "@/lib/useNow";
@@ -57,8 +58,10 @@ export default function TodoPage() {
     const homework = todos.homework
       .filter((h) => h.dueDate === date && homeworkStatus(h, now) !== "overdue")
       .sort((a, b) => (a.dueTime || "99").localeCompare(b.dueTime || "99"));
-    const done = plan.filter((i) => i.done).length + homework.filter((h) => h.done).length;
-    return { plan, homework, total: plan.length + homework.length, done };
+    // Homework you planned to finish today (a goal date before the due date), starred.
+    const goals = todos.homework.filter((h) => h.goalDate === date && h.goalDate !== h.dueDate && homeworkStatus(h, now) !== "overdue");
+    const done = plan.filter((i) => i.done).length + homework.filter((h) => h.done).length + goals.filter((h) => h.done).length;
+    return { plan, homework, goals, total: plan.length + homework.length + goals.length, done };
   }
   const freeDays = days.week.filter((date) => date > tomorrow && itemsFor(date).total === 0);
   const overdueDays = overdueByDay(overdueHomework, missedLessons);
@@ -161,6 +164,7 @@ export default function TodoPage() {
                   homework={entries.filter((e) => e.homework).map((e) => e.homework)}
                   plan={entries.filter((e) => e.lesson).map((e) => e.lesson)}
                   now={now}
+                  today={today}
                   overdue
                 />
               </section>
@@ -172,7 +176,7 @@ export default function TodoPage() {
       {/* This week, day by day */}
       <div className="mt-6 flex flex-col gap-4">
         {days.week.map((date) => {
-          const { plan, homework, total, done } = itemsFor(date);
+          const { plan, homework, goals, total, done } = itemsFor(date);
           const isToday = date === today;
 
           // Quiet days after tomorrow are gathered into the free-range card below.
@@ -202,7 +206,7 @@ export default function TodoPage() {
                   <p>Nothing due. Free-range day!</p>
                 </div>
               ) : (
-                <DayGroups homework={homework} plan={plan} now={now} />
+                <DayGroups homework={homework} goals={goals} plan={plan} now={now} today={today} />
               )}
             </section>
           );
@@ -240,13 +244,13 @@ export default function TodoPage() {
             </h2>
             <div className="mt-3 flex flex-col gap-4">
               {days.later.map((date) => {
-                const { plan, homework } = itemsFor(date);
+                const { plan, homework, goals } = itemsFor(date);
                 return (
                   <div key={date}>
                     <p className="label-small">
                       {formatDate(date)} · in {daysBetween(today, date)} days
                     </p>
-                    <DayGroups homework={homework} plan={plan} now={now} compact />
+                    <DayGroups homework={homework} goals={goals} plan={plan} now={now} today={today} compact />
                   </div>
                 );
               })}
@@ -289,15 +293,19 @@ function overdueByDay(homework, lessons) {
 
 // One day's to-dos in two sections: homework (Schoology, Google Classroom, or added by hand) first,
 // then the study plan from your nests. A section with nothing in it is left out.
-function DayGroups({ homework, plan, now, overdue = false, compact = false }) {
+// `goals` are homework due later that the student wants done this day (shown first, starred).
+function DayGroups({ homework, goals = [], plan, now, today, overdue = false, compact = false }) {
   const groups = [
-    homework.length > 0 && {
+    homework.length + goals.length > 0 && {
       id: "homework",
       icon: "homework",
       title: "Homework",
-      done: homework.filter((h) => h.done).length,
-      total: homework.length,
-      rows: homework.map((h) => <HomeworkRow key={h.id} homework={h} now={now} />),
+      done: homework.filter((h) => h.done).length + goals.filter((h) => h.done).length,
+      total: homework.length + goals.length,
+      rows: [
+        ...goals.map((h) => <HomeworkRow key={`${h.id}-goal`} homework={h} now={now} today={today} goal />),
+        ...homework.map((h) => <HomeworkRow key={h.id} homework={h} now={now} today={today} />),
+      ],
     },
     plan.length > 0 && {
       id: "plan",
@@ -376,26 +384,51 @@ function PlanRow({ item }) {
   );
 }
 
-function HomeworkRow({ homework: h, now }) {
+// `goal`: this is the copy shown on the day the student wants it done by (starred, says when it's due).
+function HomeworkRow({ homework: h, now, today, goal = false }) {
+  const [pickingGoal, setPickingGoal] = useState(false);
   const status = homeworkStatus(h, now);
-  const when = [h.dueTime && `due ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}`]
-    .filter(Boolean)
-    .join(" ");
+  const when = goal
+    ? `due ${formatDate(h.dueDate)}${h.dueTime ? ` ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}` : ""}`
+    : h.dueTime
+      ? `due ${formatClock(new Date(`${h.dueDate}T${h.dueTime}`))}`
+      : "";
+  const hasGoal = h.goalDate && h.goalDate !== h.dueDate;
+  const missedGoal = hasGoal && !h.done && h.goalDate < today;
   return (
-    <li className={`flex items-center gap-3 rounded-2xl bg-white px-3 py-2 ${h.done ? "opacity-60" : ""}`}>
+    <li className={`flex flex-col rounded-2xl px-3 py-2 ${goal ? "border-2 border-beak/70 bg-chick/40" : "bg-white"} ${h.done ? "opacity-60" : ""}`}>
+      <div className="flex items-center gap-3">
       <CheckButton
         done={h.done}
         label={h.done ? `Mark "${h.title}" as not done` : `Mark "${h.title}" as done`}
         onClick={() => update("todos", (t) => toggleHomework(t, h.id))}
       />
-      <Icon name="homework" size={24} />
+      <Icon name={goal ? "star" : "homework"} size={24} />
       <div className="min-w-0 flex-1">
         <p className={`font-semibold ${h.done ? "line-through" : ""}`}>{h.title}</p>
         <p className="text-xs text-muted">
+          {goal && <span className="font-semibold text-foreground">Goal: get it done today · </span>}
           {[h.subject, when, h.sourceId && "synced"].filter(Boolean).join(" · ")}
           {status === "soon" && <span className="ml-1 font-semibold text-beak">· Due {dueRelative(h, now)}</span>}
+          {!goal && hasGoal && (
+            <span className={`ml-1 font-semibold ${missedGoal ? "text-red-700" : "text-foreground"}`}>
+              · <Icon name="star" size={12} /> {missedGoal ? "Missed your goal of" : "Goal:"} {formatDate(h.goalDate)}
+            </span>
+          )}
         </p>
       </div>
+      {!h.done && h.dueDate >= today && (
+        <button
+          type="button"
+          onClick={() => setPickingGoal(!pickingGoal)}
+          className={`shrink-0 rounded-xl p-1 hover:bg-chick ${hasGoal ? "" : "opacity-50 hover:opacity-100"}`}
+          aria-label={hasGoal ? `Change the goal date for "${h.title}"` : `Set a goal date for "${h.title}"`}
+          aria-expanded={pickingGoal}
+          title={hasGoal ? "Change goal date" : "Set a goal: get it done by…"}
+        >
+          {hasGoal ? <Icon name="star" size={20} /> : <span className="font-display text-lg leading-none">☆</span>}
+        </button>
+      )}
       {h.link && !h.done && (
         <a href={h.link} target="_blank" rel="noopener noreferrer" className="btn-secondary shrink-0 px-3 py-1 text-sm">
           Open
@@ -410,6 +443,33 @@ function HomeworkRow({ homework: h, now }) {
       >
         <Icon name="trash" size={20} />
       </button>
+      </div>
+      {pickingGoal && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t-2 border-line/10 pt-2 text-sm">
+          <Icon name="star" size={16} />
+          <span className="font-semibold">Goal: get it done by</span>
+          <input
+            type="date"
+            className="input w-auto py-1 text-sm"
+            min={today}
+            max={h.dueDate}
+            defaultValue={h.goalDate || ""}
+            aria-label="Goal date"
+            onChange={(e) => {
+              const d = e.target.value;
+              if (d && d >= today && d <= h.dueDate) update("todos", (t) => setGoalDate(t, h.id, d));
+            }}
+          />
+          {hasGoal && (
+            <button type="button" onClick={() => (update("todos", (t) => setGoalDate(t, h.id, "")), setPickingGoal(false))} className="text-xs font-semibold text-muted underline">
+              Remove goal
+            </button>
+          )}
+          <button type="button" onClick={() => setPickingGoal(false)} className="ml-auto text-xs font-semibold text-muted underline">
+            Done
+          </button>
+        </div>
+      )}
     </li>
   );
 }
@@ -419,13 +479,15 @@ function AddHomework({ subjects, today, onDone }) {
   const [subject, setSubject] = useState("");
   const [dueDate, setDueDate] = useState(addDays(today, 1));
   const [dueTime, setDueTime] = useState("");
+  const [goalDate, setGoalDateValue] = useState("");
   const [error, setError] = useState("");
 
   function add(e) {
     e.preventDefault();
     if (!title.trim()) return setError("What's the homework?");
     if (!dueDate) return setError("Pick the due date.");
-    update("todos", (t) => addHomework(t, { title, subject, dueDate, dueTime }));
+    if (goalDate && goalDate > dueDate) return setError("Your goal date should be on or before the due date.");
+    update("todos", (t) => addHomework(t, { title, subject, dueDate, dueTime, goalDate }));
     onDone();
   }
 
@@ -457,6 +519,13 @@ function AddHomework({ subjects, today, onDone }) {
           <input type="time" className="input" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
         </label>
       </div>
+      <label className="flex flex-col gap-1">
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
+          <Icon name="star" size={16} /> Goal: get done by (optional)
+        </span>
+        <input type="date" className="input" min={today} max={dueDate || undefined} value={goalDate} onChange={(e) => setGoalDateValue(e.target.value)} />
+        <span className="text-xs text-muted">It shows on that day with a star, and on its due date too.</span>
+      </label>
       {error && <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <div className="flex justify-end gap-3">
         <button type="button" onClick={onDone} className="btn-secondary">
