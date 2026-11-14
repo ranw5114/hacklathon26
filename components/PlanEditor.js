@@ -15,6 +15,10 @@ import { addGuideNotes, addSection, deleteSection, editDayFocus, editSection } f
 // you don't need, and add your own. Every change saves right away; a delete can be undone.
 export default function PlanEditor({ nestId, nest, goal, onDone }) {
   const [undo, setUndo] = useState(null); // { title, before } after a delete
+  // The study-material box opens from "Upload more materials" (or stays open while PDFs are read).
+  const live = useNestLive();
+  const [showMaterial, setShowMaterial] = useState(false);
+  const materialOpen = showMaterial || (live.uploads[nestId] ?? []).some((u) => !u.added);
   const { plan } = nest;
   const onlyOne = allSections(plan).length <= 1;
 
@@ -31,12 +35,22 @@ export default function PlanEditor({ nestId, nest, goal, onDone }) {
           <p className="font-display text-lg font-semibold">Editing your plan</p>
           <p className="text-sm text-muted">Changes save as you go. Renamed eggs get a fresh lesson the next time you open them.</p>
         </div>
-        <button type="button" onClick={onDone} className="btn-primary">
-          Done editing
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setShowMaterial(!materialOpen)}
+            aria-expanded={materialOpen}
+            className="btn-secondary flex items-center gap-1.5"
+          >
+            <Icon name={materialOpen ? "close" : "plus"} size={16} /> {materialOpen ? "Hide materials" : "Upload more materials"}
+          </button>
+          <button type="button" onClick={onDone} className="btn-primary">
+            Done editing
+          </button>
+        </div>
       </div>
 
-      <StudyMaterial nest={nest} />
+      {materialOpen && <StudyMaterial nest={nest} />}
 
       {undo && (
         <div role="status" className="flex items-center justify-between gap-3 rounded-2xl border-[3px] border-line bg-white px-4 py-2 text-sm anim-pop">
