@@ -34,6 +34,10 @@ const KIND_ICONS = { lesson: "egg", mock: "trophy", test: "target", homework: "h
 export default function TodoPage() {
   const nests = useNests();
   const stored = useStored("todos");
+  const prefs = useStored("prefs");
+  // Overdue can be folded away so Today is on top. Remembered (and copied to your account).
+  const overdueClosed = Boolean(prefs?.overdueCollapsed);
+  const toggleOverdue = () => update("prefs", (p) => ({ ...p, overdueCollapsed: !p?.overdueCollapsed }));
   const now = useNow();
   const [showAdd, setShowAdd] = useState(false);
   const [, setPermissionAsked] = useState(0); // re-render after the browser's permission prompt
@@ -58,6 +62,7 @@ export default function TodoPage() {
   }
   const freeDays = days.week.filter((date) => date > tomorrow && itemsFor(date).total === 0);
   const overdueDays = overdueByDay(overdueHomework, missedLessons);
+  const overdueCount = overdueHomework.filter((h) => !h.done).length + missedLessons.filter((l) => !l.done).length;
   const subjects = [...new Set(nests.map((n) => n.test.subject))];
 
   const canNotify = notificationsSupported();
@@ -117,10 +122,29 @@ export default function TodoPage() {
       {/* Overdue: one red card per day it was due, oldest first */}
       {overdueDays.length > 0 && (
         <div className="mt-6 flex flex-col gap-4">
-          <p className="flex items-center gap-2 px-2 font-display font-semibold text-red-800">
-            <Icon name="fried" size={22} /> Overdue · don&apos;t let these get fried!
-          </p>
-          {overdueDays.map(({ date, entries }) => {
+          <button
+            type="button"
+            onClick={toggleOverdue}
+            aria-expanded={!overdueClosed}
+            className={`flex w-full items-center gap-2 text-left font-display font-semibold text-red-800 transition ${
+              overdueClosed
+                ? "rounded-2xl border-[3px] border-red-700 bg-red-50 px-4 py-2.5 shadow-[0_3px_0_#991b1b] hover:-translate-y-0.5"
+                : "rounded-xl px-2 py-1 hover:bg-red-50"
+            }`}
+          >
+            <Icon name="fried" size={22} />
+            <span className="flex-1">
+              Overdue
+              {overdueClosed ? ` · ${overdueCount} ${overdueCount === 1 ? "thing" : "things"} to catch up on` : " · don't let these get fried!"}
+            </span>
+            <span className="flex items-center gap-1 text-sm">
+              {overdueClosed ? "Show" : "Hide"}
+              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" className={`transition-transform ${overdueClosed ? "" : "rotate-180"}`}>
+                <path d="M5 8 L10 13 L15 8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+          {!overdueClosed && overdueDays.map(({ date, entries }) => {
             const late = daysBetween(date, today);
             return (
               <section key={date} className="card border-red-700 bg-red-50 shadow-[0_4px_0_#991b1b]">
