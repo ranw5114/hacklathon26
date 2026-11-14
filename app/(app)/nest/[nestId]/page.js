@@ -11,6 +11,7 @@ import NestPath from "@/components/NestPath";
 import PlanEditor from "@/components/PlanEditor";
 import { useState } from "react";
 import { addCorn, chickCount, randomChestCorn, withDefaults } from "@/lib/flock";
+import { announceCorn } from "@/components/CornToast";
 import { deleteNest, updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
@@ -37,6 +38,7 @@ export default function NestPage() {
     const corn = randomChestCorn();
     updateNest(nestId, (n) => ({ ...n, plan: openChest(n.plan, sectionId, corn) }));
     update("flock", (f) => addCorn(f, corn));
+    announceCorn(corn, "Chest opened");
   }
 
   async function removeNest() {

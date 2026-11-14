@@ -7,7 +7,7 @@ hidden, and students can still sync each class with its calendar link.
 
 ## 1. Create a Google Cloud project
 1. Go to https://console.cloud.google.com and sign in with a personal Google account (school accounts often can't create projects).
-2. At the top, click the project menu → **New project**. Name it "Chick Study Buddy" → **Create**.
+2. At the top, click the project menu → **New project**. Name it "Cluck In" → **Create**.
 
 ## 2. Turn on the Google Classroom API
 1. Menu → **APIs & Services** → **Library**.
@@ -15,7 +15,7 @@ hidden, and students can still sync each class with its calendar link.
 
 ## 3. Set up the consent screen (what students see when signing in)
 1. **APIs & Services** → **OAuth consent screen** (it may be called "Google Auth Platform" → **Branding**).
-2. User type: **External**. App name: "Chick Study Buddy". Add your email as support and developer contact.
+2. User type: **External**. App name: "Cluck In". Add your email as support and developer contact.
 3. **Scopes** (or **Data access**): add these two, both read-only:
    - `https://www.googleapis.com/auth/classroom.courses.readonly`
    - `https://www.googleapis.com/auth/classroom.coursework.me.readonly`

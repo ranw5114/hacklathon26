@@ -45,6 +45,18 @@ export default function TodoPage() {
   const overdueHomework = todos.homework.filter((h) => homeworkStatus(h, now) === "overdue");
   const missedLessons = missedPlanItems(nests, today, todos);
   const days = daysToShow(nests, todos, today);
+  const tomorrow = addDays(today, 1);
+
+  // A day's study lessons and (not overdue) homework, and how many are done.
+  function itemsFor(date) {
+    const plan = planItemsFor(nests, date, todos);
+    const homework = todos.homework
+      .filter((h) => h.dueDate === date && homeworkStatus(h, now) !== "overdue")
+      .sort((a, b) => (a.dueTime || "99").localeCompare(b.dueTime || "99"));
+    const done = plan.filter((i) => i.done).length + homework.filter((h) => h.done).length;
+    return { plan, homework, total: plan.length + homework.length, done };
+  }
+  const freeDays = days.week.filter((date) => date > tomorrow && itemsFor(date).total === 0);
   const overdueDays = overdueByDay(overdueHomework, missedLessons);
   const subjects = [...new Set(nests.map((n) => n.test.subject))];
 
@@ -94,7 +106,7 @@ export default function TodoPage() {
       )}
       {permission === "granted" && (
         <p className="mt-4 flex items-center gap-2 text-sm text-muted">
-          <Icon name="bell" size={18} /> Reminders are on. They arrive while Chick Study Buddy is open in a tab.
+          <Icon name="bell" size={18} /> Reminders are on. They arrive while Cluck In is open in a tab.
         </p>
       )}
 
@@ -136,25 +148,14 @@ export default function TodoPage() {
         </div>
       )}
 
-      {/* Day by day */}
+      {/* This week, day by day */}
       <div className="mt-6 flex flex-col gap-4">
-        {days.map((date) => {
-          const plan = planItemsFor(nests, date, todos);
-          const homework = todos.homework
-            .filter((h) => h.dueDate === date && homeworkStatus(h, now) !== "overdue")
-            .sort((a, b) => (a.dueTime || "99").localeCompare(b.dueTime || "99"));
-          const total = plan.length + homework.length;
-          const done = plan.filter((i) => i.done).length + homework.filter((h) => h.done).length;
+        {days.week.map((date) => {
+          const { plan, homework, total, done } = itemsFor(date);
           const isToday = date === today;
 
-          // Quiet days after tomorrow get a single short line.
-          if (!total && date > addDays(today, 1)) {
-            return (
-              <p key={date} className="px-2 text-sm text-muted">
-                <strong>{dayLabel(date, today)}</strong> · {formatDate(date)} · Free-range day
-              </p>
-            );
-          }
+          // Quiet days after tomorrow are gathered into the free-range card below.
+          if (!total && date > tomorrow) return null;
 
           return (
             <section key={date} className={`card ${isToday ? "bg-chick/60" : ""}`}>
@@ -192,6 +193,59 @@ export default function TodoPage() {
             </section>
           );
         })}
+
+        {/* The rest of the week's empty days, as one card of day chips */}
+        {freeDays.length > 0 && (
+          <section className="card">
+            <div className="flex items-center gap-3">
+              <Chick variant="sunny" size={40} className="shrink-0" />
+              <div>
+                <h2 className="text-xl">Free-range days</h2>
+                <p className="text-sm text-muted">Nothing due these days this week. Enjoy!</p>
+              </div>
+            </div>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {freeDays.map((date) => (
+                <li
+                  key={date}
+                  className="flex flex-col items-center rounded-2xl border-[3px] border-line bg-chick/40 px-3 py-1 font-display leading-tight"
+                >
+                  <span className="text-xs font-semibold text-muted uppercase">{weekdayShort(date)}</span>
+                  <span className="text-lg font-semibold">{dayOfMonth(date)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Homework and tests more than a week away, so nothing is hidden */}
+        {days.later.length > 0 && (
+          <section className="card">
+            <h2 className="flex items-center gap-2 text-xl">
+              <Icon name="calendar" size={22} /> Coming up later
+            </h2>
+            <div className="mt-3 flex flex-col gap-4">
+              {days.later.map((date) => {
+                const { plan, homework } = itemsFor(date);
+                return (
+                  <div key={date}>
+                    <p className="label-small">
+                      {formatDate(date)} · in {daysBetween(today, date)} days
+                    </p>
+                    <ul className="mt-2 flex flex-col gap-2">
+                      {plan.map((item) => (
+                        <PlanRow key={item.key} item={item} />
+                      ))}
+                      {homework.map((h) => (
+                        <HomeworkRow key={h.id} homework={h} now={now} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       {nests.length === 0 && (
@@ -201,6 +255,14 @@ export default function TodoPage() {
       )}
     </main>
   );
+}
+
+// "2026-11-15" → "Sun" and "15", for the free-range day chips.
+function weekdayShort(dateKey) {
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: "short" });
+}
+function dayOfMonth(dateKey) {
+  return Number(dateKey.slice(8));
 }
 
 // Overdue homework and missed lessons, grouped by the day they were due (oldest day first,

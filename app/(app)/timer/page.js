@@ -529,6 +529,37 @@ function CoopChick({ chick, name, showTag, onTap }) {
   );
 }
 
+// The fried-egg plate and the drumstick bucket: a title with a count badge, the picture, and a note
+// at the bottom saying how they happen (or a happy note when there are none).
+function LossCard({ title, count, icon, cause, allClear, children }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
+      <div className="flex w-full items-center justify-between">
+        <p className="label-small">{title}</p>
+        <span
+          className={`rounded-full border-2 border-line px-2.5 font-display font-semibold ${count > 0 ? "bg-white" : "bg-white/50 text-muted"}`}
+        >
+          × {count}
+        </span>
+      </div>
+      {children}
+      <p className="mt-auto flex w-full items-center gap-2 rounded-xl bg-white/80 px-3 py-2 text-left text-sm">
+        <Icon name={count > 0 ? icon : "heart"} size={20} className="shrink-0" />
+        <span>
+          {count > 0 ? (
+            <>
+              <span className="font-semibold">How it happens: </span>
+              {cause}
+            </>
+          ) : (
+            allClear
+          )}
+        </span>
+      </p>
+    </div>
+  );
+}
+
 // Your flock: the coop with every chick you've hatched, the plate of fried eggs,
 // and the takeout bucket of drumsticks.
 function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewestFried }) {
@@ -547,11 +578,14 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
     <section className="card mt-6 flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl">Your flock</h2>
-        {streak > 0 && (
-          <p className="font-display font-semibold">
-            <Icon name="flame" size={20} /> {streak}-day streak
-          </p>
-        )}
+        <p className="font-display font-semibold">
+          <Icon name="chick" size={20} /> {count} chick{count === 1 ? "" : "s"}
+          {streak > 0 && (
+            <span className="ml-3">
+              <Icon name="flame" size={20} /> {streak}-day streak
+            </span>
+          )}
+        </p>
       </div>
 
       {/* The coop, where every chick you've hatched lives */}
@@ -568,7 +602,7 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
                 className="rounded-lg border-[3px] border-line px-4 py-1 font-display font-semibold whitespace-nowrap shadow-[0_3px_0_var(--chick-line)]"
                 style={{ background: WOOD_SIGN }}
               >
-                The Coop · {count} chick{count === 1 ? "" : "s"}
+                The Coop
               </p>
             </div>
           </div>
@@ -643,8 +677,13 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Fried eggs, stacked on a plate, with a heartbroken chick */}
-        <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
-          <p className="label-small">Fried eggs</p>
+        <LossCard
+          title="Fried eggs"
+          count={friedCount}
+          icon="fried"
+          cause="Stopping a focus session early, or pausing too long"
+          allClear="No fried eggs. Keep it that way!"
+        >
           {friedCount > 0 && <span className="bubble text-sm">{PLATE_MESSAGE}</span>}
           <div className="mt-1 flex items-end gap-1">
             <Chick variant={avatar} mood={friedCount > 0 ? "crying" : "happy"} size={64} className="mb-3 shrink-0" />
@@ -652,16 +691,16 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
               <FriedEggPlate count={friedCount} size={150} />
             </div>
           </div>
-          <p className="text-sm text-muted">
-            {friedCount === 0
-              ? "No fried eggs. Keep it that way!"
-              : `${friedCount} fried egg${friedCount === 1 ? "" : "s"} (stopped early or went cold)`}
-          </p>
-        </div>
+        </LossCard>
 
         {/* Drumsticks, in a takeout bucket */}
-        <div className="flex flex-col items-center gap-2 rounded-2xl bg-chick/40 p-4 text-center">
-          <p className="label-small">Drumsticks</p>
+        <LossCard
+          title="Drumsticks"
+          count={drumsticks}
+          icon="drumstick"
+          cause="Missing a study-plan day, or failing a Nest quiz"
+          allClear="No drumsticks. Your chicks are safe!"
+        >
           {drumsticks > 0 ? (
             <TakeoutBucket count={drumsticks} size={150} />
           ) : (
@@ -669,12 +708,7 @@ function FlockSection({ flock, sessions, today, plan, avatar, plateRef, hideNewe
               <TakeoutBucket count={0} size={120} className="opacity-40" />
             </div>
           )}
-          <p className="text-sm text-muted">
-            {drumsticks === 0
-              ? "No drumsticks. Your chicks are safe!"
-              : `${drumsticks} drumstick${drumsticks === 1 ? "" : "s"} (missed plan days or failed quizzes)`}
-          </p>
-        </div>
+        </LossCard>
       </div>
     </section>
   );

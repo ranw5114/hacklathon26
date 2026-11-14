@@ -10,6 +10,7 @@ import Modal from "@/components/Modal";
 import Lesson from "@/components/Lesson";
 import Quiz from "@/components/Quiz";
 import { addCorn, chickCount, hatchChicks, loseChickToQuiz, quizRewards } from "@/lib/flock";
+import { announceCorn } from "@/components/CornToast";
 import { todayString } from "@/lib/dates";
 import MissingNest from "@/components/MissingNest";
 import { updateNest, useNest } from "@/lib/nests";
@@ -213,7 +214,10 @@ function LevelPlay({ nestId, id }) {
 
     updateNest(nestId, (n) => ({ ...n, plan: completeSection(n.plan, id, score, newConcepts) }));
     if (chicks) update("flock", (f) => hatchChicks(f, chicks, "quiz"));
-    if (corn) update("flock", (f) => addCorn(f, corn));
+    if (corn) {
+      update("flock", (f) => addCorn(f, corn));
+      announceCorn(corn, `${newConcepts.length} concept${newConcepts.length === 1 ? "" : "s"} understood`);
+    }
     if (lostChick) update("flock", (f) => loseChickToQuiz(f, todayString()));
     clearProgress();
     setShowResumed(false);

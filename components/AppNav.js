@@ -4,7 +4,7 @@ import Icon from "@/components/Icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Chick from "@/components/Chick";
-import { chickCount, withDefaults } from "@/lib/flock";
+import CornGuide from "@/components/CornGuide";
 import { useStored } from "@/lib/storage";
 
 // Menu icons (drawn in components/Icon.js).
@@ -26,23 +26,16 @@ export default function AppNav({ avatar }) {
   return (
     <>
       {/* Computer: top bar */}
-      <header className="sticky top-0 z-20 hidden border-b-[3px] border-line bg-background/95 backdrop-blur sm:block">
+      <header className="sticky top-0 z-[35] hidden border-b-[3px] border-line bg-background/95 backdrop-blur sm:block">
         <nav className="mx-auto flex max-w-5xl items-center gap-1 px-4 py-2">
           <Link href="/barn" className="mr-4 flex items-center gap-2 font-display text-lg font-semibold">
             <Chick variant={avatar} size={36} />
-            Chick Study Buddy
+            Cluck In
           </Link>
           {NAV_ITEMS.map((item) => (
             <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
           ))}
-          <Link
-            href="/henhouse"
-            className="ml-auto flex items-center gap-1 rounded-full border-2 border-line bg-white py-0.5 pr-3 pl-2 font-display font-semibold"
-            title="Visit the Henhouse: your chicks and corn"
-          >
-            <Chick variant="sunny" size={26} /> {chickCount(flock)}
-            <span className="ml-1.5 flex items-center gap-1"><Icon name="corn" size={20} /> {withDefaults(flock).corn}</span>
-          </Link>
+          <CornGuide flock={flock} />
         </nav>
       </header>
 

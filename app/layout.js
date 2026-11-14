@@ -15,7 +15,7 @@ const nunito = Nunito({
 });
 
 export const metadata = {
-  title: "Chick Study Buddy",
+  title: "Cluck In",
   description: "A personalized study plan that works backwards from your goal grade.",
 };
 

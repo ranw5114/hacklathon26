@@ -6,7 +6,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Chick, { CHICK_COLORS } from "@/components/Chick";
 import { CoopRoof } from "@/components/EggArt";
-import { chickCount, withDefaults } from "@/lib/flock";
+import { chickCount, CORN_WAYS, withDefaults } from "@/lib/flock";
 import { buyItem, chickLook, chickName, SHOP, SLOT_LABELS, SLOTS, updateChick, wardrobe } from "@/lib/henhouse";
 
 // What each wardrobe row is called on the chick editor.
@@ -179,9 +179,21 @@ export default function HenhousePage() {
       <section className="card mt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-xl">The Shop</h2>
-          <p className="text-sm text-muted">
-            Earn corn for every concept you get right on Nest quizzes, and from chests on the path.
-          </p>
+        </div>
+        {/* How to earn corn (the same list as the corn guide in the top bar) */}
+        <div className="mt-3 rounded-2xl bg-chick/40 px-4 py-3 text-sm">
+          <p className="font-semibold">How to earn corn</p>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {CORN_WAYS.map((way) => (
+              <li key={way.text} className="flex items-start gap-2">
+                <Icon name={way.icon} size={18} className="mt-0.5" />
+                <span className="flex-1">{way.text}</span>
+                <span className="font-semibold whitespace-nowrap">
+                  {way.amount} <Icon name="corn" size={14} />
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
         {message && <p className="mt-3 rounded-2xl bg-chick/60 px-4 py-2 text-sm font-semibold">{message}</p>}
         {["color", ...SLOTS].map((slot) => (

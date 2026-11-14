@@ -8,7 +8,8 @@ import { usePathname } from "next/navigation";
 import { notify, playDing } from "@/lib/alerts";
 import { BroodingChick, HatchedChick } from "@/components/EggArt";
 import { formatDate, localDateString, todayString } from "@/lib/dates";
-import { fryEgg, hatchChicks, judgeMissedDays } from "@/lib/flock";
+import { addCorn, CORN_PER_SESSION, fryEgg, hatchChicks, judgeMissedDays } from "@/lib/flock";
+import { announceCorn } from "@/components/CornToast";
 import { allPlanDays, useNests } from "@/lib/nests";
 import { avatarLook } from "@/lib/avatar";
 import { onPopOutRequest, openPopOutWindow, popOutSupported, requestPopOut } from "@/lib/popout";
@@ -28,7 +29,7 @@ import {
 } from "@/lib/timer";
 import { useNow } from "@/lib/useNow";
 
-const APP_TITLE = "Chick Study Buddy";
+const APP_TITLE = "Cluck In";
 
 // Lives in the shared layout, so it runs on every page (Barn, Nest, Coop, ...).
 // It hatches eggs when time is up, fries eggs left paused too long, checks for missed
@@ -87,8 +88,8 @@ export default function TimerWatcher() {
     const hatched = newSessions.filter((s) => s.minutes >= MIN_FOCUS_MIN).length;
     const tooShort = newSessions.length - hatched;
     const notice = [
-      hatched === 1 && "Your egg hatched! A new chick joined your flock.",
-      hatched > 1 && `${hatched} eggs hatched! New chicks joined your flock.`,
+      hatched === 1 && `Your egg hatched! A new chick joined your flock, and you earned ${CORN_PER_SESSION} corn.`,
+      hatched > 1 && `${hatched} eggs hatched! New chicks joined your flock, and you earned ${hatched * CORN_PER_SESSION} corn.`,
       tooShort > 0 && `Focus done! Sessions need ${MIN_FOCUS_MIN}+ minutes to hatch an egg.`,
       breakEnded ? "Break's over, ready for another round?" : `Break time (${next.breakMin} min).`,
     ]
@@ -96,7 +97,10 @@ export default function TimerWatcher() {
       .join(" ");
 
     if (newSessions.length) save("sessions", [...(sessions ?? []), ...newSessions].slice(-200));
-    if (hatched) update("flock", (f) => hatchChicks(f, hatched, "timer", newSessions.at(-1).endedAt));
+    if (hatched) {
+      update("flock", (f) => addCorn(hatchChicks(f, hatched, "timer", newSessions.at(-1).endedAt), hatched * CORN_PER_SESSION));
+      announceCorn(hatched * CORN_PER_SESSION, hatched === 1 ? "Focus session finished" : "Focus sessions finished");
+    }
     save("timer", { ...next, notice });
 
     playDing();

@@ -39,7 +39,7 @@ const STYLE_RULES = {
 function buildInstructions(learner, test, currentLevel) {
   const styleId = learner?.learningStyle;
   const style = LEARNING_STYLES[styleId];
-  return `You are Scholar, a friendly chick tutor in the Chick Study Buddy app. You help students understand their schoolwork.
+  return `You are Scholar, a friendly chick tutor in the Cluck In app. You help students understand their schoolwork.
 
 About the student:
 - Name: ${learner?.name || "the student"}

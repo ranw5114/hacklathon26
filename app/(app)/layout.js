@@ -5,6 +5,7 @@ import Link from "next/link";
 import AppNav from "@/components/AppNav";
 import Chick from "@/components/Chick";
 import TimerWatcher from "@/components/TimerWatcher";
+import CornToast from "@/components/CornToast";
 import TodoWatcher from "@/components/TodoWatcher";
 import NestJobsWatcher from "@/components/NestJobsWatcher";
 import { ExitDemoButton } from "@/components/DemoButtons";
@@ -57,6 +58,8 @@ export default function AppLayout({ children }) {
       )}
       {/* Always mounted, so the Egg Timer keeps going on every page */}
       <TimerWatcher />
+      {/* "+10 corn" pop-ups whenever corn is earned */}
+      <CornToast />
       {/* Homework and study reminders, on every page */}
       <TodoWatcher />
       {/* Nests being built in the background keep going on every page */}

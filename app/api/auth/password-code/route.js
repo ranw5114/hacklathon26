@@ -40,7 +40,7 @@ export async function POST(request) {
     await db.set(codeKey(user.username), JSON.stringify({ hash, exp: Date.now() + CODE_MINUTES * 60_000, tries: 0 }));
     await sendEmail({
       to: user.email,
-      subject: `Your Chick Study Buddy code: ${code}`,
+      subject: `Your Cluck In code: ${code}`,
       text: `Hi ${user.username}!\n\nYour code to change your password is ${code}. It works for ${CODE_MINUTES} minutes.\n\nIf you didn't ask for this, you can ignore this email; your password stays the same.\n\n- Your study chick`,
       html: `<div style="font-family:sans-serif;font-size:16px;color:#3b2416"><p>Hi ${user.username}!</p><p>Your code to change your password is:</p><p style="font-size:32px;font-weight:bold;letter-spacing:6px">${code}</p><p>It works for ${CODE_MINUTES} minutes. If you didn't ask for this, you can ignore this email; your password stays the same.</p><p>- Your study chick</p></div>`,
     });
