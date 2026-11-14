@@ -266,12 +266,11 @@ function overdueByDay(homework, lessons) {
 // One day's to-dos in two sections: homework (Schoology, Google Classroom, or added by hand) first,
 // then the study plan from your nests. A section with nothing in it is left out.
 function DayGroups({ homework, plan, now, overdue = false, compact = false }) {
-  const synced = homework.some((h) => h.sourceId);
   const groups = [
     homework.length > 0 && {
       id: "homework",
       icon: "homework",
-      title: synced ? "Homework & Schoology" : "Homework",
+      title: "Homework",
       done: homework.filter((h) => h.done).length,
       total: homework.length,
       rows: homework.map((h) => <HomeworkRow key={h.id} homework={h} now={now} />),
