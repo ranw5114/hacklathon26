@@ -81,6 +81,26 @@ export default function NestPage() {
           <span className="flex items-center gap-1"><Icon name="corn" size={18} /> {withDefaults(flock).corn} corn</span>
         </div>
       </div>
+      {/* Practice mock exams: as many as you like (app/(app)/nest/[nestId]/mock) */}
+      <Link
+        href={`/nest/${nestId}/mock`}
+        className="card-link mt-4 flex items-center gap-4 bg-beak/30 py-4"
+      >
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-[3px] border-line bg-chick">
+          <Icon name="trophy" size={34} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-xl font-semibold">Take mock exam!</span>
+          <span className="block text-sm text-muted">
+            {nest.mockInProgress
+              ? "You have one in progress. Pick up where you left off."
+              : nest.mockExams?.length
+                ? `${nest.mockExams.length} taken · best ${Math.max(...nest.mockExams.map((e) => Math.round(e.score * 100)))}% · new questions every time`
+                : "Practice in your real test's format, as many times as you want."}
+          </span>
+        </span>
+        <span className="font-display text-2xl" aria-hidden="true">→</span>
+      </Link>
       <div className="mt-4 flex items-start gap-3">
         <p className="flex-1 text-sm text-muted">{plan.overview}</p>
         {!editing && (
