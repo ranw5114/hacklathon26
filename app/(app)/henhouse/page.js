@@ -9,11 +9,20 @@ import { CoopRoof } from "@/components/EggArt";
 import { chickCount, CORN_WAYS, withDefaults } from "@/lib/flock";
 import { buyItem, chickLook, chickName, SHOP, SLOT_LABELS, SLOTS, updateChick, wardrobe } from "@/lib/henhouse";
 
+import { useConfirm } from "@/components/Modal";
+import { useAvatar } from "@/lib/avatar";
+import { load, save, update, useStored } from "@/lib/storage";
+
 // What each wardrobe row is called on the chick editor.
 const WEAR_LABELS = { head: "Head", face: "Face", neck: "Neck", body: "Body", prop: "Holding" };
-import { save, update, useStored } from "@/lib/storage";
 
-const HOW_FROM = { timer: "the Egg Timer", quiz: "a perfect quiz", exam: "the mock exam", chest: "a chest" };
+// Where a chick hatched from, shown under it.
+const HOW_FROM = {
+  timer: { icon: "egg", label: "Egg Timer" },
+  quiz: { icon: "star", label: "Perfect quiz" },
+  exam: { icon: "trophy", label: "Mock exam" },
+  chest: { icon: "chest", label: "Chest" },
+};
 
 // The Henhouse: every chick you've hatched. Name them, paint them, and dress them up with corn.
 export default function HenhousePage() {
@@ -21,6 +30,8 @@ export default function HenhousePage() {
   const profile = useStored("profile");
   const [selectedId, setSelectedId] = useState(null);
   const [message, setMessage] = useState("");
+  const { confirm, dialog } = useConfirm();
+  const avatar = useAvatar();
 
   if (stored === undefined) return null;
   const flock = withDefaults(stored);
@@ -33,15 +44,27 @@ export default function HenhousePage() {
     update("flock", (f) => updateChick(f, selected.id, changes));
   }
 
-  function buy(item) {
-    const next = buyItem(flock, item.id);
-    if (!next) return setMessage(`You need ${item.price - flock.corn} more corn for the ${item.name}.`);
+  // Buying asks first, so a misclick doesn't spend corn.
+  async function buy(item) {
+    if (flock.corn < item.price) return setMessage(`You need ${item.price - flock.corn} more corn for the ${item.name}.`);
+    const ok = await confirm({
+      title: `Buy the ${item.name}?`,
+      message: `It costs ${item.price} corn. You'll have ${flock.corn - item.price} corn left.`,
+      confirmLabel: `Buy for ${item.price} corn`,
+      cancelLabel: "Not now",
+      chick: avatar,
+    });
+    if (!ok) return;
+    // Buy from the latest saved flock, in case it changed while the question was open.
+    const next = buyItem(withDefaults(load("flock")), item.id);
+    if (!next) return setMessage(`You need more corn for the ${item.name}.`);
     save("flock", next);
     setMessage(`You bought the ${item.name}! ${selected ? "Try it on your chick above." : ""}`);
   }
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+      {dialog}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           <PageIcon icon="henhouse" move="peek" size={52} lines={["Peekaboo!", "Home sweet coop.", "Dress-up time!", "Who wants a new hat?"]} label="Poke the henhouse" />
@@ -102,12 +125,29 @@ export default function HenhousePage() {
         <section className="card mt-6 grid gap-5 sm:grid-cols-[180px_1fr]">
           <div className="flex flex-col items-center gap-2 text-center">
             <Chick {...chickLook(selected)} size={150} />
-            <p className="text-xs text-muted">
-              Hatched {new Date(selected.hatchedAt).toLocaleDateString()}
-              {HOW_FROM[selected.from] && <> from {HOW_FROM[selected.from]}</>}
-            </p>
+            {/* Where this chick came from */}
+            <div className="flex flex-wrap justify-center gap-1.5 text-xs font-semibold">
+              <span className="flex items-center gap-1 rounded-full border-2 border-line/30 bg-white px-2.5 py-0.5">
+                <Icon name="calendar" size={14} />
+                {new Date(selected.hatchedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+              {HOW_FROM[selected.from] && (
+                <span className="flex items-center gap-1 rounded-full border-2 border-line/30 bg-white px-2.5 py-0.5">
+                  <Icon name={HOW_FROM[selected.from].icon} size={14} /> {HOW_FROM[selected.from].label}
+                </span>
+              )}
+            </div>
             {selected.id === profile?.avatarChickId ? (
-              <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold"><Icon name="star" size={14} /> Your avatar</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold"><Icon name="star" size={14} /> Your avatar</span>
+                <button
+                  type="button"
+                  onClick={() => update("profile", (p) => ({ ...p, avatarChickId: null }))}
+                  className="text-xs font-semibold text-muted underline"
+                >
+                  Stop using as avatar
+                </button>
+              </div>
             ) : (
               <button
                 type="button"

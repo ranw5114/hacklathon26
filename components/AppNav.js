@@ -7,12 +7,12 @@ import Chick from "@/components/Chick";
 import CornGuide from "@/components/CornGuide";
 import { useStored } from "@/lib/storage";
 
-// Menu icons (drawn in components/Icon.js).
+// Menu icons (drawn in components/Icon.js). `alsoFor` lists other pages that count as being in that tab.
 export const NAV_ITEMS = [
   { href: "/barn", label: "Barn", icon: "barn" },
   { href: "/nest", label: "Nest", icon: "nest" },
   { href: "/coop", label: "Coop", icon: "hen" },
-  { href: "/timer", label: "Timer", icon: "egg" },
+  { href: "/timer", label: "Timer", icon: "egg", alsoFor: ["/henhouse"] }, // the Henhouse opens from the timer's coop
   { href: "/roost", label: "Roost", icon: "calendar" },
   { href: "/todo", label: "To-Do", icon: "todo" },
   { href: "/profile", label: "Me", icon: "chick" },
@@ -33,7 +33,7 @@ export default function AppNav({ avatar }) {
             Cluck In
           </Link>
           {NAV_ITEMS.map((item) => (
-            <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} />
+            <NavLink key={item.href} item={item} active={isActive(item, pathname)} />
           ))}
           <CornGuide flock={flock} />
         </nav>
@@ -42,11 +42,15 @@ export default function AppNav({ avatar }) {
       {/* Phone: bottom bar */}
       <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t-[3px] border-line bg-background px-1 py-1.5 sm:hidden">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} stacked />
+          <NavLink key={item.href} item={item} active={isActive(item, pathname)} stacked />
         ))}
       </nav>
     </>
   );
+}
+
+function isActive(item, pathname) {
+  return [item.href, ...(item.alsoFor ?? [])].some((href) => pathname.startsWith(href));
 }
 
 function NavLink({ item, active, stacked }) {
