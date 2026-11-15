@@ -9,6 +9,8 @@ import MissingNest from "@/components/MissingNest";
 import { updateNest, useNest } from "@/lib/nests";
 import { useAvatar } from "@/lib/avatar";
 import { allSections } from "@/lib/progress";
+import { addSection, deleteSection } from "@/lib/planEdit";
+import { formatDate, todayString } from "@/lib/dates";
 import {
   DEFAULT_FORMAT,
   examBatches,
@@ -17,6 +19,7 @@ import {
   gradeLocally,
   MAX_QUESTIONS,
   QUESTION_TYPES,
+  conceptStats,
   totalQuestions,
 } from "@/lib/mockExam";
 
@@ -439,6 +442,8 @@ function ExamResults({ exam, nest, number, onAnother }) {
         </div>
       </div>
 
+      <TuneNest nest={nest} exam={exam} />
+
       <h2 className="text-2xl">{missed ? `Review (${missed} to look at)` : "Review: all correct!"}</h2>
       {exam.questions.map((q, i) => {
         const r = exam.results[i];
@@ -486,6 +491,182 @@ function ExamResults({ exam, nest, number, onAnother }) {
         );
       })}
     </div>
+  );
+}
+
+// After a mock exam: how you did on each concept, and changes to the nest to match: new eggs for
+// what you're missing, and unstarted eggs on what you've mastered (so the nest can get shorter).
+function TuneNest({ nest, exam }) {
+  const stats = conceptStats(nest.mockExams);
+  const goal = nest.test.goalGrade;
+  const latest = nest.mockExams?.at(-1)?.id === exam.id;
+  // Suggestions load by themselves for the newest exam (nothing changes until "Update my nest").
+  const [state, setState] = useState(exam.tuned ? "applied" : latest && stats.length ? "loading" : "idle"); // idle | loading | ready | applied | error
+  const [plan, setPlan] = useState(null); // { summary, add: [...with pick, date], remove: [...with pick] }
+  const [error, setError] = useState("");
+  const [outcome, setOutcome] = useState(exam.tuned ?? null);
+  const today = todayString();
+  const days = nest.plan.days.filter((d) => d.date >= today).map((d) => d.date);
+  const dayChoices = days.length ? days : [nest.plan.days.at(-1).date];
+  const sections = allSections(nest.plan);
+  const asked = useRef(false);
+
+  async function fetchSuggestions() {
+    try {
+      const res = await fetch("/api/plan-tune", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          test: { subject: nest.test.subject, topic: nest.test.topic, goalGrade: goal },
+          goal,
+          sections: sections.map((sec) => ({ id: sec.id, title: sec.title, goal: sec.goal, completed: sec.completed, score: sec.score })),
+          stats,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setPlan({
+        summary: data.summary,
+        // Weakest first, so those land on the earliest days.
+        add: data.add.map((a, i) => ({ ...a, pick: true, date: dayChoices[i % dayChoices.length] })),
+        remove: data.remove.map((rm) => ({ ...rm, pick: true, title: sections.find((sec) => sec.id === rm.id)?.title ?? "A lesson" })),
+      });
+      setState("ready");
+    } catch (err) {
+      setError(err.message || "Couldn't get suggestions. Please try again.");
+      setState("error");
+    }
+  }
+
+  function suggest() {
+    setState("loading");
+    setError("");
+    fetchSuggestions();
+  }
+
+  useEffect(() => {
+    if (state !== "loading" || asked.current) return;
+    asked.current = true;
+    fetchSuggestions();
+  });
+
+  function apply() {
+    const adds = plan.add.filter((a) => a.pick);
+    const removes = plan.remove.filter((rm) => rm.pick);
+    let result = null;
+    updateNest(nest.id, (n) => {
+      // New eggs go in first, so removing others can't empty (and drop) the day they're going to.
+      let next = adds.reduce((acc, a) => addSection(acc, a.date, { title: a.title, goal: a.goal }), n);
+      next = removes.reduce((acc, rm) => deleteSection(acc, rm.id), next);
+      const count = (x) => allSections(x.plan).length;
+      const added = count(next) - count(n) + removes.filter((rm) => !allSections(next.plan).some((sec) => sec.id === rm.id)).length;
+      result = { added, removed: count(n) + added - count(next), before: count(n), after: count(next) };
+      // Remember it on this exam, so it isn't suggested twice.
+      return { ...next, mockExams: (next.mockExams ?? []).map((e) => (e.id === exam.id ? { ...e, tuned: result } : e)) };
+    });
+    setOutcome(result);
+    setState("applied");
+  }
+
+  const toggle = (list, i) => setPlan((p) => ({ ...p, [list]: p[list].map((x, j) => (j === i ? { ...x, pick: !x.pick } : x)) }));
+  const picked = plan ? plan.add.filter((a) => a.pick).length + plan.remove.filter((rm) => rm.pick).length : 0;
+
+  return (
+    <section className="card flex flex-col gap-4">
+      <div>
+        <h2 className="flex items-center gap-2 text-2xl">
+          <Icon name="nest" size={26} /> Tune your nest
+        </h2>
+        <p className="text-sm text-muted">From your {Math.min(3, nest.mockExams?.length ?? 1)} latest mock exam{(nest.mockExams?.length ?? 1) === 1 ? "" : "s"}: more practice where you need it, less where you don&apos;t.</p>
+      </div>
+
+      {stats.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {stats.slice(0, 10).map((st) => (
+            <li key={st.concept} className="grid grid-cols-[minmax(0,1fr)_7rem_3rem] items-center gap-2 text-sm">
+              <span className="truncate">{st.concept}</span>
+              <span className="h-3 overflow-hidden rounded-full border-2 border-line bg-white">
+                <span className={`block h-full ${st.percent >= goal ? "bg-[oklch(0.76_0.15_145)]" : st.percent >= 60 ? "bg-beak" : "bg-red-400"}`} style={{ width: `${st.percent}%` }} />
+              </span>
+              <span className="text-right font-semibold tabular-nums">{st.percent}%</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {state === "applied" && outcome ? (
+        <p className="rounded-2xl bg-green-50 p-3 text-sm font-semibold text-green-800">
+          Your nest is updated: {outcome.added} egg{outcome.added === 1 ? "" : "s"} added, {outcome.removed} removed ({outcome.before} → {outcome.after} eggs).{" "}
+          <Link href={`/nest/${nest.id}`} className="underline">
+            See your nest
+          </Link>
+        </p>
+      ) : !latest ? (
+        <p className="text-sm text-muted">Tune your nest from your latest mock exam.</p>
+      ) : state === "ready" ? (
+        <div className="flex flex-col gap-3">
+          {plan.summary && <p className="bubble self-start text-sm">{plan.summary}</p>}
+          {plan.add.length + plan.remove.length === 0 && <p className="text-sm font-semibold">Your nest already fits you. No changes needed!</p>}
+          {plan.add.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="font-display font-semibold">Add these eggs</p>
+              {plan.add.map((a, i) => (
+                <div key={i} className={`flex flex-wrap items-start gap-3 rounded-xl border-2 border-line/20 bg-white p-2 ${a.pick ? "" : "opacity-50"}`}>
+                  <input type="checkbox" className="mt-1 h-5 w-5 accent-[var(--chick-line)]" checked={a.pick} onChange={() => toggle("add", i)} aria-label={`Add ${a.title}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold">{a.title}</p>
+                    <p className="text-xs text-muted">{a.reason}</p>
+                  </div>
+                  <select
+                    className="input w-auto py-1 text-sm"
+                    value={a.date}
+                    aria-label={`Day for ${a.title}`}
+                    onChange={(e) => setPlan((p) => ({ ...p, add: p.add.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)) }))}
+                  >
+                    {dayChoices.map((d) => (
+                      <option key={d} value={d}>
+                        {formatDate(d)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+          {plan.remove.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="font-display font-semibold">Skip these (you&apos;ve got them down)</p>
+              {plan.remove.map((rm, i) => (
+                <label key={rm.id} className={`flex items-start gap-3 rounded-xl border-2 border-line/20 bg-white p-2 ${rm.pick ? "" : "opacity-50"}`}>
+                  <input type="checkbox" className="mt-1 h-5 w-5 accent-[var(--chick-line)]" checked={rm.pick} onChange={() => toggle("remove", i)} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold line-through decoration-2">{rm.title}</span>
+                    <span className="block text-xs text-muted">{rm.reason}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {plan.add.length + plan.remove.length > 0 && (
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => setState("idle")} className="btn-secondary px-4 py-1.5 text-sm">
+                Not now
+              </button>
+              <button type="button" onClick={apply} disabled={!picked} className="btn-primary px-4 py-1.5 text-sm disabled:opacity-50">
+                Update my nest ({sections.length} → {sections.length + plan.add.filter((a) => a.pick).length - plan.remove.filter((rm) => rm.pick).length} eggs)
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={suggest} disabled={state === "loading"} className="btn-primary">
+            {state === "loading" ? "Looking at your results…" : "Tune my nest from my results"}
+          </button>
+          {error && <p className="text-sm text-red-700">{error}</p>}
+        </div>
+      )}
+    </section>
   );
 }
 
