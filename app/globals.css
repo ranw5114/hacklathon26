@@ -399,3 +399,53 @@ h3 {
     padding: 0.6em 0.8em;
   }
 }
+
+/* The mascot stage for the judges' video (app/stage/page.js) */
+@keyframes stage-drift {
+  from {
+    transform: translateX(-30cqw);
+  }
+  to {
+    transform: translateX(130cqw);
+  }
+}
+@keyframes stage-drop {
+  0% {
+    transform: translateY(-140%) rotate(-6deg);
+  }
+  60% {
+    transform: translateY(6%) rotate(3deg);
+  }
+  80% {
+    transform: translateY(-2%) rotate(-1.5deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+}
+@keyframes stage-bob {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-2.5%) scaleY(1.02);
+  }
+}
+@keyframes stage-fall {
+  from {
+    transform: translateY(-10cqh) rotate(0deg);
+  }
+  to {
+    transform: translateY(110cqh) rotate(540deg);
+  }
+}
+@keyframes stage-sway {
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
