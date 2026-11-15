@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
 import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
-import { save } from "@/lib/storage";
+import { load, save } from "@/lib/storage";
+import { STARTER_CHICK_ID, withStarterChick } from "@/lib/flock";
 import Link from "next/link";
 import { AccountFields, checkAccount, EMPTY_ACCOUNT } from "@/components/AccountFields";
 import { signUp, useAccountsAvailable } from "@/lib/account";
@@ -51,7 +52,9 @@ export default function SetupPage() {
     try {
       // The account is made first, so a taken username doesn't leave a half-made profile.
       if (accounts) await signUp({ ...account, email: account.email.trim(), username: account.username.trim() });
-      save("profile", { ...profile, name: profile.name.trim() });
+      // The avatar picked here is a gift: it joins the flock as your first chick.
+      save("flock", withStarterChick(load("flock"), profile.avatar));
+      save("profile", { ...profile, name: profile.name.trim(), avatarChickId: STARTER_CHICK_ID });
       router.push("/barn");
     } catch (err) {
       setError(err.message);
@@ -88,8 +91,11 @@ export default function SetupPage() {
                   onChange={(e) => update("name", e.target.value)}
                 />
               </Field>
-              <Field label="Pick your avatar">
+              <Field label="Pick your first chick">
                 <AvatarPicker value={profile.avatar} onChange={(id) => update("avatar", id)} />
+                <p className="mt-2 text-sm text-muted">
+                  It&apos;s yours to keep! Later you can dress it up, or make any chick you hatch your avatar.
+                </p>
               </Field>
             </>
           )}

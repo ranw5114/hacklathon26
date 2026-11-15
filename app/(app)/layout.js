@@ -11,14 +11,16 @@ import NestJobsWatcher from "@/components/NestJobsWatcher";
 import { ExitDemoButton } from "@/components/DemoButtons";
 import { useMoveOldNest } from "@/lib/nests";
 import { useStored } from "@/lib/storage";
-import { useAvatar } from "@/lib/avatar";
+import { useAvatar, useStarterChick } from "@/lib/avatar";
 import { useAccount } from "@/lib/account";
 
 // Shared layout for every page in the (app) folder: Barn, Nest, Coop, Timer, Roost, To-Do, Henhouse, Profile.
 // The (app) folder name is in parentheses, so it doesn't appear in the URL (/barn, not /app/barn).
 export default function AppLayout({ children }) {
   const profile = useStored("profile");
-  const avatar = useAvatar(); // a starter chick or a Henhouse chick (lib/avatar.js)
+  const avatar = useAvatar(); // a chick from the Henhouse (lib/avatar.js)
+  // The chick picked at setup joins the flock (for profiles made before that was a thing).
+  useStarterChick();
   const account = useAccount();
   // Plans saved before multiple nests existed move into the new nests list (once).
   useMoveOldNest();

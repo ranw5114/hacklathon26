@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
 import { useConfirm } from "@/components/Modal";
 import { ExitDemoButton, TryDemoButton } from "@/components/DemoButtons";
-import { AvatarPicker, Field, LearningStylePicker } from "@/components/ProfileFields";
+import { Field, LearningStylePicker } from "@/components/ProfileFields";
 import { clearAll, remove, save, useStored } from "@/lib/storage";
 import { useNests } from "@/lib/nests";
 import { avatarLook } from "@/lib/avatar";
@@ -29,8 +29,6 @@ export default function ProfilePage() {
   const [draft, setDraft] = useState(profile);
   const [saved, setSaved] = useState(false);
   const [toursReset, setToursReset] = useState(false);
-  // Picking a starter chick here switches away from a Henhouse chick avatar (applied on Save).
-  const [pickedStarter, setPickedStarter] = useState(false);
   const { confirm, dialog } = useConfirm();
   const account = useAccount();
   const accounts = useAccountsAvailable();
@@ -42,9 +40,8 @@ export default function ProfilePage() {
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [open, setOpen] = useState(null); // which settings row is open
 
-  // What the avatar will look like after saving.
-  const previewProfile = { ...draft, avatarChickId: pickedStarter ? null : profile?.avatarChickId };
-  const henhouseChick = previewProfile.avatarChickId && flock?.chicks?.find((c) => c.id === previewProfile.avatarChickId);
+  // The avatar is picked in the Henhouse, from the chicks you own.
+  const henhouseChick = profile?.avatarChickId && flock?.chicks?.find((c) => c.id === profile.avatarChickId);
 
   function update(field, value) {
     setDraft({ ...draft, [field]: value });
@@ -58,7 +55,7 @@ export default function ProfilePage() {
       ...profile,
       ...draft,
       name: draft.name.trim(),
-      avatarChickId: pickedStarter ? null : profile.avatarChickId,
+      avatarChickId: profile.avatarChickId,
     });
     setSaved(true);
   }
@@ -130,7 +127,7 @@ export default function ProfilePage() {
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
       {dialog}
       <div className="flex items-end gap-4">
-        <Chick variant={avatarLook(previewProfile, flock)} size={100} />
+        <Chick variant={avatarLook(profile, flock)} size={100} />
         <div>
           <p className="label-small">Profile</p>
           <h1 className="text-4xl">{profile.name}</h1>
@@ -155,28 +152,22 @@ export default function ProfilePage() {
             <input className="input" value={draft.name} onChange={(e) => update("name", e.target.value)} />
           </Field>
           <Field label="Avatar">
-            {henhouseChick && (
-              <p className="mb-2 rounded-2xl bg-chick/50 px-4 py-2 text-sm">
-                <Icon name="star" size={16} /> Your avatar is <strong>{chickName(henhouseChick, flock.chicks.indexOf(henhouseChick))}</strong> from
-                the <Link href="/henhouse" className="underline">Henhouse</Link>. Pick a starter chick below to switch back.
+            <div className="flex items-center gap-3 rounded-2xl bg-chick/50 px-4 py-3 text-sm">
+              <Chick variant={avatarLook(profile, flock)} size={48} />
+              <p className="flex-1">
+                {henhouseChick ? (
+                  <>
+                    Your avatar is <strong>{chickName(henhouseChick, flock.chicks.indexOf(henhouseChick))}</strong>.
+                  </>
+                ) : (
+                  "This is your avatar."
+                )}{" "}
+                To change it, pick any chick you own in the Henhouse and tap &ldquo;Make this my avatar&rdquo;.
               </p>
-            )}
-            <AvatarPicker
-              value={henhouseChick ? null : draft.avatar}
-              onChange={(id) => {
-                setPickedStarter(true);
-                update("avatar", id);
-              }}
-            />
-            {!henhouseChick && (
-              <p className="mt-2 text-sm text-muted">
-                Or make one of your hatched chicks your avatar in the{" "}
-                <Link href="/henhouse" className="underline">
-                  Henhouse
-                </Link>
-                .
-              </p>
-            )}
+              <Link href="/henhouse" className="btn-secondary shrink-0 px-3 py-1 text-sm">
+                Henhouse
+              </Link>
+            </div>
           </Field>
           <SaveButton saved={saved} onSave={saveProfile} />
         </MenuRow>

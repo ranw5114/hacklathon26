@@ -1,5 +1,6 @@
 "use client";
 
+import { fromPercent, gradeText, scoreScale } from "@/lib/grades";
 import Icon from "@/components/Icon";
 import { useState } from "react";
 import Link from "next/link";
@@ -122,6 +123,9 @@ export default function ExamPage() {
 function ExamResults({ nestId, plan, test, avatar, earned, onRetake }) {
   const { predicted, score } = plan.mockExam;
   const gap = test.goalGrade - predicted;
+  // Tests like the SAT also show the predicted grade in their own scale.
+  const scale = test.goalScore !== undefined ? scoreScale(test) : null;
+  const predictedScore = scale ? fromPercent(predicted, scale) : null;
   // Levels scored under 80% are the ones worth reviewing.
   const weakSpots = allSections(plan).filter((s) => s.score < 0.8);
 
@@ -131,8 +135,13 @@ function ExamResults({ nestId, plan, test, avatar, earned, onRetake }) {
         <Chick variant={avatar} size={90} />
         <p className="label-small mt-2">Predicted grade</p>
         <p className="font-display text-7xl font-semibold">{predicted}%</p>
+        {scale && (
+          <p className="font-display text-xl font-semibold">
+            About {predictedScore} on the {test.subject}
+          </p>
+        )}
         <p className="text-muted">
-          Mock exam: {Math.round(score * 100)}% · Goal: {test.goalGrade}%
+          Mock exam: {Math.round(score * 100)}% · Goal: {gradeText(test, "goal")}
         </p>
         {earned > 0 && (
           <p className="font-display font-semibold">
@@ -140,7 +149,7 @@ function ExamResults({ nestId, plan, test, avatar, earned, onRetake }) {
           </p>
         )}
         <span className="bubble mt-4">
-          {gap <= 0 ? <>You&apos;re on track to hit your goal! <Icon name="party" size={18} /></> : `${gap} points from your goal. You can do it!`}
+          {gap <= 0 ? <>You&apos;re on track to hit your goal! <Icon name="party" size={18} /></> : scale ? `${Math.max(0, test.goalScore - predictedScore)} points from your goal. You can do it!` : `${gap} points from your goal. You can do it!`}
         </span>
       </div>
 

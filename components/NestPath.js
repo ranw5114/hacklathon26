@@ -1,7 +1,7 @@
 "use client";
 
 import Icon from "@/components/Icon";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Chick from "@/components/Chick";
@@ -82,6 +82,10 @@ function LevelNode({ nestId, section, offset, isCurrent, avatar, goal, chickColo
   const result = section.completed ? eggResult(section.score, goal) : null;
   const state = locked ? "locked" : result ? result.id : "ready";
   const href = `/nest/${nestId}/${section.id}`;
+
+  // Next keeps this page alive (hidden) while the lesson is open, so without this the egg would
+  // still be "cracking", and unclickable, after Back to nest. The cleanup runs when it's hidden.
+  useLayoutEffect(() => () => setCracking(false), []);
 
   // Unopened eggs crack open first, then the lesson appears. Finished or paused ones open right away.
   function open() {

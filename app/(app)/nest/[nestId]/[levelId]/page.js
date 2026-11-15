@@ -8,8 +8,8 @@ import Chick from "@/components/Chick";
 import { Drumstick, FriedEgg, HatchedChick, PathEgg } from "@/components/EggArt";
 import Modal from "@/components/Modal";
 import Lesson from "@/components/Lesson";
-import Quiz from "@/components/Quiz";
-import { addCorn, chickCount, hatchChicks, loseChickToQuiz, quizRewards } from "@/lib/flock";
+import Quiz, { QuizReview } from "@/components/Quiz";
+import { addCorn, chickCount, hasLosableChick, hatchChicks, loseChickToQuiz, quizRewards } from "@/lib/flock";
 import { announceCorn } from "@/components/CornToast";
 import { todayString } from "@/lib/dates";
 import MissingNest from "@/components/MissingNest";
@@ -17,7 +17,7 @@ import { updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
 import { completeSection, conceptSummary, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
-import { DIFFICULTIES, recentFeedback, saveFeedback } from "@/lib/planEdit";
+import { DIFFICULTIES, forget, recentFeedback, saveFeedback } from "@/lib/planEdit";
 
 // One level: read the lesson, take the quiz, see how "cooked" you are.
 export default function LevelPage() {
@@ -32,6 +32,8 @@ export default function LevelPage() {
 
 // Where you were in a lesson, saved on the nest when you pause or leave:
 // nest.paused[levelId] = { stage: "lesson" | "quiz", quiz, quizRound, scrollY, at } (see lib/planEdit.js).
+// The last finished quiz is saved too, so a finished level opens on it instead of starting over:
+// nest.quizzes[levelId] = { answers: [{ correct, flagged, pick }], correct, total, at }.
 function LevelPlay({ nestId, id }) {
   const nest = useNest(nestId);
   const profile = useStored("profile");
@@ -43,7 +45,12 @@ function LevelPlay({ nestId, id }) {
 
   // A paused lesson resumes where it was (only if its lesson is still saved).
   const [resumed] = useState(() => (nest?.paused?.[id] && nest?.levels?.[id] ? nest.paused[id] : null));
-  const [stage, setStage] = useState(resumed?.stage ?? "lesson"); // "lesson" → "quiz" → "results"
+  // A finished level (with its quiz saved) opens on that quiz, to look back at.
+  const [stage, setStage] = useState(() => {
+    if (resumed) return resumed.stage;
+    const done = nest?.plan && findSection(nest.plan, id)?.completed;
+    return done && nest?.quizzes?.[id] && nest?.levels?.[id] ? "review" : "lesson";
+  }); // "lesson" → "quiz" → "results", or "review" (the last finished quiz)
   const [pausedView, setPausedView] = useState(false); // the "Lesson paused" screen
   const [showResumed, setShowResumed] = useState(Boolean(resumed)); // the "Picked up where you left off" note
   const [result, setResult] = useState(null); // { correct, total, chicks, corn, egg, flagged }
@@ -57,6 +64,7 @@ function LevelPlay({ nestId, id }) {
 
   const section = plan ? findSection(plan, id) : null;
   const level = levels?.[id]; // saved lesson + quiz, if we've generated it before
+  const lastQuiz = level ? nest?.quizzes?.[id] : null; // the last time this quiz was finished
   const canPlay = plan && section && isUnlocked(plan, id, goalFraction(test));
 
   // Generate the lesson + quiz the first time this level is opened, then save it.
@@ -193,11 +201,7 @@ function LevelPlay({ nestId, id }) {
     setResult(null);
     setShowFriedPopup(false);
     setStage("lesson");
-    updateNest(nestId, (n) => {
-      const levels = { ...n.levels };
-      delete levels[id];
-      return { ...n, levels };
-    });
+    updateNest(nestId, (n) => forget(n, id));
     window.scrollTo({ top: 0 });
   }
 
@@ -210,9 +214,13 @@ function LevelPlay({ nestId, id }) {
     const concepts = conceptSummary(level.quiz, answers ?? []);
     const { chicks, corn, newConcepts, loseChick } = quizRewards(section, score, goal, concepts.understood);
     const egg = eggResult(score, goal);
-    const lostChick = loseChick && chickCount(flock) > 0;
+    const lostChick = loseChick && hasLosableChick(flock);
 
-    updateNest(nestId, (n) => ({ ...n, plan: completeSection(n.plan, id, score, newConcepts) }));
+    updateNest(nestId, (n) => ({
+      ...n,
+      plan: completeSection(n.plan, id, score, newConcepts),
+      quizzes: { ...n.quizzes, [id]: { answers, correct, total, at: Date.now() } },
+    }));
     if (chicks) update("flock", (f) => hatchChicks(f, chicks, "quiz"));
     if (corn) {
       update("flock", (f) => addCorn(f, corn));
@@ -241,6 +249,12 @@ function LevelPlay({ nestId, id }) {
   function reviewLesson() {
     setShowFriedPopup(false);
     setStage("lesson");
+    window.scrollTo({ top: 0 });
+  }
+
+  function seeLastQuiz() {
+    setShowFriedPopup(false);
+    setStage("review");
     window.scrollTo({ top: 0 });
   }
 
@@ -332,11 +346,27 @@ function LevelPlay({ nestId, id }) {
               <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5">
                 <Icon name="pause" size={18} /> Pause for now
               </button>
+              {lastQuiz && (
+                <button type="button" onClick={seeLastQuiz} className="btn-secondary">
+                  See my last quiz
+                </button>
+              )}
               <button type="button" onClick={startQuiz} className="btn-primary">
-                Start the quiz →
+                {lastQuiz ? "Retake the quiz →" : "Start the quiz →"}
               </button>
             </div>
           </>
+        )}
+
+        {level && stage === "review" && lastQuiz && (
+          <LastQuiz
+            lastQuiz={lastQuiz}
+            questions={level.quiz}
+            goal={goalFraction(test)}
+            nestId={nestId}
+            onLesson={reviewLesson}
+            onRetake={retryQuiz}
+          />
         )}
 
         {/* A new key makes React start a fresh Quiz (back to question 1) */}
@@ -357,6 +387,7 @@ function LevelPlay({ nestId, id }) {
             nestId={nestId}
             onRetry={retryQuiz}
             onReview={reviewLesson}
+            onSeeAnswers={seeLastQuiz}
             feedback={nest.feedback?.[id]}
             onFeedback={sendFeedback}
             onRemake={remakeLesson}
@@ -406,7 +437,7 @@ const PASSED_LINE = "You ate that lesson, here's some corn for your chicks to ea
 const FAILED_LINE = "You gotta lock in before you run out of chicks to fry.";
 const COOKED_LINE = "You are cooked for this test if you don't work on these concepts:";
 
-function Results({ result, nestId, onRetry, onReview, feedback, onFeedback, onRemake }) {
+function Results({ result, nestId, onRetry, onReview, onSeeAnswers, feedback, onFeedback, onRemake }) {
   const { egg } = result;
   const percent = Math.round((result.correct / result.total) * 100);
 
@@ -429,12 +460,14 @@ function Results({ result, nestId, onRetry, onReview, feedback, onFeedback, onRe
         </p>
       )}
       {result.chicks > 0 && (
-        <p className="font-display font-semibold">
-          <Icon name="chick" size={18} /> A new chick joined your coop!{" "}
-          <Link href="/henhouse" className="underline">
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border-[3px] border-line bg-chick/50 px-4 py-2.5">
+          <span className="flex items-center gap-2 font-display font-semibold">
+            <Icon name="chick" size={22} /> A new chick joined your flock!
+          </span>
+          <Link href="/henhouse" className="btn-secondary px-3 py-1 text-sm">
             Visit the Henhouse
           </Link>
-        </p>
+        </div>
       )}
       {egg.id === "golden" && <p className="text-sm text-muted">Get 100% to hatch a chick from this egg!</p>}
       {egg.id === "fried" && (
@@ -449,6 +482,9 @@ function Results({ result, nestId, onRetry, onReview, feedback, onFeedback, onRe
             Review the lesson
           </button>
         )}
+        <button type="button" onClick={onSeeAnswers} className="btn-secondary">
+          See my answers
+        </button>
         <button type="button" onClick={onRetry} className={egg.id === "fried" ? "btn-primary" : "btn-secondary"}>
           {egg.id === "fried" ? "Retry the quiz" : "Try again"}
         </button>
@@ -456,6 +492,49 @@ function Results({ result, nestId, onRetry, onReview, feedback, onFeedback, onRe
           Back to nest
         </Link>
       </div>
+    </div>
+  );
+}
+
+// A finished level's last quiz: the score, then every question with your answer and the right one.
+function LastQuiz({ lastQuiz, questions, goal, nestId, onLesson, onRetake }) {
+  const { correct, total, answers, at } = lastQuiz;
+  const score = total ? correct / total : 0;
+  const egg = eggResult(score, goal);
+  const when = new Date(at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="card flex flex-wrap items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-end justify-center">
+          {egg.id === "hatched" && <HatchedChick size={64} />}
+          {egg.id === "golden" && <PathEgg state="golden" size={52} />}
+          {egg.id === "fried" && <FriedEgg size={60} />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="label-small">Your last quiz · {when}</p>
+          <p className="font-display text-2xl font-semibold">
+            {correct} of {total} correct ({Math.round(score * 100)}%)
+          </p>
+          <p className="text-sm text-muted">
+            {egg.name} · goal {Math.round(goal * 100)}%
+          </p>
+        </div>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <button type="button" onClick={onLesson} className="btn-secondary px-4 py-2 text-sm">
+            Read the lesson
+          </button>
+          <button type="button" onClick={onRetake} className="btn-primary px-4 py-2 text-sm">
+            Retake the quiz
+          </button>
+        </div>
+      </div>
+
+      <QuizReview questions={questions} answers={answers} />
+
+      <Link href={`/nest/${nestId}`} className="btn-secondary self-center">
+        Back to nest
+      </Link>
     </div>
   );
 }

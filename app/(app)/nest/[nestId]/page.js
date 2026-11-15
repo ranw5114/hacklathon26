@@ -1,5 +1,6 @@
 "use client";
 
+import { gradeText } from "@/lib/grades";
 import Icon from "@/components/Icon";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -75,7 +76,7 @@ export default function NestPage() {
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-display font-semibold">
           <span className="flex items-center gap-1"><Icon name="calendar" size={18} /> {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : daysLeft === 0 ? "Test day!" : "Test done"}</span>
           <span className="flex items-center gap-2">
-            <Icon name="target" size={18} /> {test.currentGrade}% → {test.goalGrade}% <EditGradesButton test={test} nestId={nestId} />
+            <Icon name="target" size={18} /> {gradeText(test, "current")} → {gradeText(test, "goal")} <EditGradesButton test={test} nestId={nestId} />
           </span>
           <span className="flex items-center gap-1"><Icon name="chick" size={18} /> {chickCount(flock)} chicks</span>
           <span className="flex items-center gap-1"><Icon name="corn" size={18} /> {withDefaults(flock).corn} corn</span>

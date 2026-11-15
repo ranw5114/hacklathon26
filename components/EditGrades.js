@@ -5,10 +5,11 @@ import { useState } from "react";
 import Modal from "@/components/Modal";
 import { Field } from "@/components/ProfileFields";
 import { formatDate } from "@/lib/dates";
-import { checkGrades } from "@/lib/grades";
+import { checkGrades, gradeFields, gradeInputs, scoreScale } from "@/lib/grades";
 import { updateNest } from "@/lib/nests";
 
-// "Edit" on the Nest banner: change the current and goal grade without rebuilding the plan.
+// "Edit" on the Nest banner: change the current and goal grade (or score, for tests like the SAT)
+// without rebuilding the plan.
 export default function EditGradesButton({ test, nestId }) {
   const [open, setOpen] = useState(false);
 
@@ -22,7 +23,7 @@ export default function EditGradesButton({ test, nestId }) {
       >
         <Icon name="pencil" size={16} /> Edit
       </button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Update your grades" chick="mint">
+      <Modal open={open} onClose={() => setOpen(false)} title={scoreScale(test) ? "Update your scores" : "Update your grades"} chick="mint">
         {/* A key resets the form to the saved grades each time it opens */}
         {open && <EditGradesForm key={open} test={test} nestId={nestId} onDone={() => setOpen(false)} />}
       </Modal>
@@ -31,19 +32,20 @@ export default function EditGradesButton({ test, nestId }) {
 }
 
 function EditGradesForm({ test, nestId, onDone }) {
-  const [current, setCurrent] = useState(String(test.currentGrade));
-  const [goal, setGoal] = useState(String(test.goalGrade));
+  const scale = scoreScale(test);
+  const [current, setCurrent] = useState(() => gradeInputs(test).current);
+  const [goal, setGoal] = useState(() => gradeInputs(test).goal);
   const [error, setError] = useState("");
   const [canSwap, setCanSwap] = useState(false);
 
   function saveGrades() {
-    const check = checkGrades(current, goal);
+    const check = checkGrades(current, goal, scale);
     if (check.error) {
       setError(check.error);
       setCanSwap(Boolean(check.canSwap));
       return;
     }
-    updateNest(nestId, (n) => ({ ...n, test: { ...n.test, currentGrade: Number(current), goalGrade: Number(goal) } }));
+    updateNest(nestId, (n) => ({ ...n, test: { ...n.test, ...gradeFields(scale, current, goal) } }));
     onDone();
   }
 
@@ -60,10 +62,11 @@ function EditGradesForm({ test, nestId, onDone }) {
         Got a test back, or aiming higher? Your plan and progress stay the same.
       </p>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Current grade (%)">
+        <Field label={scale ? `Current score (${scale.range}, optional)` : "Current grade (%)"}>
           <input
             type="number"
             className="input"
+            step={scale?.step ?? "any"}
             value={current}
             onChange={(e) => {
               setCurrent(e.target.value);
@@ -71,10 +74,11 @@ function EditGradesForm({ test, nestId, onDone }) {
             }}
           />
         </Field>
-        <Field label="Goal grade (%)">
+        <Field label={scale ? `Goal score (${scale.range})` : "Goal grade (%)"}>
           <input
             type="number"
             className="input"
+            step={scale?.step ?? "any"}
             value={goal}
             onChange={(e) => {
               setGoal(e.target.value);

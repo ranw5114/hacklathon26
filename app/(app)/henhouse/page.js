@@ -14,6 +14,7 @@ const WEAR_LABELS = { head: "Head", face: "Face", neck: "Neck", body: "Body", pr
 
 // Where a chick hatched from, shown under it.
 const HOW_FROM = {
+  starter: { icon: "heart", label: "Your first chick" },
   timer: { icon: "egg", label: "Egg Timer" },
   quiz: { icon: "star", label: "Perfect quiz" },
   exam: { icon: "trophy", label: "Mock exam" },
@@ -141,18 +142,9 @@ export default function HenhousePage() {
               </button>
               {message && <p className="rounded-2xl bg-chick/60 px-3 py-1.5 text-xs font-semibold">{message}</p>}
               {selected.id === profile?.avatarChickId ? (
-                <div className="flex flex-col items-center gap-1">
-                  <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold">
-                    <Icon name="star" size={14} /> Your avatar
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => update("profile", (p) => ({ ...p, avatarChickId: null }))}
-                    className="text-xs font-semibold text-muted underline"
-                  >
-                    Stop using as avatar
-                  </button>
-                </div>
+                <span className="rounded-full bg-chick px-3 py-1 text-sm font-semibold">
+                  <Icon name="star" size={14} /> Your avatar
+                </span>
               ) : (
                 <button
                   type="button"

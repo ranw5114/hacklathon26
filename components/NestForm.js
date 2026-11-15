@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { Field } from "@/components/ProfileFields";
 import { useRouter } from "next/navigation";
 import { todayString } from "@/lib/dates";
-import { checkGrades } from "@/lib/grades";
+import { checkGrades, gradeFields } from "@/lib/grades";
 import { findSubject, SUBJECT_GROUPS, SUBJECTS } from "@/lib/subjects";
 import { isPdf } from "@/lib/studyGuide";
 import { formatBytes } from "@/lib/attachmentTypes";
@@ -33,7 +33,7 @@ function validate(test) {
   if (!test.topic.trim() && !findSubject(test.subjectId)?.defaultTopic) return { error: "Add what's on the test." };
   if (!test.testDate) return { error: "Pick your test date." };
   if (test.testDate <= todayString()) return { error: "The test date needs to be after today." };
-  return checkGrades(test.currentGrade, test.goalGrade);
+  return checkGrades(test.currentGrade, test.goalGrade, findSubject(test.subjectId)?.score);
 }
 
 // The form that collects test details and asks the AI to build a study plan.
@@ -79,7 +79,8 @@ export default function NestForm({ learner }) {
   }
 
   const picked = findSubject(test.subjectId);
-  const isTest = picked?.kind === "test";
+  // Tests like the SAT or AMC 10 ask for a score in their own scale, not a grade.
+  const scale = picked?.score;
 
   function update(field, value) {
     setTest({ ...test, [field]: value });
@@ -106,8 +107,7 @@ export default function NestForm({ learner }) {
       ...test,
       // Tests like the SAT can be studied as a whole, so "what's on it" can be left blank.
       topic: test.topic.trim() || findSubject(test.subjectId)?.defaultTopic || test.topic,
-      currentGrade: Number(test.currentGrade),
-      goalGrade: Number(test.goalGrade),
+      ...gradeFields(scale, test.currentGrade, test.goalGrade),
     };
     startNestJob({ test: finalTest, learner, today: todayString(), guides: guides.filter((g) => live.guides[g.id]?.status !== "error") });
     removeGuides(guides.filter((g) => live.guides[g.id]?.status === "error").map((g) => g.id));
@@ -203,25 +203,36 @@ export default function NestForm({ learner }) {
             ))}
           </select>
         </Field>
-        <Field label={isTest ? "Current score (% of the max)" : "Current grade (%)"}>
+        <Field label={scale ? `Current score (${scale.range}, optional)` : "Current grade (%)"}>
           <input
             type="number"
             className="input"
-            placeholder="78"
+            min={scale?.min ?? 0}
+            max={scale?.max ?? 100}
+            step={scale?.step ?? "any"}
+            placeholder={scale ? `e.g. ${scale.examples[0]}` : "78"}
             value={test.currentGrade}
             onChange={(e) => update("currentGrade", e.target.value)}
           />
         </Field>
-        <Field label={isTest ? "Goal score (% of the max)" : "Goal grade (%)"}>
+        <Field label={scale ? `Goal score (${scale.range})` : "Goal grade (%)"}>
           <input
             type="number"
             className="input"
-            placeholder="90"
+            min={scale?.min ?? 0}
+            max={scale?.max ?? 100}
+            step={scale?.step ?? "any"}
+            placeholder={scale ? `e.g. ${scale.examples[1]}` : "90"}
             value={test.goalGrade}
             onChange={(e) => update("goalGrade", e.target.value)}
           />
         </Field>
       </div>
+      {scale && (
+        <p className="-mt-2 text-xs text-muted">
+          Use your score from a past {picked.label} or a practice test. Haven&apos;t taken one yet? Leave the current score blank.
+        </p>
+      )}
       <Field label="Class notes or study guide (optional)">
         <textarea
           className="input min-h-40"

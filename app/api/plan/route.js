@@ -1,3 +1,4 @@
+import { gradePromptLines } from "@/lib/grades";
 import { generateJSON } from "@/lib/gemini";
 import { addDays, daysBetween } from "@/lib/dates";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
@@ -58,8 +59,7 @@ function buildPrompt(learner, test, lessonDays) {
 Student:
 - Subject: ${test.subject}
 - Test topic(s): ${test.topic}
-- Current grade in the class: ${test.currentGrade}%
-- Goal grade: ${test.goalGrade}%
+${gradePromptLines(test)}
 - Study time available: about ${test.hoursPerDay} hour(s) per day
 - Learning style: ${LEARNING_STYLES[learner.learningStyle].prompt}
 ${subjectBriefText(test, { withGuide: false })}${studyGuideText(test.guide, MAX_GUIDE_CHARS)}${notes ? `\nThe student's class notes (use these to decide what to cover):\n"""\n${notes}\n"""\n` : ""}

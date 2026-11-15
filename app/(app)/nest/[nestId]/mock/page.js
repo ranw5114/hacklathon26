@@ -1,5 +1,6 @@
 "use client";
 
+import { gradeText } from "@/lib/grades";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -428,9 +429,9 @@ function ExamResults({ exam, nest, number, onAnother }) {
         <Chick variant="sunny" mood={percent >= goal ? "love" : percent >= goal - 15 ? "happy" : "sad"} size={90} />
         <p className="label-small mt-2">Mock exam #{number}</p>
         <p className="font-display text-7xl font-semibold">{percent}%</p>
-        <p className="text-muted">Goal: {goal}%{exam.timeUp ? " · Time ran out" : ""}</p>
+        <p className="text-muted">Goal: {gradeText(nest.test, "goal")}{exam.timeUp ? " · Time ran out" : ""}</p>
         <span className="bubble mt-3">
-          {percent >= goal ? "You'd crush the real thing! Keep it up!" : `${goal - percent} points from your goal. Another round?`}
+          {percent >= goal ? "You'd crush the real thing! Keep it up!" : nest.test.goalScore !== undefined ? "Getting closer! Another round?" : `${goal - percent} points from your goal. Another round?`}
         </span>
         <div className="mt-3 flex flex-wrap justify-center gap-3">
           <button type="button" onClick={onAnother} className="btn-primary">
