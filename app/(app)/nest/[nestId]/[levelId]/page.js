@@ -153,6 +153,16 @@ function LevelPlay({ nestId, id }) {
     };
   }, [saveProgress]);
 
+  // Next keeps this page alive (hidden) after Back to nest, so opening the egg again would show the
+  // old results screen. Once it's hidden, the results become "your last quiz" instead.
+  useLayoutEffect(
+    () => () => {
+      setStage((now) => (now === "results" ? "review" : now));
+      setShowFriedPopup(false);
+    },
+    []
+  );
+
   // Back where you were on the page when resuming.
   useEffect(() => {
     if (!resumed?.scrollY || !hasLesson) return;
