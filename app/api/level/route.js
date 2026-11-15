@@ -1,4 +1,4 @@
-import { generateJSON, PLAIN_TEXT_RULE, questionSchema } from "@/lib/gemini";
+import { generateJSON, MATH_TEXT_RULE, questionSchema } from "@/lib/gemini";
 import { GRAPH_RULES, SVG_RULES } from "@/lib/drawingRules";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
 import { subjectBriefText } from "@/lib/briefPrompt";
@@ -149,7 +149,7 @@ Rules:
 - Write exactly ${QUESTIONS_PER_LEVEL} multiple-choice questions that test the lesson's goal, from easier to harder. Make them look like real questions from this class/test (for a competition or standardized test, use its style and difficulty).
 - Tag every question with the "concept" it tests. Use 2-4 different concepts across the quiz (matching the lesson's sections), and spell a concept exactly the same way each time it's used.
 - Each question has exactly 4 choices and one correct answer. Vary which position the correct answer is in.
-- ${PLAIN_TEXT_RULE}`;
+- ${MATH_TEXT_RULE}`;
 
   const { data, error, status } = await generateJSON(prompt, levelSchema);
   if (error) return Response.json({ error }, { status });

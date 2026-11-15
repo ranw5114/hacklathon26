@@ -2,6 +2,7 @@ import Icon from "@/components/Icon";
 import Chick from "@/components/Chick";
 import Graph from "@/components/Graph";
 import { Diagram, Practice } from "@/components/RichParts";
+import RichText from "@/components/RichText";
 
 // Shows an AI-written lesson: intro, teaching sections (with graphs and diagrams for visual
 // learners), worked example, practice problems, key points, and a video link.
@@ -15,13 +16,17 @@ export default function Lesson({ lesson, avatar, videoSources }) {
     <div className="flex flex-col gap-5">
       <div className="flex items-end gap-3">
         <Chick variant={avatar} size={70} className="shrink-0" />
-        <span className="bubble text-sm">{lesson.hook}</span>
+        <span className="bubble text-sm">
+          <RichText text={lesson.hook} inline />
+        </span>
       </div>
 
       {lesson.sections.map((section) => (
         <section key={section.heading} className="card">
-          <h2 className="text-xl">{section.heading}</h2>
-          <p className="mt-2 leading-relaxed whitespace-pre-line">{section.body}</p>
+          <h2 className="text-xl">
+            <RichText text={section.heading} inline />
+          </h2>
+          <RichText text={section.body} className="mt-2 leading-relaxed" />
           {section.graph?.curves?.length > 0 && (
             <div className="mt-3">
               <Graph spec={section.graph} />
@@ -37,7 +42,7 @@ export default function Lesson({ lesson, avatar, videoSources }) {
 
       <section className="card bg-chick/40">
         <p className="label-small">Worked example</p>
-        <p className="mt-1 font-display text-lg font-semibold">{lesson.example.problem}</p>
+        <RichText text={lesson.example.problem} className="mt-1 font-display text-lg font-semibold" />
         <ol className="mt-3 flex flex-col gap-2">
           {lesson.example.steps.map((step, i) => (
             <li key={i} className="flex gap-3">
@@ -45,11 +50,13 @@ export default function Lesson({ lesson, avatar, videoSources }) {
                 {i + 1}
               </span>
               {/* Drop "Step 1:" if the AI added it, since the steps are already numbered */}
-              <span className="pt-0.5">{step.replace(/^step\s*\d+\s*[:.)-]\s*/i, "")}</span>
+              <RichText text={step.replace(/^step\s*\d+\s*[:.)-]\s*/i, "")} className="pt-0.5" />
             </li>
           ))}
         </ol>
-        <p className="mt-3 font-semibold">Answer: {lesson.example.answer}</p>
+        <p className="mt-3 font-semibold">
+          Answer: <RichText text={lesson.example.answer} inline />
+        </p>
       </section>
 
       {lesson.practice?.length > 0 && (
@@ -67,7 +74,9 @@ export default function Lesson({ lesson, avatar, videoSources }) {
         <p className="text-sm text-muted">The key ideas from this lesson, before you take the quiz.</p>
         <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
           {lesson.keyPoints.map((point) => (
-            <li key={point}>{point}</li>
+            <li key={point}>
+              <RichText text={point} inline />
+            </li>
           ))}
         </ul>
       </section>

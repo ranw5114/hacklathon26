@@ -3,7 +3,7 @@
 //   Writes one batch of questions of one type, never repeating (or rewording) `previous`.
 // POST { mode: "format", test } → { format }: a best guess at the real test's format.
 import { subjectBriefText } from "@/lib/briefPrompt";
-import { generateJSON, PLAIN_TEXT_RULE } from "@/lib/gemini";
+import { generateJSON, MATH_TEXT_RULE } from "@/lib/gemini";
 import { DEFAULT_FORMAT, isRepeat, MAX_QUESTIONS, QUESTION_TYPES } from "@/lib/mockExam";
 
 export const maxDuration = 60;
@@ -93,7 +93,7 @@ It must feel like the student's REAL test: same difficulty, style, and format.
 ${format.notes ? `What the student said about their test: "${String(format.notes).slice(0, 500)}"\n` : ""}${topics ? `Topics the test covers:\n${topics}\n` : ""}${subjectBriefText(test)}
 Write exactly ${n} ${QUESTION_TYPES[type].short} questions. Each has ${TYPE_RULES[type](choices)}.
 - Spread them across the topics, from easier to harder, mixing recall with problem-solving the way the real test does.
-${avoid.length ? `- These questions were already asked on the student's earlier practice exams. Do NOT repeat them, reword them, or ask the same thing with different numbers or names. Ask new questions: different ideas, angles, or skills, and different setups (a word problem, a graph or table described in words, finding a mistake, comparing two methods, working backwards, a real-world context):\n${avoid.map((q) => `  * ${q.slice(0, 160)}`).join("\n")}\n` : ""}- ${PLAIN_TEXT_RULE}`;
+${avoid.length ? `- These questions were already asked on the student's earlier practice exams. Do NOT repeat them, reword them, or ask the same thing with different numbers or names. Ask new questions: different ideas, angles, or skills, and different setups (a word problem, a graph or table described in words, finding a mistake, comparing two methods, working backwards, a real-world context):\n${avoid.map((q) => `  * ${q.slice(0, 160)}`).join("\n")}\n` : ""}- ${MATH_TEXT_RULE} The accepted short answers ("answers") are the exception: plain text with no LaTeX, the way a student would type them (e.g. "1/2", "x^2").`;
     return generateJSON(prompt, questionSchema(type, choices));
   }
 

@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import Icon from "@/components/Icon";
 import Chick from "@/components/Chick";
 import MissingNest from "@/components/MissingNest";
+import RichText from "@/components/RichText";
 import { updateNest, useNest } from "@/lib/nests";
 import { useAvatar } from "@/lib/avatar";
 import { allSections } from "@/lib/progress";
@@ -371,7 +372,7 @@ function TakeExam({ nest, onFinished }) {
           <p className="label-small">
             Question {i + 1} · {QUESTION_TYPES[q.type]?.label}
           </p>
-          <p className="mt-1 text-lg font-semibold whitespace-pre-line">{q.question}</p>
+          <RichText text={q.question} className="mt-1 text-lg font-semibold" />
           {q.choices ? (
             <div className="mt-3 flex flex-col gap-2" role="radiogroup" aria-label={`Question ${i + 1}`}>
               {q.choices.map((choice, c) => (
@@ -384,7 +385,9 @@ function TakeExam({ nest, onFinished }) {
                   className={`flex items-start gap-3 rounded-2xl border-[3px] border-line p-3 text-left transition ${answers[i] === c ? "bg-chick shadow-[0_3px_0_var(--chick-line)]" : "bg-white hover:bg-chick/40"}`}
                 >
                   {q.type === "mc" && <span className="font-display font-semibold">{LETTERS[c]}.</span>}
-                  <span>{choice}</span>
+                  <span>
+                    <RichText text={choice} inline />
+                  </span>
                 </button>
               ))}
             </div>
@@ -460,7 +463,7 @@ function ExamResults({ exam, nest, number, onAnother }) {
                 {mark === "right" ? "Correct" : mark === "partly" ? `${Math.round(r.score * 100)}% credit` : "Not quite"}
               </span>
             </div>
-            <p className="mt-1 font-semibold whitespace-pre-line">{q.question}</p>
+            <RichText text={q.question} className="mt-1 font-semibold" />
             {q.choices ? (
               <ul className="mt-2 flex flex-col gap-1 text-sm">
                 {q.choices.map((c, k) => (
@@ -469,7 +472,7 @@ function ExamResults({ exam, nest, number, onAnother }) {
                     className={`rounded-xl px-3 py-1.5 ${k === q.answerIndex ? "bg-green-100 font-semibold" : k === answer ? "bg-red-100" : "bg-white"}`}
                   >
                     {q.type === "mc" && `${LETTERS[k]}. `}
-                    {c}
+                    <RichText text={c} inline />
                     {k === q.answerIndex ? " ✓" : k === answer ? " (your answer)" : ""}
                   </li>
                 ))}
@@ -486,8 +489,8 @@ function ExamResults({ exam, nest, number, onAnother }) {
                 )}
               </div>
             )}
-            {r.feedback && <p className="mt-2 rounded-xl bg-chick/40 p-2 text-sm">{r.feedback}</p>}
-            {q.explanation && <p className="mt-2 text-sm text-muted">{q.explanation}</p>}
+            {r.feedback && <RichText text={r.feedback} className="mt-2 rounded-xl bg-chick/40 p-2 text-sm" />}
+            {q.explanation && <RichText text={q.explanation} className="mt-2 text-sm text-muted" />}
           </section>
         );
       })}

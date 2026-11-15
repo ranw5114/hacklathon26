@@ -3,6 +3,7 @@
 import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { save, useStored } from "@/lib/storage";
+import RichText from "@/components/RichText";
 
 // AI-written answers are usually right, but not always. Students can flag a question that looks
 // wrong; flagged questions don't count toward the score. Limited per quiz so it can't skip hard ones.
@@ -124,7 +125,7 @@ export default function Quiz({ questions, onFinish, topic, initial, onProgress }
         Question {shown + 1} of {questions.length}
         {reviewing !== null && " · looking back"}
       </p>
-      <h2 className="text-2xl leading-snug">{question.question}</h2>
+      <RichText text={question.question} className="font-display text-2xl leading-snug font-semibold" />
 
       <div className="flex flex-col gap-3">
         {question.choices.map((text, i) => (
@@ -135,7 +136,7 @@ export default function Quiz({ questions, onFinish, topic, initial, onProgress }
             onClick={() => setSelected(i)}
             className={`rounded-2xl border-[3px] border-line p-4 text-left font-semibold transition ${choiceStyle(i)}`}
           >
-            {text}
+            <RichText text={text} inline />
             {reviewing !== null && i === choice && <span className="ml-2 text-xs font-bold text-muted">(your answer)</span>}
           </button>
         ))}
@@ -144,7 +145,7 @@ export default function Quiz({ questions, onFinish, topic, initial, onProgress }
       {answered && (
         <div className={`rounded-2xl border-[3px] p-4 ${isCorrect ? "border-green-700 bg-green-50" : "border-red-700 bg-red-50"}`}>
           <p className="font-display text-lg font-semibold">{isCorrect ? <>Egg-cellent! <Icon name="chick" size={22} /></> : "Not quite!"}</p>
-          <p className="mt-1">{question.explanation}</p>
+          <RichText text={question.explanation} className="mt-1" />
           {isFlagged ? (
             <p className="mt-3 text-sm font-semibold"><Icon name="flag" size={16} /> Flagged. Thanks! This question won&apos;t count against you.</p>
           ) : reviewing !== null ? null : flagged.length < MAX_FLAGS ? (
@@ -203,7 +204,7 @@ export function QuizReview({ questions, answers }) {
                 {answer.flagged ? "Flagged" : answer.correct ? "Correct" : "Missed"}
               </span>
             </div>
-            <h3 className="text-lg leading-snug">{q.question}</h3>
+            <RichText text={q.question} className="font-display text-lg leading-snug font-semibold" />
             <ul className="flex flex-col gap-2">
               {q.choices.map((text, i) => (
                 <li
@@ -212,12 +213,12 @@ export function QuizReview({ questions, answers }) {
                     i === q.answerIndex ? "border-green-700 bg-green-100" : i === pick ? "border-red-700 bg-red-100" : "border-line/20 bg-white"
                   }`}
                 >
-                  {text}
+                  <RichText text={text} inline />
                   {i === pick && <span className="ml-2 text-xs font-bold text-muted">(your answer)</span>}
                 </li>
               ))}
             </ul>
-            <p className="rounded-2xl bg-chick/40 px-4 py-2.5 text-sm">{q.explanation}</p>
+            <RichText text={q.explanation} className="rounded-2xl bg-chick/40 px-4 py-2.5 text-sm" />
           </li>
         );
       })}

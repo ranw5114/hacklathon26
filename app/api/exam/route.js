@@ -1,5 +1,5 @@
 import { subjectBriefText } from "@/lib/briefPrompt";
-import { generateJSON, PLAIN_TEXT_RULE, questionSchema } from "@/lib/gemini";
+import { generateJSON, MATH_TEXT_RULE, questionSchema } from "@/lib/gemini";
 
 // AI requests can take a while (with retries), so allow up to 60 seconds on Vercel.
 export const maxDuration = 60;
@@ -35,7 +35,7 @@ Rules:
 - Cover all the topics, with a few extra questions on topics marked "student found this hard".
 - Mix recall questions with problem-solving questions. Order them from easier to harder.
 - Each question has exactly 4 choices and one correct answer. Vary which position the correct answer is in.
-- ${PLAIN_TEXT_RULE}`;
+- ${MATH_TEXT_RULE}`;
 
   const { data, error, status } = await generateJSON(prompt, examSchema);
   if (error) return Response.json({ error }, { status });
