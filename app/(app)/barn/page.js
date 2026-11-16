@@ -9,6 +9,7 @@ import { useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
 import { chickCount, withDefaults } from "@/lib/flock";
 import { useNests } from "@/lib/nests";
+import { useSavedProblems } from "@/lib/savedProblems";
 import { planItemsFor, withTodoDefaults } from "@/lib/todos";
 import { todayString } from "@/lib/dates";
 import { LEARNING_STYLES } from "@/lib/learningStyles";
@@ -66,7 +67,7 @@ const AREAS = [
   },
 ];
 
-// The chips under "The Barn", and the picture for each learning style.
+// The chips under "The Barn" (learning style, chicks, corn, saved problems), and the picture for each learning style.
 const BARN_CHIP =
   "flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-3 py-1 font-display text-sm font-semibold shadow-[0_2px_0_var(--chick-line)] transition hover:-translate-y-0.5 hover:bg-chick/40";
 const STYLE_ICONS = { visual: "idea", lecture: "book", examples: "pencil" };
@@ -104,6 +105,7 @@ export default function BarnPage() {
   const flock = useStored("flock");
   const todos = useStored("todos");
   const nests = useNests();
+  const saved = useSavedProblems();
   const now = useNow();
   // Pick one joke when the page opens (useState keeps it from changing on every re-render).
   // Start on a random joke; poking the joke chick tells the next one.
@@ -164,6 +166,11 @@ export default function BarnPage() {
         <Link href="/henhouse/shop" className={BARN_CHIP} title="Spend your corn in the Shop">
           <Icon name="corn" size={18} /> {withDefaults(flock).corn} corn
         </Link>
+        {saved?.length > 0 && (
+          <Link href="/saved" className={BARN_CHIP} title="Try your starred problems again">
+            <Icon name="star" size={18} /> {saved.length} saved problem{saved.length === 1 ? "" : "s"}
+          </Link>
+        )}
       </div>
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">

@@ -4,6 +4,7 @@ import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 import { save, useStored } from "@/lib/storage";
 import RichText from "@/components/RichText";
+import StarButton from "@/components/StarButton";
 
 // AI-written answers are usually right, but not always. Students can flag a question that looks
 // wrong; flagged questions don't count toward the score. Limited per quiz so it can't skip hard ones.
@@ -121,10 +122,13 @@ export default function Quiz({ questions, onFinish, topic, initial, onProgress }
         ))}
       </div>
 
-      <p className="label-small">
-        Question {shown + 1} of {questions.length}
-        {reviewing !== null && " · looking back"}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="label-small">
+          Question {shown + 1} of {questions.length}
+          {reviewing !== null && " · looking back"}
+        </p>
+        <StarButton problem={quizProblem(question, answered ? choice : null)} nudge={answered && !isCorrect} />
+      </div>
       <RichText text={question.question} className="font-display text-2xl leading-snug font-semibold" />
 
       <div className="flex flex-col gap-3">
@@ -196,6 +200,7 @@ export function QuizReview({ questions, answers }) {
           <li key={n} className="card flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <p className="label-small">Question {n + 1}</p>
+              <StarButton problem={quizProblem(q, pick)} className="ml-auto" />
               <span
                 className={`rounded-full border-2 px-2.5 py-0.5 text-xs font-bold ${
                   answer.flagged ? "border-line/30 bg-zinc-100" : answer.correct ? "border-green-700 bg-green-50 text-green-800" : "border-red-700 bg-red-50 text-red-800"
@@ -224,4 +229,9 @@ export function QuizReview({ questions, answers }) {
       })}
     </ol>
   );
+}
+
+// What the star saves from a quiz question (pick = the answer chosen, if they've answered).
+function quizProblem(q, pick) {
+  return { kind: "quiz", question: q.question, choices: q.choices, answerIndex: q.answerIndex, pick, explanation: q.explanation };
 }

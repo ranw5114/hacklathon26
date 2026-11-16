@@ -1,6 +1,7 @@
 // Pieces shared by the Coop chat and Nest lessons: AI-drawn diagrams and practice problems.
 
 import RichText from "@/components/RichText";
+import StarButton from "@/components/StarButton";
 import { svgToImageSrc } from "@/lib/tutorReply";
 
 // A diagram the AI drew (for visual learners). Pass `src` (already converted) or raw `svg`.
@@ -20,7 +21,10 @@ export function Diagram({ src, svg }) {
 export function Practice({ number, problem, solution }) {
   return (
     <div className="rounded-2xl border-[3px] border-line bg-chick/40 p-3">
-      <p className="label-small">Practice {number}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="label-small">Practice {number}</p>
+        <StarButton problem={{ kind: "practice", question: problem, answer: solution }} />
+      </div>
       <RichText text={problem} className="mt-1" />
       <details className="group mt-2">
         <summary className="btn-secondary inline-block list-none px-3 py-1 text-sm [&::-webkit-details-marker]:hidden">

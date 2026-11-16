@@ -20,6 +20,7 @@ import { addMessage, autoNameChat, createChat, deleteChat, deleteFolder, folderC
 import { focusNest, useNests } from "@/lib/nests";
 import { todayString } from "@/lib/dates";
 import { parseReply } from "@/lib/tutorReply";
+import { clearCoopDraft, peekCoopDraft } from "@/lib/savedProblems";
 
 // A unique id for each message (only called when sending, never while drawing the page).
 let lastId = 0;
@@ -52,7 +53,8 @@ function CoopRoom() {
   const [thinkingFor, setThinkingFor] = useState(null); // the chat waiting for a reply
   const [showChats, setShowChats] = useState(false); // the chat list on phones
 
-  const [text, setText] = useState("");
+  // "Ask the Coop" on a saved problem leaves its question waiting, ready to send or change.
+  const [text, setText] = useState(() => peekCoopDraft() ?? "");
   const [photo, setPhoto] = useState(null); // { mimeType, data, preview } waiting to be sent
   // Files being attached: { id, name, size, progress, label, status: "working" | "ready" | "error", result, error }
   const [attachments, setAttachments] = useState([]);
@@ -67,6 +69,9 @@ function CoopRoom() {
   const thinking = thinkingFor !== null && thinkingFor === activeId;
   const currentId = plan ? currentSectionId(plan, goalFraction(test)) : null;
   const currentLevel = currentId ? findSection(plan, currentId).title : null;
+
+  // Once it's in the message box, the saved problem's question is cleared so it isn't used again.
+  useEffect(() => clearCoopDraft(), []);
 
   // Scroll to the newest message whenever the conversation changes.
   useEffect(() => {

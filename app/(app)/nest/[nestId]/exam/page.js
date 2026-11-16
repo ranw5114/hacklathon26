@@ -6,6 +6,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Chick from "@/components/Chick";
 import Quiz from "@/components/Quiz";
+import { SaveSpot } from "@/lib/savedProblems";
 import { chicksForExam, hatchChicks } from "@/lib/flock";
 import { useParams } from "next/navigation";
 import MissingNest from "@/components/MissingNest";
@@ -112,7 +113,11 @@ export default function ExamPage() {
           </div>
         )}
 
-        {stage === "exam" && exam && <Quiz questions={exam} onFinish={finishExam} topic="Mock exam" />}
+        {stage === "exam" && exam && (
+          <SaveSpot value={{ nestId, subject: test.subject, lesson: "Mock exam" }}>
+            <Quiz questions={exam} onFinish={finishExam} topic="Mock exam" />
+          </SaveSpot>
+        )}
 
         {stage === "results" && <ExamResults nestId={nestId} plan={plan} test={test} avatar={avatar} earned={earned} onRetake={retake} />}
       </div>

@@ -14,6 +14,7 @@ import { announceCorn } from "@/components/CornToast";
 import { todayString } from "@/lib/dates";
 import MissingNest from "@/components/MissingNest";
 import { updateNest, useNest } from "@/lib/nests";
+import { SaveSpot } from "@/lib/savedProblems";
 import { update, useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
 import { completeSection, conceptSummary, eggResult, findSection, goalFraction, isUnlocked } from "@/lib/progress";
@@ -279,151 +280,154 @@ function LevelPlay({ nestId, id }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-      <div className="flex items-center justify-between gap-3">
-        <Link href={`/nest/${nestId}`} className="text-sm font-semibold text-muted hover:underline">
-          ← Back to nest
-        </Link>
-        {level && !pausedView && (stage === "lesson" || stage === "quiz") && (
-          <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 text-sm">
-            <Icon name="pause" size={16} /> Pause
-          </button>
-        )}
-      </div>
-      <p className="label-small mt-4">{test.subject}</p>
-      <h1 className="text-3xl">{section.title}</h1>
-      <p className="mt-1 text-muted">{section.goal}</p>
-
-      {showResumed && !pausedView && (stage === "lesson" || stage === "quiz") && (
-        <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-[3px] border-line bg-chick/60 px-4 py-2 text-sm anim-pop">
-          <span className="flex items-center gap-2 font-semibold">
-            <Icon name="play" size={18} /> Welcome back! You&apos;re right where you left off
-            {stage === "quiz" && resumed?.quiz ? ` (question ${resumed.quiz.index + 1} of ${level?.quiz.length ?? "?"})` : ""}.
-          </span>
-          <span className="flex gap-3">
-            <button type="button" onClick={startOver} className="font-semibold underline">
-              Start over
+    // Stars on this page's problems save them under this nest and lesson.
+    <SaveSpot value={{ nestId, subject: test.subject, lesson: section.title }}>
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+        <div className="flex items-center justify-between gap-3">
+          <Link href={`/nest/${nestId}`} className="text-sm font-semibold text-muted hover:underline">
+            ← Back to nest
+          </Link>
+          {level && !pausedView && (stage === "lesson" || stage === "quiz") && (
+            <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 text-sm">
+              <Icon name="pause" size={16} /> Pause
             </button>
-            <button type="button" onClick={() => setShowResumed(false)} aria-label="Dismiss">
-              <Icon name="close" size={14} />
-            </button>
-          </span>
+          )}
         </div>
-      )}
+        <p className="label-small mt-4">{test.subject}</p>
+        <h1 className="text-3xl">{section.title}</h1>
+        <p className="mt-1 text-muted">{section.goal}</p>
 
-      {pausedView && (
-        <div className="card mt-6 flex flex-col items-center gap-3 py-10 text-center">
-          <Chick variant={avatar} mood="squint" size={110} />
-          <h2 className="text-3xl">Lesson paused</h2>
-          <p className="max-w-sm text-muted">
-            Take a break! Your place is saved{stage === "quiz" ? ", including your quiz answers" : ""}. Come back any time, even after closing the app.
-          </p>
-          <div className="mt-2 flex flex-wrap justify-center gap-3">
-            <button type="button" onClick={resume} className="btn-primary flex items-center gap-1.5">
-              <Icon name="play" size={18} /> Resume
-            </button>
-            <Link href={`/nest/${nestId}`} className="btn-secondary">
-              Back to nest
-            </Link>
-          </div>
-          <button type="button" onClick={startOver} className="text-xs font-semibold text-muted underline">
-            Start this lesson over
-          </button>
-        </div>
-      )}
-
-      <div className={`mt-6 ${pausedView ? "hidden" : ""}`}>
-        {error && (
-          <div className="card text-center">
-            <p className="text-red-700">{error}</p>
-            <button type="button" onClick={retryLoad} className="btn-primary mt-4">
-              Try again
-            </button>
-          </div>
-        )}
-
-        {!error && !level && (
-          <div className="flex flex-col items-center gap-4 py-12">
-            <Chick variant={avatar} size={100} className="animate-bounce" />
-            <span className="bubble">{remaking ? `Making it ${remaking} for you…` : "Hatching your lesson…"}</span>
-          </div>
-        )}
-
-        {level && stage === "lesson" && (
-          <>
-            <Lesson lesson={level.lesson} avatar={avatar} videoSources={profile.videoSources} />
-            <div className="mt-8 flex flex-wrap justify-end gap-3">
-              <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5">
-                <Icon name="pause" size={18} /> Pause for now
+        {showResumed && !pausedView && (stage === "lesson" || stage === "quiz") && (
+          <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-[3px] border-line bg-chick/60 px-4 py-2 text-sm anim-pop">
+            <span className="flex items-center gap-2 font-semibold">
+              <Icon name="play" size={18} /> Welcome back! You&apos;re right where you left off
+              {stage === "quiz" && resumed?.quiz ? ` (question ${resumed.quiz.index + 1} of ${level?.quiz.length ?? "?"})` : ""}.
+            </span>
+            <span className="flex gap-3">
+              <button type="button" onClick={startOver} className="font-semibold underline">
+                Start over
               </button>
-              {lastQuiz && (
-                <button type="button" onClick={seeLastQuiz} className="btn-secondary">
-                  See my last quiz
+              <button type="button" onClick={() => setShowResumed(false)} aria-label="Dismiss">
+                <Icon name="close" size={14} />
+              </button>
+            </span>
+          </div>
+        )}
+
+        {pausedView && (
+          <div className="card mt-6 flex flex-col items-center gap-3 py-10 text-center">
+            <Chick variant={avatar} mood="squint" size={110} />
+            <h2 className="text-3xl">Lesson paused</h2>
+            <p className="max-w-sm text-muted">
+              Take a break! Your place is saved{stage === "quiz" ? ", including your quiz answers" : ""}. Come back any time, even after closing the app.
+            </p>
+            <div className="mt-2 flex flex-wrap justify-center gap-3">
+              <button type="button" onClick={resume} className="btn-primary flex items-center gap-1.5">
+                <Icon name="play" size={18} /> Resume
+              </button>
+              <Link href={`/nest/${nestId}`} className="btn-secondary">
+                Back to nest
+              </Link>
+            </div>
+            <button type="button" onClick={startOver} className="text-xs font-semibold text-muted underline">
+              Start this lesson over
+            </button>
+          </div>
+        )}
+
+        <div className={`mt-6 ${pausedView ? "hidden" : ""}`}>
+          {error && (
+            <div className="card text-center">
+              <p className="text-red-700">{error}</p>
+              <button type="button" onClick={retryLoad} className="btn-primary mt-4">
+                Try again
+              </button>
+            </div>
+          )}
+
+          {!error && !level && (
+            <div className="flex flex-col items-center gap-4 py-12">
+              <Chick variant={avatar} size={100} className="animate-bounce" />
+              <span className="bubble">{remaking ? `Making it ${remaking} for you…` : "Hatching your lesson…"}</span>
+            </div>
+          )}
+
+          {level && stage === "lesson" && (
+            <>
+              <Lesson lesson={level.lesson} avatar={avatar} videoSources={profile.videoSources} />
+              <div className="mt-8 flex flex-wrap justify-end gap-3">
+                <button type="button" onClick={pause} className="btn-secondary flex items-center gap-1.5">
+                  <Icon name="pause" size={18} /> Pause for now
                 </button>
-              )}
-              <button type="button" onClick={startQuiz} className="btn-primary">
-                {lastQuiz ? "Retake the quiz →" : "Start the quiz →"}
-              </button>
+                {lastQuiz && (
+                  <button type="button" onClick={seeLastQuiz} className="btn-secondary">
+                    See my last quiz
+                  </button>
+                )}
+                <button type="button" onClick={startQuiz} className="btn-primary">
+                  {lastQuiz ? "Retake the quiz →" : "Start the quiz →"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {level && stage === "review" && lastQuiz && (
+            <LastQuiz
+              lastQuiz={lastQuiz}
+              questions={level.quiz}
+              goal={goalFraction(test)}
+              nestId={nestId}
+              onLesson={reviewLesson}
+              onRetake={retryQuiz}
+            />
+          )}
+
+          {/* A new key makes React start a fresh Quiz (back to question 1) */}
+          {level && stage === "quiz" && (
+            <Quiz
+              key={quizRound}
+              questions={level.quiz}
+              onFinish={finishQuiz}
+              topic={section.title}
+              initial={resumed?.stage === "quiz" && quizRound === (resumed.quizRound ?? 0) ? resumed.quiz : null}
+              onProgress={onQuizProgress}
+            />
+          )}
+
+          {stage === "results" && result && (
+            <Results
+              result={result}
+              nestId={nestId}
+              onRetry={retryQuiz}
+              onReview={reviewLesson}
+              onSeeAnswers={seeLastQuiz}
+              feedback={nest.feedback?.[id]}
+              onFeedback={sendFeedback}
+              onRemake={remakeLesson}
+            />
+          )}
+
+          {/* A failed quiz: a heartbroken chicken pops up */}
+          <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={avatar} chickMood="sad">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex items-end gap-2">
+                <Chick variant={avatar} mood="crying" size={90} />
+                <FriedEgg size={70} />
+              </div>
+              <p className="font-display text-lg font-semibold">{FRIED_POPUP}</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button type="button" onClick={reviewLesson} className="btn-secondary">
+                  Review the lesson
+                </button>
+                <button type="button" onClick={retryQuiz} className="btn-primary">
+                  Retry the quiz
+                </button>
+              </div>
             </div>
-          </>
-        )}
-
-        {level && stage === "review" && lastQuiz && (
-          <LastQuiz
-            lastQuiz={lastQuiz}
-            questions={level.quiz}
-            goal={goalFraction(test)}
-            nestId={nestId}
-            onLesson={reviewLesson}
-            onRetake={retryQuiz}
-          />
-        )}
-
-        {/* A new key makes React start a fresh Quiz (back to question 1) */}
-        {level && stage === "quiz" && (
-          <Quiz
-            key={quizRound}
-            questions={level.quiz}
-            onFinish={finishQuiz}
-            topic={section.title}
-            initial={resumed?.stage === "quiz" && quizRound === (resumed.quizRound ?? 0) ? resumed.quiz : null}
-            onProgress={onQuizProgress}
-          />
-        )}
-
-        {stage === "results" && result && (
-          <Results
-            result={result}
-            nestId={nestId}
-            onRetry={retryQuiz}
-            onReview={reviewLesson}
-            onSeeAnswers={seeLastQuiz}
-            feedback={nest.feedback?.[id]}
-            onFeedback={sendFeedback}
-            onRemake={remakeLesson}
-          />
-        )}
-
-        {/* A failed quiz: a heartbroken chicken pops up */}
-        <Modal open={showFriedPopup} onClose={() => setShowFriedPopup(false)} title="My egg!!" chick={avatar} chickMood="sad">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex items-end gap-2">
-              <Chick variant={avatar} mood="crying" size={90} />
-              <FriedEgg size={70} />
-            </div>
-            <p className="font-display text-lg font-semibold">{FRIED_POPUP}</p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={reviewLesson} className="btn-secondary">
-                Review the lesson
-              </button>
-              <button type="button" onClick={retryQuiz} className="btn-primary">
-                Retry the quiz
-              </button>
-            </div>
-          </div>
-        </Modal>
-      </div>
-    </main>
+          </Modal>
+        </div>
+      </main>
+    </SaveSpot>
   );
 }
 

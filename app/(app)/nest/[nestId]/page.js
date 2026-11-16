@@ -16,6 +16,7 @@ import { announceCorn } from "@/components/CornToast";
 import { deleteNest, updateNest, useNest } from "@/lib/nests";
 import { update, useStored } from "@/lib/storage";
 import { useAvatar } from "@/lib/avatar";
+import { useSavedProblems } from "@/lib/savedProblems";
 import { goalFraction, openChest } from "@/lib/progress";
 import { daysBetween, formatDate, todayString } from "@/lib/dates";
 
@@ -29,6 +30,7 @@ export default function NestPage() {
   const flock = useStored("flock");
   const { confirm, dialog } = useConfirm();
   const [editing, setEditing] = useState(false);
+  const savedHere = (useSavedProblems() ?? []).filter((p) => p.nestId === nestId).length;
 
   if (nest === undefined) return null;
   if (!nest) return <MissingNest />;
@@ -102,6 +104,16 @@ export default function NestPage() {
         </span>
         <span className="font-display text-2xl" aria-hidden="true">→</span>
       </Link>
+      {/* Problems starred in this nest's lessons and mock exams (app/(app)/nest/[nestId]/saved) */}
+      {savedHere > 0 && (
+        <Link href={`/nest/${nestId}/saved`} className="card-link mt-3 flex items-center gap-3 py-3">
+          <Icon name="star" size={26} />
+          <span className="flex-1 font-display text-lg font-semibold">
+            {savedHere} saved problem{savedHere === 1 ? "" : "s"} to review
+          </span>
+          <span className="font-display text-xl" aria-hidden="true">→</span>
+        </Link>
+      )}
       <div className="mt-4 flex items-start gap-3">
         <p className="flex-1 text-sm text-muted">{plan.overview}</p>
         {!editing && (

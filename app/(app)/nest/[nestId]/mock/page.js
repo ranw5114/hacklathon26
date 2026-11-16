@@ -8,6 +8,8 @@ import Icon from "@/components/Icon";
 import Chick from "@/components/Chick";
 import MissingNest from "@/components/MissingNest";
 import RichText from "@/components/RichText";
+import StarButton from "@/components/StarButton";
+import { SaveSpot } from "@/lib/savedProblems";
 import { updateNest, useNest } from "@/lib/nests";
 import { useAvatar } from "@/lib/avatar";
 import { allSections } from "@/lib/progress";
@@ -427,74 +429,78 @@ function ExamResults({ exam, nest, number, onAnother }) {
   const goal = nest.test.goalGrade;
   const missed = exam.results.filter((r) => r.score < 1).length;
   return (
-    <div className="flex flex-col gap-5">
-      <div className="card flex flex-col items-center gap-2 py-8 text-center">
-        <Chick variant="sunny" mood={percent >= goal ? "love" : percent >= goal - 15 ? "happy" : "sad"} size={90} />
-        <p className="label-small mt-2">Mock exam #{number}</p>
-        <p className="font-display text-7xl font-semibold">{percent}%</p>
-        <p className="text-muted">Goal: {gradeText(nest.test, "goal")}{exam.timeUp ? " · Time ran out" : ""}</p>
-        <span className="bubble mt-3">
-          {percent >= goal ? "You'd crush the real thing! Keep it up!" : nest.test.goalScore !== undefined ? "Getting closer! Another round?" : `${goal - percent} points from your goal. Another round?`}
-        </span>
-        <div className="mt-3 flex flex-wrap justify-center gap-3">
-          <button type="button" onClick={onAnother} className="btn-primary">
-            Take another mock exam
-          </button>
-          <Link href={`/nest/${nest.id}`} className="btn-secondary">
-            Back to nest
-          </Link>
+    // Stars on the review save questions under this nest.
+    <SaveSpot value={{ nestId: nest.id, subject: nest.test.subject, lesson: `Mock exam ${number}` }}>
+      <div className="flex flex-col gap-5">
+        <div className="card flex flex-col items-center gap-2 py-8 text-center">
+          <Chick variant="sunny" mood={percent >= goal ? "love" : percent >= goal - 15 ? "happy" : "sad"} size={90} />
+          <p className="label-small mt-2">Mock exam #{number}</p>
+          <p className="font-display text-7xl font-semibold">{percent}%</p>
+          <p className="text-muted">Goal: {gradeText(nest.test, "goal")}{exam.timeUp ? " · Time ran out" : ""}</p>
+          <span className="bubble mt-3">
+            {percent >= goal ? "You'd crush the real thing! Keep it up!" : nest.test.goalScore !== undefined ? "Getting closer! Another round?" : `${goal - percent} points from your goal. Another round?`}
+          </span>
+          <div className="mt-3 flex flex-wrap justify-center gap-3">
+            <button type="button" onClick={onAnother} className="btn-primary">
+              Take another mock exam
+            </button>
+            <Link href={`/nest/${nest.id}`} className="btn-secondary">
+              Back to nest
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <TuneNest nest={nest} exam={exam} />
+        <TuneNest nest={nest} exam={exam} />
 
-      <h2 className="text-2xl">{missed ? `Review (${missed} to look at)` : "Review: all correct!"}</h2>
-      {exam.questions.map((q, i) => {
-        const r = exam.results[i];
-        const answer = exam.answers[i];
-        const mark = r.score >= 1 ? "right" : r.score > 0 ? "partly" : "wrong";
-        return (
-          <section key={i} className={`card ${mark === "right" ? "" : mark === "partly" ? "border-beak" : "border-red-700 bg-red-50/50"}`}>
-            <div className="flex items-start justify-between gap-3">
-              <p className="label-small">
-                Question {i + 1} · {QUESTION_TYPES[q.type]?.label}
-              </p>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${mark === "right" ? "bg-green-100 text-green-800" : mark === "partly" ? "bg-chick" : "bg-red-100 text-red-800"}`}>
-                {mark === "right" ? "Correct" : mark === "partly" ? `${Math.round(r.score * 100)}% credit` : "Not quite"}
-              </span>
-            </div>
-            <RichText text={q.question} className="mt-1 font-semibold" />
-            {q.choices ? (
-              <ul className="mt-2 flex flex-col gap-1 text-sm">
-                {q.choices.map((c, k) => (
-                  <li
-                    key={k}
-                    className={`rounded-xl px-3 py-1.5 ${k === q.answerIndex ? "bg-green-100 font-semibold" : k === answer ? "bg-red-100" : "bg-white"}`}
-                  >
-                    {q.type === "mc" && `${LETTERS[k]}. `}
-                    <RichText text={c} inline />
-                    {k === q.answerIndex ? " ✓" : k === answer ? " (your answer)" : ""}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-2 flex flex-col gap-1 text-sm">
-                <p>
-                  <span className="font-semibold">Your answer:</span> {String(answer ?? "").trim() || <em className="text-muted">(blank)</em>}
+        <h2 className="text-2xl">{missed ? `Review (${missed} to look at)` : "Review: all correct!"}</h2>
+        {exam.questions.map((q, i) => {
+          const r = exam.results[i];
+          const answer = exam.answers[i];
+          const mark = r.score >= 1 ? "right" : r.score > 0 ? "partly" : "wrong";
+          return (
+            <section key={i} className={`card ${mark === "right" ? "" : mark === "partly" ? "border-beak" : "border-red-700 bg-red-50/50"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <p className="label-small">
+                  Question {i + 1} · {QUESTION_TYPES[q.type]?.label}
                 </p>
-                {q.type === "short" && (
-                  <p>
-                    <span className="font-semibold">Answer:</span> {q.answers?.[0]}
-                  </p>
-                )}
+                <StarButton problem={mockProblem(q, answer)} nudge={mark !== "right"} className="ml-auto" />
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${mark === "right" ? "bg-green-100 text-green-800" : mark === "partly" ? "bg-chick" : "bg-red-100 text-red-800"}`}>
+                  {mark === "right" ? "Correct" : mark === "partly" ? `${Math.round(r.score * 100)}% credit` : "Not quite"}
+                </span>
               </div>
-            )}
-            {r.feedback && <RichText text={r.feedback} className="mt-2 rounded-xl bg-chick/40 p-2 text-sm" />}
-            {q.explanation && <RichText text={q.explanation} className="mt-2 text-sm text-muted" />}
-          </section>
-        );
-      })}
-    </div>
+              <RichText text={q.question} className="mt-1 font-semibold" />
+              {q.choices ? (
+                <ul className="mt-2 flex flex-col gap-1 text-sm">
+                  {q.choices.map((c, k) => (
+                    <li
+                      key={k}
+                      className={`rounded-xl px-3 py-1.5 ${k === q.answerIndex ? "bg-green-100 font-semibold" : k === answer ? "bg-red-100" : "bg-white"}`}
+                    >
+                      {q.type === "mc" && `${LETTERS[k]}. `}
+                      <RichText text={c} inline />
+                      {k === q.answerIndex ? " ✓" : k === answer ? " (your answer)" : ""}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="mt-2 flex flex-col gap-1 text-sm">
+                  <p>
+                    <span className="font-semibold">Your answer:</span> {String(answer ?? "").trim() || <em className="text-muted">(blank)</em>}
+                  </p>
+                  {q.type === "short" && (
+                    <p>
+                      <span className="font-semibold">Answer:</span> {q.answers?.[0]}
+                    </p>
+                  )}
+                </div>
+              )}
+              {r.feedback && <RichText text={r.feedback} className="mt-2 rounded-xl bg-chick/40 p-2 text-sm" />}
+              {q.explanation && <RichText text={q.explanation} className="mt-2 text-sm text-muted" />}
+            </section>
+          );
+        })}
+      </div>
+    </SaveSpot>
   );
 }
 
@@ -702,4 +708,11 @@ function History({ history, goal, onOpen }) {
       </ul>
     </section>
   );
+}
+
+// What the star saves from a mock exam question, with the student's answer.
+function mockProblem(q, answer) {
+  const base = { kind: "mock", question: q.question, explanation: q.explanation };
+  if (q.choices) return { ...base, choices: q.choices, answerIndex: q.answerIndex, pick: answer ?? null };
+  return { ...base, yours: String(answer ?? "").trim(), answer: q.answers?.[0] ?? q.rubric };
 }
